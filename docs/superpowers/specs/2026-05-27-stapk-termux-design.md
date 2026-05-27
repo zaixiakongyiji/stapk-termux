@@ -210,6 +210,7 @@ stapk-termux/
 $PREFIX/bin/
   stapk-init
   stapk-start
+  stapk-status
   stapk-stop
   stapk-update
   stapk-open-url
@@ -333,6 +334,15 @@ tar --numeric-owner --preserve-permissions -czf SillyTavern.tar.gz SillyTavern p
 
 6. 将 tarball 放入 APK assets。
 
+payload 构建环境规则：
+
+- 截至 2026-05-27，SillyTavern release 分支 `1.18.0` 的生产依赖未发现 native Node addon。检查项包括 `*.node`、`binding.gyp`、`node-gyp`、`prebuild`、`node-pre-gyp`、`bindings`、`nan`、`node-addon-api` 和平台限定包。
+- 生产依赖中存在 WASM 资源，例如 `tiktoken`、`onnxruntime-web`、`sillytavern-transformers`、`@jsquash/*`，但这类 WASM 资源不绑定 Android ABI。
+- 当前默认 payload 构建路径可以使用 Linux x86_64 CI 执行 `npm ci --omit=dev --ignore-scripts` 或与官方 `start.sh` 等价的生产依赖安装命令。
+- 不推荐在 Windows 直接生成最终 payload。主要原因不是 ABI，而是 symlink、可执行权限、`.bin` shim、tar 元数据和换行语义更容易与 Android/Termux 运行环境产生偏差。
+- 构建脚本必须在每次打包前扫描 production `node_modules`。如果发现 native addon 或平台限定包，payload 构建路径切换为真实 aarch64 Termux 设备，或 CI 中的 aarch64/QEMU 构建环境。
+- 即使默认在 Linux x86_64 CI 生成 payload，也必须在真实 arm64 Android/Termux 环境做 smoke test：解包、`node --version`、`npm --version`、`git --version`、`cd ~/SillyTavern && bash start.sh`。
+
 验收标准：
 
 - 断网首次启动后，payload 能完整解包。
@@ -430,7 +440,7 @@ UI 状态：
 
 - 点击后进入“启动中”。
 - 输出写入 `$HOME/.stapk/logs/start.log`。
-- 检测本地端口或进程状态，成功后显示“运行中”。
+- 按 §7.7 的健康检测策略判断服务状态，成功后显示“运行中”。
 - 成功后“打开酒馆”按钮可用。
 
 注意：
@@ -439,7 +449,51 @@ UI 状态：
 - 如果联网更新后依赖变化，`start.sh` 会尝试按官方方式安装依赖。
 - 不改官方 start.sh，避免跟上游行为分叉。
 
-### 7.7 停止流程
+### 7.7 进程健康检测策略
+
+健康检测不能只看 Termux session，也不能只看端口。第一版采用分层检测，Android UI 通过轮询 `stapk-status` 或等价内部 API 获得状态 JSON。
+
+检测层级：
+
+| 层级 | 方法 | 作用 |
+| --- | --- | --- |
+| App 启动会话 | 检查控制面板启动的 Termux session 是否仍存在 | 判断官方 `start.sh` 是否还在运行，例如正在执行 npm install |
+| Node 进程 | `pgrep -f "node .*server.js"`，并记录 PID | 判断 SillyTavern server 进程是否存在 |
+| TCP 端口 | Android 侧尝试连接 `127.0.0.1:<port>`，超时 500-1000ms | 判断 server 是否已经监听端口 |
+| HTTP 健康 | `GET http://127.0.0.1:<port>/` 并检查返回码 | 判断服务是否可用，第一版列为增强项 |
+
+端口来源：
+
+- 优先读取 SillyTavern 配置中的端口。
+- 读取失败时使用默认端口 `8000`。
+- `ss -tlnp` 可作为诊断页展示信息，但第一版不依赖它作为唯一状态来源，避免额外依赖 `iproute2`。
+
+UI 状态映射：
+
+| 检测结果 | UI 状态 |
+| --- | --- |
+| 无 App 启动会话、无 Node 进程 | 已停止 |
+| App 启动会话存在，但 Node 进程未出现 | 启动中 |
+| Node 进程存在，但 TCP 端口未监听 | 启动中 |
+| Node 进程存在，TCP 端口可连接 | 运行中 |
+| Node 进程存在，TCP 端口可连接，但 HTTP 健康检查失败 | 异常，HTTP 检查启用后使用 |
+| App 启动会话已退出，退出码非 0 | 错误 |
+| App 启动会话不存在，但检测到 Node 进程和端口 | 运行中，标记为外部启动 |
+
+轮询频率：
+
+- 用户点击启动后的前 30 秒，每 2 秒检测一次。
+- 30 秒后仍未就绪，改为每 5 秒检测一次，并保留“启动中”状态。
+- 稳定运行后，每 10-15 秒检测一次。
+- 用户进入首页、日志页、更新页时立即触发一次检测。
+
+第一版实现范围：
+
+- 必须实现 App 启动会话、Node 进程、TCP 端口三层检测。
+- HTTP 健康检查作为第二阶段增强，不阻塞第一版。
+- 不完全依赖事件驱动；即使 Termux session 退出事件没有传到 Android 层，轮询也应能修正 UI 状态。
+
+### 7.8 停止流程
 
 按钮：停止酒馆
 
@@ -460,7 +514,7 @@ pkill -f "node .*server.js"
 - 保留最后日志。
 - 不删除任何 SillyTavern 数据。
 
-### 7.8 打开网页流程
+### 7.9 打开网页流程
 
 按钮：打开酒馆
 
@@ -476,7 +530,7 @@ http://127.0.0.1:8000
 
 第一版建议优先打开系统浏览器，避免 WebView 兼容问题。后续再评估内置 WebView。
 
-### 7.9 Git 更新流程
+### 7.10 Git 更新流程
 
 按钮：更新酒馆
 
@@ -508,7 +562,7 @@ cd "$HOME/SillyTavern" && git reset --hard "$PREVIOUS_COMMIT"
 
 回滚是破坏性动作，必须在 UI 二次确认。
 
-### 7.10 备份与恢复流程
+### 7.11 备份与恢复流程
 
 按钮：备份数据
 
@@ -532,7 +586,7 @@ $HOME/.stapk/backups/sillytavern-backup-YYYYMMDD-HHMMSS.tar.gz
 4. 解包覆盖。
 5. 显示恢复结果。
 
-### 7.11 日志和诊断流程
+### 7.12 日志和诊断流程
 
 日志页面显示：
 
