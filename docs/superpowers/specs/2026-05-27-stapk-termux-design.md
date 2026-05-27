@@ -311,7 +311,7 @@ payload 不是普通 zip 下载包，而是可后续 Git 更新的工作树。
 
 步骤：
 
-1. 在与目标环境兼容的 aarch64 Termux 环境中准备 `payload/SillyTavern`。
+1. 默认在 Linux x86_64 CI 中准备 `payload/SillyTavern`；如果 native addon 扫描发现平台绑定依赖，再切换到真实 aarch64 Termux 或 aarch64/QEMU 环境。
 2. 使用 `release` 分支浅克隆，并保留 `.git`。
 3. 执行与官方 `start.sh` 等价的生产依赖安装命令。
 4. 记录 manifest。下面字段由 payload 构建脚本在打包时自动写入，示例中的值表示字段含义：
@@ -361,7 +361,7 @@ payload 构建环境规则：
 1. App 检查 Termux bootstrap 是否已安装。
 2. 如果未安装，使用 Termux 原有 bootstrap 安装流程。
 3. 检查 `$HOME/.stapk/state/initialized`。
-4. 如果未初始化：
+4. 如果未初始化且 `$HOME/SillyTavern` 不存在：
    - 创建 `$HOME/.stapk/logs`、`backups`、`state`。
    - 从 APK assets 拷贝 `SillyTavern.tar.gz` 到临时目录。
    - 解包到 `$HOME/SillyTavern`。
@@ -369,16 +369,72 @@ payload 构建环境规则：
    - 设置脚本可执行权限。
    - 执行轻量校验：`node --version`、`npm --version`、`git --version`、`test -f ~/SillyTavern/start.sh`。
    - 写入 initialized 标记。
-5. 如果已初始化，不自动解包 APK 内置 payload，也不覆盖 `$HOME/SillyTavern`。控制面板只刷新运行时版本信息。
-6. 初始化成功后进入控制面板首页。
+5. 如果未初始化但 `$HOME/SillyTavern` 已存在，进入 §7.5 的已有 Termux 安装接管流程。
+6. 如果已初始化，不自动解包 APK 内置 payload，也不覆盖 `$HOME/SillyTavern`。控制面板只刷新运行时版本信息。
+7. 初始化成功后进入控制面板首页。
 
 失败处理：
 
 - 初始化任何一步失败都写入 `init.log`。
 - UI 显示“初始化失败”，提供“重试初始化”和“导出诊断日志”。
-- 如果 `$HOME/SillyTavern` 已部分存在，重试前先移动到 `$HOME/.stapk/backups/failed-init-时间戳`，避免覆盖用户数据。
+- 自动解包 APK payload 时如果生成了部分 `$HOME/SillyTavern`，重试前先移动到 `$HOME/.stapk/backups/failed-init-时间戳`，避免覆盖用户数据。
+- 如果 `$HOME/SillyTavern` 在初始化前已经存在，禁止自动移动或覆盖，必须走 §7.5 的接管或显式修复流程。
 
-### 7.5 APK 覆盖升级与版本管理
+### 7.5 已有 Termux 安装接管与数据迁移
+
+这个流程处理用户已经在普通 Termux 中安装过 SillyTavern 的情况。它在原型阶段优先级高，因为原型可能沿用 `com.termux` 包名，覆盖安装 stAPK 后会继承原 Termux 的 `$HOME`。
+
+场景 1：同包名覆盖安装，继承旧 `$HOME`
+
+触发条件：
+
+- `$HOME/.stapk/state/initialized` 不存在。
+- `$HOME/SillyTavern` 已存在。
+
+处理规则：
+
+1. 不解包 APK 内置 payload，不覆盖 `$HOME/SillyTavern`。
+2. 创建 `$HOME/.stapk/logs`、`backups`、`state`。
+3. 写入 `bundled-payload-manifest.json`，记录当前 APK 内置 payload。
+4. 校验现有 `$HOME/SillyTavern`：
+   - `start.sh` 是否存在。
+   - `package.json` 是否存在。
+   - `.git` 是否存在。
+   - `node_modules` 是否存在。
+   - `data/` 是否存在。
+5. 如果校验通过，生成 `runtime-manifest.json`，写入 initialized 标记，并进入控制面板首页。UI 显示“已接管现有 SillyTavern”。
+6. 如果缺少 `node_modules`，但 `start.sh` 和 `package.json` 存在，仍可接管；UI 标记为“需要修复依赖”，提示用户联网后点击“修复依赖”或直接启动，让官方 `start.sh` 处理依赖。
+7. 如果缺少 `.git`，说明用户可能是 zip 安装。此时不阻止接管，但更新按钮不可用；UI 提供两个选择：
+   - 保持现状，仅启动和备份，不启用 Git 更新。
+   - 导入现有数据后重新初始化：先备份 `config.yaml`、`data/` 和可识别扩展目录，再用 APK 内置 payload 解包，最后恢复数据。
+8. 如果缺少 `start.sh` 或 `package.json`，判定为未知目录，不自动接管。UI 进入修复页，允许导出诊断、备份现有目录、重新初始化。
+
+接管后状态：
+
+- stAPK 管理这个现有 `$HOME/SillyTavern`。
+- 不重置用户 Git remote、branch、config 或数据。
+- `runtime-manifest.json` 从现有目录读取 commit、branch、remote、package version、Node/npm/Git 版本。
+- 后续更新、备份、启动和停止流程与普通初始化后的环境一致。
+
+场景 2：自有包名正式版，与普通 Termux 数据隔离
+
+正式版使用自有包名时，stAPK 的 `$HOME` 与普通 Termux 的 `/data/data/com.termux/files/home` 隔离。Android 沙箱不允许 stAPK 直接读取旧 Termux 私有目录，因此不能做静默迁移。
+
+第一版文档化手动迁移步骤：
+
+1. 用户在旧 Termux 中执行导出脚本，将 SillyTavern 的 `config.yaml`、`data/` 和可识别扩展目录打包到共享存储。
+2. 用户安装 stAPK 正式版并完成首次初始化。
+3. 用户通过 stAPK 的“恢复数据”功能或文件选择器选择备份包。
+4. stAPK 停止 SillyTavern，备份当前数据，再导入旧数据。
+
+第二阶段增强：
+
+- 在 stAPK 中提供“导入旧 Termux 数据”按钮。
+- 提供一段可复制到旧 Termux 的导出命令。
+- 支持 Android 文件选择器导入 `tar.gz` 备份。
+- 导入前展示敏感信息提醒，因为备份可能包含 API key、聊天记录和角色卡。
+
+### 7.6 APK 覆盖升级与版本管理
 
 覆盖安装新 APK 时，Android 会保留 App 数据目录，Termux 的 `$PREFIX` 和 `$HOME` 也会保留。Termux bootstrap 只应在 `$PREFIX` 缺失或为空时安装；新 APK assets 中的 bootstrap 或 SillyTavern payload 不会自动替换已经初始化的运行环境。
 
@@ -428,7 +484,7 @@ bootstrap 和 `$PREFIX` 的规则：
 - 然后从 APK 内置 payload 重新解包。
 - 重新初始化完成后，保留旧备份路径并允许用户手动恢复 `data/` 和 `config.yaml`。
 
-### 7.6 启动流程
+### 7.7 启动流程
 
 按钮：启动酒馆
 
@@ -443,7 +499,7 @@ UI 状态：
 
 - 点击后进入“启动中”。
 - 输出写入 `$HOME/.stapk/logs/start.log`。
-- 按 §7.7 的健康检测策略判断服务状态，成功后显示“运行中”。
+- 按 §7.8 的健康检测策略判断服务状态，成功后显示“运行中”。
 - 成功后“打开酒馆”按钮可用。
 
 注意：
@@ -454,7 +510,7 @@ UI 状态：
 - `stapk-start` 必须在启动 SillyTavern 前调用 `termux-wake-lock`。该命令通过 TermuxService 现有机制请求 partial wake lock 和 Wi-Fi lock，并更新 Termux 前台服务通知。
 - 如果 `termux-wake-lock` 不可用或失败，启动流程不应直接中止，但必须写入 `start.log`，并在控制面板显示保活能力受限。
 
-### 7.7 进程健康检测策略
+### 7.8 进程健康检测策略
 
 健康检测不能只看 Termux session，也不能只看端口。第一版采用分层检测，Android UI 通过轮询 `stapk-status` 或等价内部 API 获得状态 JSON。
 
@@ -498,7 +554,7 @@ UI 状态映射：
 - HTTP 健康检查作为第二阶段增强，不阻塞第一版。
 - 不完全依赖事件驱动；即使 Termux session 退出事件没有传到 Android 层，轮询也应能修正 UI 状态。
 
-### 7.8 停止流程
+### 7.9 停止流程
 
 按钮：停止酒馆
 
@@ -522,7 +578,7 @@ termux-wake-unlock || true
 - `stapk-stop` 必须在确认停止或执行兜底停止后调用 `termux-wake-unlock`，释放由 `stapk-start` 获取的 wake lock。
 - 如果检测到 SillyTavern 是外部启动状态，停止前仍需二次确认；确认停止后同样释放 wake lock。
 
-### 7.9 打开网页流程
+### 7.10 打开网页流程
 
 按钮：打开酒馆
 
@@ -538,7 +594,7 @@ http://127.0.0.1:8000
 
 第一版建议优先打开系统浏览器，避免 WebView 兼容问题。后续再评估内置 WebView。
 
-### 7.10 Git 更新流程
+### 7.11 Git 更新流程
 
 按钮：更新酒馆
 
@@ -570,7 +626,7 @@ cd "$HOME/SillyTavern" && git reset --hard "$PREVIOUS_COMMIT"
 
 回滚是破坏性动作，必须在 UI 二次确认。
 
-### 7.11 备份与恢复流程
+### 7.12 备份与恢复流程
 
 按钮：备份数据
 
@@ -594,7 +650,7 @@ $HOME/.stapk/backups/sillytavern-backup-YYYYMMDD-HHMMSS.tar.gz
 4. 解包覆盖。
 5. 显示恢复结果。
 
-### 7.12 日志和诊断流程
+### 7.13 日志和诊断流程
 
 日志页面显示：
 
@@ -807,7 +863,18 @@ Termux 官方也提示 Android 12+ 可能杀掉大量或高 CPU 进程。
 - APK 覆盖升级只刷新 manifest 和执行兼容性检查。
 - 需要回退或重新初始化时必须由用户在高级修复页显式触发。
 
-### 11.6 许可证合规
+### 11.6 已有 Termux 数据迁移风险
+
+原因：同包名覆盖安装会继承旧 `$HOME`，自有包名正式版则无法直接读取普通 Termux 的私有目录。处理不当会导致用户误以为数据丢失，或在初始化时覆盖现有 SillyTavern。
+
+策略：
+
+- 同包名原型阶段必须实现 §7.5 的接管流程。
+- 初始化前已经存在的 `$HOME/SillyTavern` 禁止自动覆盖或移动。
+- 自有包名正式版只支持用户显式导出/导入，不承诺静默读取旧 Termux 私有目录。
+- 导入备份前提示可能包含 API key、聊天记录、角色卡等敏感信息。
+
+### 11.7 许可证合规
 
 Termux App 是 GPLv3 only，SillyTavern 是 AGPL-3.0，Git 是 GPL-2.0，Node 是 MIT，npm 及 node_modules 包含多种许可证。
 
@@ -838,12 +905,14 @@ Termux App 是 GPLv3 only，SillyTavern 是 AGPL-3.0，Git 是 GPL-2.0，Node �
 - 保留终端高级入口。
 - 按钮能调用固定脚本。
 - 使用现有 Termux 环境手动验证启动 SillyTavern。
+- 同包名覆盖安装普通 Termux 时，能识别并接管已有 `$HOME/SillyTavern`。
 
 验收：
 
 - App 启动后先进控制面板。
 - 点击按钮能在 Termux session 中执行 `bash start.sh`。
 - 日志能在 UI 中查看。
+- 已有普通 Termux 的 `$HOME/SillyTavern` 不会被 payload 覆盖。
 
 ### 阶段 2：离线 bootstrap
 
@@ -871,6 +940,7 @@ Termux App 是 GPLv3 only，SillyTavern 是 AGPL-3.0，Git 是 GPL-2.0，Node �
 - 清数据后重新初始化成功。
 - 离线可启动 SillyTavern。
 - 联网后 `git pull` 可用。
+- payload 构建脚本包含 native addon 扫描；扫描通过时允许 Linux x86_64 CI 产物进入真实 arm64 smoke test。
 
 ### 阶段 4：更新、备份、恢复
 
