@@ -238,7 +238,9 @@ $HOME/
       initialized
       running.json
       last-error.json
-      payload-manifest.json
+      bundled-payload-manifest.json
+      runtime-manifest.json
+      app-upgrade.json
 ```
 
 ## 7. 核心流程
@@ -351,11 +353,12 @@ tar --numeric-owner --preserve-permissions -czf SillyTavern.tar.gz SillyTavern p
    - 创建 `$HOME/.stapk/logs`、`backups`、`state`。
    - 从 APK assets 拷贝 `SillyTavern.tar.gz` 到临时目录。
    - 解包到 `$HOME/SillyTavern`。
-   - 写入 `payload-manifest.json`。
+   - 写入 `bundled-payload-manifest.json` 和 `runtime-manifest.json`。
    - 设置脚本可执行权限。
    - 执行轻量校验：`node --version`、`npm --version`、`git --version`、`test -f ~/SillyTavern/start.sh`。
    - 写入 initialized 标记。
-5. 初始化成功后进入控制面板首页。
+5. 如果已初始化，不自动解包 APK 内置 payload，也不覆盖 `$HOME/SillyTavern`。控制面板只刷新运行时版本信息。
+6. 初始化成功后进入控制面板首页。
 
 失败处理：
 
@@ -363,7 +366,57 @@ tar --numeric-owner --preserve-permissions -czf SillyTavern.tar.gz SillyTavern p
 - UI 显示“初始化失败”，提供“重试初始化”和“导出诊断日志”。
 - 如果 `$HOME/SillyTavern` 已部分存在，重试前先移动到 `$HOME/.stapk/backups/failed-init-时间戳`，避免覆盖用户数据。
 
-### 7.5 启动流程
+### 7.5 APK 覆盖升级与版本管理
+
+覆盖安装新 APK 时，Android 会保留 App 数据目录，Termux 的 `$PREFIX` 和 `$HOME` 也会保留。Termux bootstrap 只应在 `$PREFIX` 缺失或为空时安装；新 APK assets 中的 bootstrap 或 SillyTavern payload 不会自动替换已经初始化的运行环境。
+
+第一版必须遵守这条规则：
+
+> 已初始化环境中，APK 覆盖升级不得自动用 APK 内置 payload 覆盖用户当前的 `$HOME/SillyTavern`。
+
+原因是用户可能已经通过控制面板的 Git 更新按钮把 SillyTavern 更新到比新 APK 内置 payload 更新的版本。例如用户运行时已经是 SillyTavern `1.19.0`，新 APK 内置 payload 只有 `1.18.2`，此时自动解包会造成版本回退和潜在数据损坏。
+
+覆盖升级后执行的检查：
+
+1. 读取 APK assets 中的 `payload-manifest.json`，复制到 `$HOME/.stapk/state/bundled-payload-manifest.json`，只作为“当前 APK 内置版本”记录。
+2. 检查 `$HOME/SillyTavern/.git` 和 `package.json`，生成 `$HOME/.stapk/state/runtime-manifest.json`，记录“用户当前实际运行版本”。
+3. 如果 `initialized` 存在，跳过 SillyTavern payload 解包。
+4. 如果 APK 内置 payload 版本高于运行时版本，只提示“APK 内置版本较新”，不自动覆盖；建议用户使用 Git 更新按钮。
+5. 如果运行时版本高于 APK 内置 payload，只提示“运行时已由用户更新”，不做回退。
+6. 如果运行时目录损坏，进入修复页，由用户选择“修复依赖”“Git 恢复”“重新初始化”。
+
+manifest 分工：
+
+```text
+bundled-payload-manifest.json
+  记录当前 APK 内置的 SillyTavern commit、版本、Node/npm 版本、打包时间。
+
+runtime-manifest.json
+  记录 $HOME/SillyTavern 当前实际 commit、分支、远程仓库、package.json version、
+  node/npm/git 当前版本、最后一次 Git 更新结果。
+
+app-upgrade.json
+  记录上一次运行的 stAPK versionCode/versionName、当前 APK 版本、是否发生覆盖升级、
+  覆盖升级后执行了哪些检查。
+```
+
+bootstrap 和 `$PREFIX` 的规则：
+
+- 覆盖安装 APK 不自动重装 `$PREFIX`。
+- 新 APK 内置了更新的 Node/Git/npm 时，不代表用户已有 `$PREFIX` 会自动升级。
+- 第一版只做版本检测和提示，不做自动 apt/dpkg 迁移。
+- 如必须升级 Node/Git/npm，提供“更新运行环境”高级按钮，执行前备份 `$PREFIX` 包列表和 stAPK 状态，并显示风险说明。
+- 若 `$PREFIX` 缺失、为空或基础命令不可用，则进入 bootstrap 修复流程。
+
+重新初始化规则：
+
+- “重新初始化”是高级修复动作，不出现在普通首页。
+- 执行前必须二次确认，明确说明会移动当前 `$HOME/SillyTavern`。
+- 不直接删除旧目录，而是移动到 `$HOME/.stapk/backups/reinit-时间戳/SillyTavern`。
+- 然后从 APK 内置 payload 重新解包。
+- 重新初始化完成后，保留旧备份路径并允许用户手动恢复 `data/` 和 `config.yaml`。
+
+### 7.6 启动流程
 
 按钮：启动酒馆
 
@@ -386,7 +439,7 @@ UI 状态：
 - 如果联网更新后依赖变化，`start.sh` 会尝试按官方方式安装依赖。
 - 不改官方 start.sh，避免跟上游行为分叉。
 
-### 7.6 停止流程
+### 7.7 停止流程
 
 按钮：停止酒馆
 
@@ -407,7 +460,7 @@ pkill -f "node .*server.js"
 - 保留最后日志。
 - 不删除任何 SillyTavern 数据。
 
-### 7.7 打开网页流程
+### 7.8 打开网页流程
 
 按钮：打开酒馆
 
@@ -423,7 +476,7 @@ http://127.0.0.1:8000
 
 第一版建议优先打开系统浏览器，避免 WebView 兼容问题。后续再评估内置 WebView。
 
-### 7.8 Git 更新流程
+### 7.9 Git 更新流程
 
 按钮：更新酒馆
 
@@ -455,7 +508,7 @@ cd "$HOME/SillyTavern" && git reset --hard "$PREVIOUS_COMMIT"
 
 回滚是破坏性动作，必须在 UI 二次确认。
 
-### 7.9 备份与恢复流程
+### 7.10 备份与恢复流程
 
 按钮：备份数据
 
@@ -479,7 +532,7 @@ $HOME/.stapk/backups/sillytavern-backup-YYYYMMDD-HHMMSS.tar.gz
 4. 解包覆盖。
 5. 显示恢复结果。
 
-### 7.10 日志和诊断流程
+### 7.11 日志和诊断流程
 
 日志页面显示：
 
@@ -678,7 +731,18 @@ Termux 官方也提示 Android 12+ 可能杀掉大量或高 CPU 进程。
 - 日志中记录 signal 9 或进程异常退出。
 - 第一版不承诺长时间后台不被系统杀掉。
 
-### 11.5 许可证合规
+### 11.5 覆盖升级造成运行时回退
+
+原因：APK 内置 payload 可能落后于用户通过 Git 按钮更新后的运行时版本。
+
+策略：
+
+- 已初始化环境永不自动解包 APK 内置 SillyTavern payload。
+- 分开记录 APK 内置版本和用户运行时版本。
+- APK 覆盖升级只刷新 manifest 和执行兼容性检查。
+- 需要回退或重新初始化时必须由用户在高级修复页显式触发。
+
+### 11.6 许可证合规
 
 Termux App 是 GPLv3 only，SillyTavern 是 AGPL-3.0，Git 是 GPL-2.0，Node 是 MIT，npm 及 node_modules 包含多种许可证。
 
