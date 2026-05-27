@@ -235,6 +235,11 @@ $HOME/
       start.log
       update.log
       backup.log
+    locks/
+      start.lock
+      update.lock
+      backup.lock
+      restore.lock
     backups/
     state/
       initialized
@@ -324,7 +329,14 @@ payload 不是普通 zip 下载包，而是可后续 Git 更新的工作树。
   "sillytavern_version": "package.json 中的 version",
   "node_version": "node --version 的输出",
   "npm_version": "npm --version 的输出",
-  "created_at": "ISO-8601 格式的打包时间"
+  "created_at": "ISO-8601 格式的打包时间",
+  "payload_archive_size_bytes": "SillyTavern.tar.gz 文件大小",
+  "payload_unpacked_size_bytes": "解包后 SillyTavern 工作树大小",
+  "required_free_bytes": "payload_unpacked_size_bytes * 1.5 后向上取整",
+  "native_addon_scan": {
+    "has_native_addon": false,
+    "checked_patterns": ["*.node", "binding.gyp", "node-gyp", "prebuild", "node-pre-gyp", "bindings", "nan", "node-addon-api"]
+  }
 }
 ```
 
@@ -343,6 +355,7 @@ payload 构建环境规则：
 - 当前默认 payload 构建路径可以使用 Linux x86_64 CI 执行 `npm ci --omit=dev --ignore-scripts` 或与官方 `start.sh` 等价的生产依赖安装命令。
 - 不推荐在 Windows 直接生成最终 payload。主要原因不是 ABI，而是 symlink、可执行权限、`.bin` shim、tar 元数据和换行语义更容易与 Android/Termux 运行环境产生偏差。
 - 构建脚本必须在每次打包前扫描 production `node_modules`。如果发现 native addon 或平台限定包，payload 构建路径切换为真实 aarch64 Termux 设备，或 CI 中的 aarch64/QEMU 构建环境。
+- 构建脚本在压缩前计算 payload 解包体积和压缩包体积，并将 `required_free_bytes = payload_unpacked_size_bytes * 1.5` 写入 `payload-manifest.json`，供首次初始化做磁盘空间预检。
 - 即使默认在 Linux x86_64 CI 生成 payload，也必须在真实 arm64 Android/Termux 环境做 smoke test：解包、`node --version`、`npm --version`、`git --version`、`cd ~/SillyTavern && bash start.sh`。
 
 验收标准：
@@ -362,7 +375,10 @@ payload 构建环境规则：
 2. 如果未安装，使用 Termux 原有 bootstrap 安装流程。
 3. 检查 `$HOME/.stapk/state/initialized`。
 4. 如果未初始化且 `$HOME/SillyTavern` 不存在：
-   - 创建 `$HOME/.stapk/logs`、`backups`、`state`。
+   - 创建 `$HOME/.stapk/logs`、`locks`、`backups`、`state`。
+   - 读取 APK assets 中的 `payload-manifest.json`。
+   - 检查 `$HOME` 所在分区可用空间，必须大于 manifest 中的 `required_free_bytes`。
+   - 如果空间不足，中止初始化，写入 `init.log`，UI 显示所需空间和当前可用空间，不开始解包。
    - 从 APK assets 拷贝 `SillyTavern.tar.gz` 到临时目录。
    - 解包到 `$HOME/SillyTavern`。
    - 写入 `bundled-payload-manifest.json` 和 `runtime-manifest.json`。
@@ -379,6 +395,7 @@ payload 构建环境规则：
 - UI 显示“初始化失败”，提供“重试初始化”和“导出诊断日志”。
 - 自动解包 APK payload 时如果生成了部分 `$HOME/SillyTavern`，重试前先移动到 `$HOME/.stapk/backups/failed-init-时间戳`，避免覆盖用户数据。
 - 如果 `$HOME/SillyTavern` 在初始化前已经存在，禁止自动移动或覆盖，必须走 §7.5 的接管或显式修复流程。
+- 即使做了空间预检，仍要处理解包中途 `ENOSPC`，记录日志并进入失败恢复；空间预检用于避免最常见的半解包状态，不替代失败恢复。
 
 ### 7.5 已有 Termux 安装接管与数据迁移
 
@@ -394,7 +411,7 @@ payload 构建环境规则：
 处理规则：
 
 1. 不解包 APK 内置 payload，不覆盖 `$HOME/SillyTavern`。
-2. 创建 `$HOME/.stapk/logs`、`backups`、`state`。
+2. 创建 `$HOME/.stapk/logs`、`locks`、`backups`、`state`。
 3. 写入 `bundled-payload-manifest.json`，记录当前 APK 内置 payload。
 4. 校验现有 `$HOME/SillyTavern`：
    - `start.sh` 是否存在。
@@ -614,6 +631,12 @@ cd "$HOME/SillyTavern" && git pull --rebase --autostash
 6. 更新成功后显示新 commit。
 7. 用户点击“启动”时继续走官方 `bash start.sh`，由官方脚本处理依赖。
 
+说明：
+
+- SillyTavern 的用户数据位于 `data/` 下，不属于官方 Git 工作树正常更新范围。
+- 用户本地扩展也位于用户数据路径或全局第三方扩展路径，Git 更新 SillyTavern release 分支不会主动覆盖这些目录。
+- 更新前日志记录已安装扩展列表，用于排查更新后扩展兼容问题。
+
 失败处理：
 
 - `git pull` 失败时显示错误摘要。
@@ -634,7 +657,19 @@ cd "$HOME/SillyTavern" && git reset --hard "$PREVIOUS_COMMIT"
 
 - `$HOME/SillyTavern/config.yaml`
 - `$HOME/SillyTavern/data/`
-- 用户安装的扩展目录，按 SillyTavern 实际目录确认后纳入
+- 用户本地扩展目录：默认 `$HOME/SillyTavern/data/default-user/extensions/`。实际实现应按 `config.yaml` 的 `dataRoot` 和当前用户 handle 解析，不硬编码只支持 `default-user`。
+- 全局第三方扩展目录：`$HOME/SillyTavern/public/scripts/extensions/third-party/`，如果存在则纳入备份。
+
+不备份：
+
+- 官方内置扩展目录 `$HOME/SillyTavern/public/scripts/extensions/` 下除 `third-party/` 以外的内容，因为它属于程序工作树。
+- SillyTavern 主程序的 `.git/`，除非用户选择完整诊断包。
+
+扩展注意事项：
+
+- 扩展目录可能包含自己的 `node_modules`，备份默认保留。
+- 如果扩展包含 native addon，迁移到 Android/Termux 后可能不可用。第一版不自动修复第三方扩展依赖。
+- 备份和诊断日志记录扩展列表、扩展来源、是否存在 `package.json`、是否存在 `node_modules`、是否发现 `*.node` 或 `binding.gyp`。
 
 输出：
 
@@ -669,6 +704,41 @@ $HOME/.stapk/reports/stapk-report-YYYYMMDD-HHMMSS.tar.gz
 ```
 
 诊断包不应默认包含聊天记录或 API keys。包含敏感信息前需要提示用户。
+
+### 7.14 操作幂等性与互斥锁
+
+所有按钮动作必须可重复点击而不造成重复进程、重复更新或互相踩踏。Android UI 层做按钮禁用，脚本层用 lock file 做最终保护。
+
+lock 文件位置：
+
+```text
+$HOME/.stapk/locks/start.lock
+$HOME/.stapk/locks/update.lock
+$HOME/.stapk/locks/backup.lock
+$HOME/.stapk/locks/restore.lock
+```
+
+lock 文件内容：
+
+```json
+{
+  "operation": "start",
+  "pid": 12345,
+  "created_at": "ISO-8601 时间",
+  "command": "stapk-start"
+}
+```
+
+规则：
+
+- 脚本入口先检查对应 lock 是否存在。
+- lock 存在且记录的 PID 仍存活时，拒绝重入，并返回“操作进行中”。
+- lock 存在但 PID 不存在时，视为 stale lock，移动到 `$HOME/.stapk/logs/stale-locks/` 后继续。
+- 启动中重复点击“启动”：忽略，不创建第二个 Termux session。
+- 已停止状态点击“停止”：无操作，返回成功，不报错。
+- 更新、备份、恢复互斥：任一操作进行中时，其他破坏性或长耗时操作必须阻止。
+- 恢复和重新初始化必须独占，执行期间禁止启动、更新、备份。
+- 每个脚本退出时用 trap/finally 清理自身 lock；异常退出时依赖下次 stale lock 检测恢复。
 
 ## 8. UI 设计
 
@@ -712,6 +782,15 @@ $HOME/.stapk/reports/stapk-report-YYYYMMDD-HHMMSS.tar.gz
 
 不在第一版提供任意命令输入框。
 
+### 8.5 帮助页和已知限制
+
+帮助页记录第一版的已知限制和处理方式：
+
+- 后台保活：解释 Termux 前台通知、wake lock、电池优化白名单和国产 ROM 后台管理入口。
+- 本地网页：默认使用系统浏览器打开 `http://127.0.0.1:8000`。stAPK 自身可以在 `network_security_config.xml` 中允许 localhost cleartext，用于控制面板内置 WebView 或后续能力；但系统浏览器是否允许 cleartext HTTP 由浏览器自身决定，不受 stAPK 配置控制。
+- 浏览器兼容：Chrome 和大多数主流浏览器通常允许 `127.0.0.1` 明文 HTTP；少数严格浏览器可能拦截。第一版不为此内置 WebView，只在 FAQ 中提示更换浏览器或使用后续内置网页入口。
+- 数据位置：说明用户数据、备份包、日志和诊断包的位置，并提示备份可能包含聊天记录、角色卡和 API 配置。
+
 ## 9. 构建流程
 
 ### 9.1 开发构建
@@ -742,6 +821,7 @@ adb install -r app/build/outputs/apk/debug/*.apk
    - 源码压缩包或源码仓库链接
    - 许可证说明
    - 内置版本说明：Termux App tag、SillyTavern commit、Node/npm/git 版本
+   - payload manifest：包含压缩包大小、解包大小、空间预检阈值、native addon 扫描结果
 
 ## 10. 测试计划
 
@@ -757,6 +837,7 @@ adb install -r app/build/outputs/apk/debug/*.apk
 - 打开网页能访问本地 SillyTavern。
 - 不需要 `git clone`。
 - 不需要联网 `npm install`。
+- 当可用空间低于 `required_free_bytes` 时，初始化在解包前中止，UI 显示所需空间和当前可用空间。
 
 ### 10.2 联网更新
 
@@ -768,6 +849,8 @@ adb install -r app/build/outputs/apk/debug/*.apk
 - 更新日志可读。
 - 更新后可启动。
 - 如果没有更新，UI 显示已是最新。
+- 更新进行中重复点击“更新”只保留一个操作，UI 显示“操作进行中”。
+- 更新前日志记录当前已安装扩展列表。
 
 ### 10.3 失败恢复
 
@@ -778,6 +861,7 @@ adb install -r app/build/outputs/apk/debug/*.apk
 - `node_modules` 被删除。
 - `config.yaml` 损坏。
 - 端口被占用。
+- 遗留 stale lock 文件。
 
 通过标准：
 
@@ -786,8 +870,26 @@ adb install -r app/build/outputs/apk/debug/*.apk
 - 能重试初始化。
 - 能回滚更新。
 - 用户数据不被静默删除。
+- stale lock 能被识别并移动到日志目录，真实运行中的 lock 会阻止重入。
+- 已停止状态点击“停止”返回成功，不弹错误。
 
-### 10.4 Android 兼容
+### 10.4 备份与迁移
+
+测试场景：
+
+- 普通数据备份：`config.yaml`、`data/`。
+- 用户本地扩展：`data/<user>/extensions/`。
+- 全局第三方扩展：`public/scripts/extensions/third-party/`。
+- 扩展内包含 `node_modules` 或 native addon 痕迹。
+
+通过标准：
+
+- 备份覆盖用户数据和可识别的第三方扩展。
+- 不把官方内置扩展和主程序 `.git/` 放入普通备份。
+- 诊断日志能列出扩展名称、来源、是否存在 `package.json`、`node_modules` 和 native addon 痕迹。
+- 从普通 Termux 覆盖安装接管时，不覆盖已有 `$HOME/SillyTavern`。
+
+### 10.5 Android 兼容
 
 测试设备：
 
@@ -802,6 +904,7 @@ adb install -r app/build/outputs/apk/debug/*.apk
 - 通知权限和前台服务行为。
 - 浏览器打开本地地址是否稳定。
 - App 数据清理后的重新初始化是否可靠。
+- 至少验证一个非 Chrome 浏览器访问 `http://127.0.0.1:8000` 的行为；如果被 cleartext 策略拦截，记录到 FAQ，不作为第一版阻塞项。
 
 ## 11. 主要风险和处理策略
 
@@ -874,7 +977,51 @@ Termux 官方也提示 Android 12+ 可能杀掉大量或高 CPU 进程。
 - 自有包名正式版只支持用户显式导出/导入，不承诺静默读取旧 Termux 私有目录。
 - 导入备份前提示可能包含 API key、聊天记录、角色卡等敏感信息。
 
-### 11.7 许可证合规
+### 11.7 磁盘空间不足
+
+原因：APK 内置 bootstrap、Node、Git、npm、SillyTavern、`.git` 和 `node_modules`，解包体积明显大于普通 App。空间不足时如果直接解包，容易留下半初始化目录。
+
+策略：
+
+- payload 构建时计算 `required_free_bytes`，首次初始化前检查 `$HOME` 所在分区可用空间。
+- 空间不足时在解包前中止，不创建半成品 `$HOME/SillyTavern`。
+- 解包过程中仍处理 `ENOSPC`，把部分目录移动到失败备份位置并要求用户重试。
+- UI 显示明确的所需空间、当前可用空间和清理建议。
+
+### 11.8 第三方扩展兼容
+
+原因：用户安装的第三方扩展可能依赖特定 SillyTavern 版本，也可能携带自己的 `node_modules` 或 native addon。Git 更新主程序不会主动覆盖 `data/`，但扩展运行时仍可能因接口或依赖变化失效。
+
+策略：
+
+- 备份覆盖用户本地扩展和全局第三方扩展。
+- 更新前记录扩展列表和可疑 native addon 痕迹，方便诊断。
+- 第一版不自动修复第三方扩展依赖；扩展出错时展示为兼容风险，不把主程序更新整体回滚作为默认动作。
+- 如果用户执行重新初始化，必须先备份扩展目录并明确提示恢复后扩展仍可能需要手动处理。
+
+### 11.9 Cleartext HTTP 与浏览器兼容
+
+原因：SillyTavern 本地服务使用 `http://127.0.0.1:8000`。Android App 的 cleartext 策略只约束本 App 自己的网络访问，不能强制系统浏览器放行。
+
+策略：
+
+- stAPK 自身配置允许 localhost cleartext，为后续内置 WebView 或内部健康检查保留能力。
+- 第一版继续使用系统浏览器，避免额外维护 WebView 安全面。
+- FAQ 记录少数严格浏览器可能拦截本地 HTTP；用户可换用 Chrome 或其他允许 localhost 的浏览器。
+- HTTP 健康检查只访问本机地址，不对局域网暴露服务。
+
+### 11.10 操作重入和锁残留
+
+原因：用户可能连续点击按钮，或 Android 杀进程导致脚本没有机会清理状态。没有互斥会造成重复 session、并发更新、备份和恢复互相覆盖。
+
+策略：
+
+- UI 层禁用正在执行的按钮，脚本层用 `$HOME/.stapk/locks` 做最终互斥。
+- lock 记录 PID，PID 存活时拒绝重入，PID 不存在时按 stale lock 处理。
+- 启动、停止做成幂等操作，更新、备份、恢复做成互斥操作。
+- 所有 lock 处理写入日志，方便用户导出诊断包。
+
+### 11.11 许可证合规
 
 Termux App 是 GPLv3 only，SillyTavern 是 AGPL-3.0，Git 是 GPL-2.0，Node 是 MIT，npm 及 node_modules 包含多种许可证。
 
