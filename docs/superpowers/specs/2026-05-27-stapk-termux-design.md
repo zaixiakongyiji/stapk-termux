@@ -18,6 +18,7 @@
 
 - APK 内置可离线运行的 Termux bootstrap。
 - APK 内置 `nodejs-lts`、`npm`、`git`、`bash`、`coreutils`、`tar`、`gzip` 等基础工具。
+- APK 内置 `termux-tools`，确保 `termux-wake-lock`、`termux-wake-unlock` 等 Termux 用户空间工具可用。
 - APK 内置 SillyTavern release 分支源码，并保留 Git 仓库信息，使后续 `git pull` 可用。
 - APK 内置已安装好的 `node_modules`，首次启动不依赖 `git clone` 或 `npm install`。
 - App 首次启动时解包并初始化 `$HOME/SillyTavern`。
@@ -287,6 +288,7 @@ npm install --no-save --no-audit --no-fund --loglevel=error --no-progress --omit
    - `busybox`
    - `tar`
    - `gzip`
+   - `termux-tools`
    - `git`
    - `nodejs-lts`
    - `npm`
@@ -433,6 +435,7 @@ bootstrap 和 `$PREFIX` 的规则：
 执行：
 
 ```bash
+termux-wake-lock || true
 cd "$HOME/SillyTavern" && bash start.sh
 ```
 
@@ -448,6 +451,8 @@ UI 状态：
 - 因为官方 `start.sh` 会执行 npm install，离线时依赖已存在应能继续启动。
 - 如果联网更新后依赖变化，`start.sh` 会尝试按官方方式安装依赖。
 - 不改官方 start.sh，避免跟上游行为分叉。
+- `stapk-start` 必须在启动 SillyTavern 前调用 `termux-wake-lock`。该命令通过 TermuxService 现有机制请求 partial wake lock 和 Wi-Fi lock，并更新 Termux 前台服务通知。
+- 如果 `termux-wake-lock` 不可用或失败，启动流程不应直接中止，但必须写入 `start.log`，并在控制面板显示保活能力受限。
 
 ### 7.7 进程健康检测策略
 
@@ -506,6 +511,7 @@ UI 状态映射：
 
 ```bash
 pkill -f "node .*server.js"
+termux-wake-unlock || true
 ```
 
 停止后：
@@ -513,6 +519,8 @@ pkill -f "node .*server.js"
 - UI 显示“已停止”。
 - 保留最后日志。
 - 不删除任何 SillyTavern 数据。
+- `stapk-stop` 必须在确认停止或执行兜底停止后调用 `termux-wake-unlock`，释放由 `stapk-start` 获取的 wake lock。
+- 如果检测到 SillyTavern 是外部启动状态，停止前仍需二次确认；确认停止后同样释放 wake lock。
 
 ### 7.9 打开网页流程
 
@@ -780,8 +788,11 @@ Termux 官方也提示 Android 12+ 可能杀掉大量或高 CPU 进程。
 
 策略：
 
-- 启动时使用前台服务通知。
-- 提示用户关闭电池优化。
+- 复用 TermuxService，不从零实现后台守护。TermuxService 本身是 foreground service，会在运行时保持前台通知，并管理 terminal session。
+- 启动 SillyTavern 时由 `stapk-start` 自动调用 `termux-wake-lock`，停止时由 `stapk-stop` 自动调用 `termux-wake-unlock`。这比让用户手动执行 wake lock 命令可靠。
+- 保留 Termux 的 persistent notification，不隐藏它。第一版可以沿用默认通知；后续可调整通知标题和内容为“SillyTavern 运行中”，但不能移除前台通知。
+- 首次成功启动后，Android 层用 `PowerManager.isIgnoringBatteryOptimizations()` 或 Termux 现有等价工具检测是否已忽略电池优化；未加入白名单时弹一次引导提示。
+- 国产 ROM 的后台管理开关与标准 Android 电池优化不是同一入口。第一版在帮助页面列出 MIUI、ColorOS、OriginOS 等常见路径，不做自动检测和跳转承诺。
 - 日志中记录 signal 9 或进程异常退出。
 - 第一版不承诺长时间后台不被系统杀掉。
 
