@@ -1,0 +1,51 @@
+# ===== 构建产物 =====
+output/
+payload/SillyTavern.tar.gz
+payload/payload-manifest.json
+payload/work/
+upstream/termux-app/app/src/main/assets/SillyTavern.tar.gz
+upstream/termux-app/app/src/main/assets/payload-manifest.json
+upstream/termux-app/app/src/main/cpp/bootstrap-aarch64.zip*
+upstream/termux-app/app/src/main/cpp/*.zip
+
+# ===== IDE 和编辑器 =====
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+*~
+
+# ===== OS 文件 =====
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+# ===== 日志文件 =====
+*.log
+*.log.*
+
+# ===== AI 工作流 =====
+.sisyphus/
+
+# ===== 开发内部文档 =====
+OPERATION_LOG.md
+AGENTS.md
+docs/superpowers/specs/2026-05-27-stapk-termux-design.md
+
+# ===== Gradle（根目录）=====
+.gradle/
+build/
+local.properties
+*.apk
+*.apk.idsig
+
+# ===== 签名文件 =====
+.signing/
+*.jks
+*.keystore

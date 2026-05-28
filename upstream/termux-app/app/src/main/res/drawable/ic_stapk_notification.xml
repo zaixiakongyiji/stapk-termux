@@ -1,0 +1,44 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- SillyTavern mug icon for foreground notification -->
+    <path
+        android:pathData="M3,3h14v14h-14z"
+        android:fillColor="#FF0F3460" />
+    <path
+        android:pathData="M17,7h3c1.1,0,2,0.9,2,2v2c0,1.1-0.9,2-2,2h-3v-6z"
+        android:fillColor="#FF1A5C36"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="1" />
+    <path
+        android:pathData="M3,3h14v2h-14z"
+        android:fillColor="#FF53354A" />
+    <path
+        android:pathData="M7,17l1,4h8l1,-4"
+        android:fillColor="#FF53354A" />
+    <path
+        android:pathData="M8,17v-6h1v6h6v-6h1v6"
+        android:fillColor="#FFFFFFFF"
+        android:fillAlpha="0.3" />
+    <!-- Steam lines -->
+    <path
+        android:pathData="M6,1c0,0,-1,2,-1,3s1,2,1,2"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="0.8"
+        android:fillColor="#00000000"
+        android:strokeAlpha="0.6" />
+    <path
+        android:pathData="M10,0c0,0,-1,2,-1,3s1,2,1,2"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="0.8"
+        android:fillColor="#00000000"
+        android:strokeAlpha="0.6" />
+    <path
+        android:pathData="M14,1c0,0,-1,2,-1,3s1,2,1,2"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="0.8"
+        android:fillColor="#00000000"
+        android:strokeAlpha="0.6" />
+</vector>

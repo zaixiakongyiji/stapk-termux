@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- stAPK Control Panel Strings -->
+    <string name="stapk_app_title">stAPK 控制面板</string>
+
+    <!-- Status -->
+    <string name="stapk_status_stopped">已停止</string>
+    <string name="stapk_status_starting">启动中…</string>
+    <string name="stapk_status_running">运行中</string>
+    <string name="stapk_status_initializing">初始化中…</string>
+    <string name="stapk_status_updating">更新中…</string>
+    <string name="stapk_status_stopping">停止中…</string>
+    <string name="stapk_status_unknown">无法获取状态</string>
+    <string name="stapk_version_unknown">版本：未知</string>
+    <string name="stapk_version_format">SillyTavern %1$s\nCommit: %2$s</string>
+
+    <!-- Primary Buttons -->
+    <string name="stapk_btn_start">启动酒馆</string>
+    <string name="stapk_btn_stop">停止酒馆</string>
+    <string name="stapk_btn_open">打开酒馆</string>
+    <string name="stapk_btn_init">初始化</string>
+
+    <!-- Secondary Buttons -->
+    <string name="stapk_btn_update">更新酒馆</string>
+    <string name="stapk_btn_logs">查看日志</string>
+    <string name="stapk_btn_backup">备份数据</string>
+    <string name="stapk_btn_restore">恢复数据</string>
+
+    <!-- Footer -->
+    <string name="stapk_footer_version">stAPK v0.1.0</string>
+
+    <!-- Terminal entry -->
+    <string name="stapk_terminal_entry">打开终端</string>
+
+    <!-- Dialogs -->
+    <string name="stapk_confirm_stop_title">确认停止</string>
+    <string name="stapk_confirm_stop_message">确定要停止 SillyTavern 吗？</string>
+    <string name="stapk_confirm_update_title">确认更新</string>
+    <string name="stapk_confirm_update_message">更新将执行 git pull，是否继续？\n建议在更新前先备份数据。</string>
+    <string name="stapk_confirm_yes">确认</string>
+    <string name="stapk_confirm_no">取消</string>
+
+    <!-- Messages -->
+    <string name="stapk_msg_already_running">SillyTavern 已在运行中</string>
+    <string name="stapk_msg_already_stopped">SillyTavern 未在运行</string>
+    <string name="stapk_msg_start_success">启动成功</string>
+    <string name="stapk_msg_start_failed">启动失败，请查看日志</string>
+    <string name="stapk_msg_stop_success">已停止</string>
+    <string name="stapk_msg_update_success">更新成功</string>
+    <string name="stapk_msg_update_failed">更新失败，请查看日志</string>
+    <string name="stapk_btn_rollback">回滚到更新前</string>
+    <string name="stapk_confirm_rollback_title">确认回滚</string>
+    <string name="stapk_confirm_rollback_message">将回滚到更新前的版本，是否继续？</string>
+    <string name="stapk_msg_rollback_success">已回滚</string>
+    <string name="stapk_msg_rollback_failed">回滚失败</string>
+    <string name="stapk_msg_init_needed">需要初始化，请先完成初始化</string>
+    <string name="stapk_msg_init_success">初始化成功</string>
+    <string name="stapk_msg_init_failed">初始化失败: %1$s</string>
+    <string name="stapk_msg_no_browser">无法打开浏览器</string>
+    <string name="stapk_msg_stop_before_update">请先停止酒馆再更新</string>
+    <string name="stapk_msg_stop_before_restore">请先停止酒馆再恢复</string>
+    <string name="stapk_msg_update_in_progress">更新进行中</string>
+    <string name="stapk_msg_backup_saved">备份已保存: %1$s</string>
+    <string name="stapk_msg_backup_failed">备份失败</string>
+    <string name="stapk_msg_restore_success">恢复成功</string>
+    <string name="stapk_msg_restore_failed">恢复失败：%s</string>
+    <string name="stapk_msg_no_backups">暂无可用备份</string>
+    <string name="stapk_confirm_restore_title">确认恢复</string>
+    <string name="stapk_confirm_restore_message">恢复将覆盖当前数据（恢复前会自动备份），是否继续？</string>
+    <string name="stapk_select_backup">选择备份</string>
+
+
+    <!-- Log Viewer -->
+    <string name="stapk_log_title">运行日志</string>
+    <string name="stapk_log_empty">暂无日志</string>
+    <string name="stapk_log_copy">复制日志</string>
+    <string name="stapk_log_copied">已复制到剪贴板</string>
+    <string name="stapk_log_btn_init">初始化</string>
+    <string name="stapk_log_btn_start">启动</string>
+    <string name="stapk_log_btn_update">更新</string>
+    <string name="stapk_log_btn_backup">备份</string>
+    <string name="stapk_log_btn_refresh">刷新</string>
+    <string name="stapk_log_loading">加载中…</string>
+    <string name="stapk_log_read_failed">读取日志失败: %1$s</string>
+
+    <!-- Debug Panel -->
+    <string name="stapk_debug_toggle_title">调试开关</string>
+    <string name="stapk_debug_panel_title">最近一次执行记录</string>
+    <string name="stapk_debug_empty">暂无调试记录</string>
+    <string name="stapk_debug_copy">复制调试记录</string>
+    <string name="stapk_debug_copied">调试记录已复制</string>
+    <string name="stapk_debug_log_write_failed">调试记录落盘失败</string>
+
+    <!-- Terminal entry dialog -->
+    <string name="stapk_terminal_dialog_title">高级模式</string>
+    <string name="stapk_terminal_dialog_message">打开 Termux 终端？此功能用于排障，普通操作不需要使用终端。</string>
+</resources>

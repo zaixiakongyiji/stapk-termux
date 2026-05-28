@@ -1,0 +1,58 @@
+#!/data/data/com.termux/files/usr/bin/bash
+# stAPK Report - Generate diagnostic report
+set -uo pipefail
+
+STAPK_HOME="$HOME/.stapk"
+STAPK_STATE="$STAPK_HOME/state"
+STAPK_LOGS="$STAPK_HOME/logs"
+ST_DIR="$HOME/SillyTavern"
+REPORTS_DIR="$STAPK_HOME/reports"
+
+mkdir -p "$REPORTS_DIR"
+
+REPORT_FILE="$REPORTS_DIR/stapk-report-$(date '+%Y%m%d-%H%M%S').tar.gz"
+TEMP_DIR=$(mktemp -d)
+
+# Collect system info
+cat > "$TEMP_DIR/system-info.txt" <<EOF
+stAPK Diagnostic Report
+Generated: $(date -u '+%Y-%m-%dT%H:%M:%SZ')
+Android: $(getprop ro.build.version.release 2>/dev/null || echo "unknown")
+ABI: $(getprop ro.product.cpu.abi 2>/dev/null || echo "unknown")
+Device: $(getprop ro.product.model 2>/dev/null || echo "unknown")
+Node: $(node --version 2>/dev/null || echo "not available")
+npm: $(npm --version 2>/dev/null || echo "not available")
+Git: $(git --version 2>/dev/null || echo "not available")
+Available space: $(df -h "$HOME" | tail -1 | awk '{print $4}')
+EOF
+
+# Copy state files
+cp -r "$STAPK_STATE" "$TEMP_DIR/state" 2>/dev/null || true
+
+# Copy logs
+cp -r "$STAPK_LOGS" "$TEMP_DIR/logs" 2>/dev/null || true
+
+# Collect SillyTavern info (without sensitive data)
+if [ -d "$ST_DIR" ]; then
+    cd "$ST_DIR"
+    cat > "$TEMP_DIR/sillytavern-info.txt" <<EOF
+SillyTavern Info:
+Commit: $(git rev-parse HEAD 2>/dev/null || echo "unknown")
+Branch: $(git branch --show-current 2>/dev/null || echo "unknown")
+Remote: $(git remote get-url origin 2>/dev/null || echo "unknown")
+Version: $(grep -o '"version":"[^"]*"' package.json 2>/dev/null | head -1 | cut -d'"' -f4 || echo "unknown")
+start.sh exists: $([ -f start.sh ] && echo "yes" || echo "no")
+node_modules exists: $([ -d node_modules ] && echo "yes" || echo "no")
+.git exists: $([ -d .git ] && echo "yes" || echo "no")
+EOF
+fi
+
+# Pack report
+cd "$TEMP_DIR"
+if tar -czf "$REPORT_FILE" . 2>/dev/null; then
+    echo "SUCCESS:$REPORT_FILE"
+else
+    echo "ERROR_REPORT_FAILED"
+fi
+
+rm -rf "$TEMP_DIR"

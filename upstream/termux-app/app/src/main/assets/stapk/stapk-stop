@@ -1,0 +1,50 @@
+#!/data/data/com.termux/files/usr/bin/bash
+# stAPK Stop - Stop SillyTavern server
+set -uo pipefail
+
+STAPK_HOME="$HOME/.stapk"
+STAPK_LOCKS="$STAPK_HOME/locks"
+STAPK_LOGS="$STAPK_HOME/logs"
+LOCK_FILE="$STAPK_LOCKS/start.lock"
+
+log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" >> "$STAPK_LOGS/stop.log" 2>/dev/null; }
+
+log "stapk-stop called"
+
+# Kill node server.js processes
+NODE_PIDS=$(pgrep -f "node .*server.js" 2>/dev/null || echo "")
+if [ -n "$NODE_PIDS" ]; then
+    for PID in $NODE_PIDS; do
+        log "Sending SIGTERM to PID $PID"
+        kill "$PID" 2>/dev/null || true
+    done
+
+    # Wait up to 10 seconds for graceful shutdown
+    for i in $(seq 1 10); do
+        REMAINING=$(pgrep -f "node .*server.js" 2>/dev/null || echo "")
+        if [ -z "$REMAINING" ]; then
+            break
+        fi
+        sleep 1
+    done
+
+    # Force kill if still running
+    REMAINING=$(pgrep -f "node .*server.js" 2>/dev/null || echo "")
+    if [ -n "$REMAINING" ]; then
+        for PID in $REMAINING; do
+            log "Force killing PID $PID"
+            kill -9 "$PID" 2>/dev/null || true
+        done
+    fi
+else
+    log "No node server.js process found"
+fi
+
+# Release wake lock
+termux-wake-unlock 2>/dev/null || log "WARNING: termux-wake-unlock failed"
+
+# Clean up start lock
+rm -f "$LOCK_FILE"
+
+log "stapk-stop complete"
+echo "STOPPED"

@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#FF1A1A2E">
+
+    <!-- Log content -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:padding="12dp">
+
+        <TextView
+            android:id="@+id/log_content"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/stapk_log_empty"
+            android:textColor="#FFCCCCCC"
+            android:textSize="12sp"
+            android:fontFamily="monospace"
+            android:textIsSelectable="true" />
+    </ScrollView>
+
+    <!-- Action buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingHorizontal="8dp"
+        android:paddingTop="4dp">
+
+        <Button
+            android:id="@+id/btn_log_copy"
+            android:layout_width="0dp"
+            android:layout_height="44dp"
+            android:layout_weight="1"
+            android:text="@string/stapk_log_copy"
+            android:textColor="#FFFFFFFF"
+            android:textSize="13sp"
+            android:background="#FF16213E"
+            android:layout_marginEnd="4dp" />
+
+        <Button
+            android:id="@+id/btn_log_refresh"
+            android:layout_width="0dp"
+            android:layout_height="44dp"
+            android:layout_weight="1"
+            android:text="@string/stapk_log_btn_refresh"
+            android:textColor="#FFFFFFFF"
+            android:textSize="13sp"
+            android:background="#FF16213E"
+            android:layout_marginStart="4dp" />
+    </LinearLayout>
+
+    <!-- Log type toggle buttons -->
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:scrollbars="none"
+        android:padding="8dp">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btn_log_init"
+                style="?android:attr/buttonBarButtonStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:text="@string/stapk_log_btn_init"
+                android:textColor="#FFFFFFFF"
+                android:textSize="13sp"
+                android:background="#FF16213E"
+                android:layout_marginEnd="6dp" />
+
+            <Button
+                android:id="@+id/btn_log_start"
+                style="?android:attr/buttonBarButtonStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:text="@string/stapk_log_btn_start"
+                android:textColor="#FFFFFFFF"
+                android:textSize="13sp"
+                android:background="#FF0F3460"
+                android:layout_marginEnd="6dp" />
+
+            <Button
+                android:id="@+id/btn_log_update"
+                style="?android:attr/buttonBarButtonStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:text="@string/stapk_log_btn_update"
+                android:textColor="#FFFFFFFF"
+                android:textSize="13sp"
+                android:background="#FF16213E"
+                android:layout_marginEnd="6dp" />
+
+            <Button
+                android:id="@+id/btn_log_backup"
+                style="?android:attr/buttonBarButtonStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:text="@string/stapk_log_btn_backup"
+                android:textColor="#FFFFFFFF"
+                android:textSize="13sp"
+                android:background="#FF16213E"
+                android:layout_marginEnd="6dp" />
+
+        </LinearLayout>
+    </HorizontalScrollView>
+
+</LinearLayout>

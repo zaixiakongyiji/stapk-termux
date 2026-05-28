@@ -1,0 +1,109 @@
+#!/data/data/com.termux/files/usr/bin/bash
+# stAPK Update - Update SillyTavern via git pull
+set -uo pipefail
+
+STAPK_HOME="$HOME/.stapk"
+STAPK_LOGS="$STAPK_HOME/logs"
+STAPK_LOCKS="$STAPK_HOME/locks"
+STAPK_STATE="$STAPK_HOME/state"
+ST_DIR="$HOME/SillyTavern"
+LOCK_FILE="$STAPK_LOCKS/update.lock"
+LOG_FILE="$STAPK_LOGS/update.log"
+
+log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" >> "$LOG_FILE"; }
+
+mkdir -p "$STAPK_LOCKS" "$STAPK_LOGS"
+
+# Check lock
+if [ -f "$LOCK_FILE" ]; then
+    PID=$(grep -o '"pid":[0-9]*' "$LOCK_FILE" | cut -d: -f2)
+    if [ -n "$PID" ] && kill -0 "$PID" 2>/dev/null; then
+        echo "UPDATE_IN_PROGRESS"
+        exit 0
+    else
+        mkdir -p "$STAPK_LOGS/stale-locks"
+        mv "$LOCK_FILE" "$STAPK_LOGS/stale-locks/update-$(date '+%Y%m%d-%H%M%S').lock"
+    fi
+fi
+
+# Create lock
+cat > "$LOCK_FILE" <<EOF
+{
+  "operation": "update",
+  "pid": $$,
+  "created_at": "$(date -u '+%Y-%m-%dT%H:%M:%SZ')",
+  "command": "stapk-update"
+}
+EOF
+
+cleanup() {
+    rm -f "$LOCK_FILE"
+}
+trap cleanup EXIT
+
+# Check SillyTavern exists with git
+if [ ! -d "$ST_DIR/.git" ]; then
+    echo "ERROR_NO_GIT"
+    exit 1
+fi
+
+> "$LOG_FILE"
+log "Starting SillyTavern update"
+
+# Record current commit for rollback
+cd "$ST_DIR"
+PREVIOUS_COMMIT=$(git rev-parse HEAD)
+log "Current commit: $PREVIOUS_COMMIT"
+
+# Record installed extensions
+EXT_DIR="$ST_DIR/data/default-user/extensions"
+if [ -d "$EXT_DIR" ]; then
+    log "Installed extensions: $(ls "$EXT_DIR" 2>/dev/null | tr '\n' ' ')"
+fi
+
+# Backup config and data
+BACKUP_DIR="$STAPK_HOME/backups/pre-update-$(date '+%Y%m%d-%H%M%S')"
+mkdir -p "$BACKUP_DIR"
+cp -f "$ST_DIR/config.yaml" "$BACKUP_DIR/" 2>/dev/null || true
+cp -rf "$ST_DIR/data" "$BACKUP_DIR/" 2>/dev/null || true
+log "Backup saved to $BACKUP_DIR"
+
+# Perform git pull
+log "Executing: git pull --rebase --autostash"
+PULL_OUTPUT=$(git pull --rebase --autostash 2>&1)
+PULL_EXIT=$?
+echo "$PULL_OUTPUT" >> "$LOG_FILE"
+
+if [ $PULL_EXIT -eq 0 ]; then
+    # Clear any previous rollback state
+    rm -f "$STAPK_STATE/last-update-failed-commit"
+    NEW_COMMIT=$(git rev-parse HEAD)
+    if [ "$PREVIOUS_COMMIT" = "$NEW_COMMIT" ]; then
+        log "Already up to date"
+        echo "ALREADY_UP_TO_DATE"
+    else
+        log "Updated from $PREVIOUS_COMMIT to $NEW_COMMIT"
+        echo "UPDATED:$NEW_COMMIT"
+    fi
+
+    # Update runtime manifest
+    ST_VERSION=$(grep -o '"version":"[^"]*"' "$ST_DIR/package.json" 2>/dev/null | head -1 | cut -d'"' -f4 || echo "unknown")
+    cat > "$STAPK_STATE/runtime-manifest.json" <<EOFM
+{
+  "commit": "$NEW_COMMIT",
+  "branch": "$(git branch --show-current 2>/dev/null || echo "unknown")",
+  "remote": "$(git remote get-url origin 2>/dev/null || echo "unknown")",
+  "sillytavern_version": "$ST_VERSION",
+  "node_version": "$(node --version 2>/dev/null || echo "unknown")",
+  "npm_version": "$(npm --version 2>/dev/null || echo "unknown")",
+  "git_version": "$(git --version 2>/dev/null | awk '{print $3}' || echo "unknown")",
+  "last_update_at": "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+}
+EOFM
+else
+    log "Update failed with exit code $PULL_EXIT"
+    # Save failed commit for potential rollback
+    mkdir -p "$STAPK_STATE"
+    echo "$PREVIOUS_COMMIT" > "$STAPK_STATE/last-update-failed-commit"
+    echo "FAILED:$PREVIOUS_COMMIT"
+fi

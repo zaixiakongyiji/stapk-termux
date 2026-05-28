@@ -1,0 +1,154 @@
+#!/data/data/com.termux/files/usr/bin/bash
+# stAPK Init - Initialize SillyTavern environment from APK payload
+set -euo pipefail
+
+STAPK_HOME="$HOME/.stapk"
+STAPK_LOGS="$STAPK_HOME/logs"
+STAPK_LOCKS="$STAPK_HOME/locks"
+STAPK_BACKUPS="$STAPK_HOME/backups"
+STAPK_STATE="$STAPK_HOME/state"
+ST_DIR="$HOME/SillyTavern"
+ASSETS_DIR="${1:-$HOME/.stapk/assets}"
+LOG_FILE="$STAPK_LOGS/init.log"
+
+log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" >> "$LOG_FILE"; }
+
+# Ensure directories
+mkdir -p "$STAPK_LOGS" "$STAPK_LOCKS" "$STAPK_BACKUPS" "$STAPK_STATE"
+
+# 确保 Termux 基础环境完整（自定义 bootstrap 可能缺失部分目录和文件）
+# 以下补全方案来自实际排障中发现的缺失项
+PREFIX="${PREFIX:-$HOME/../usr}"
+
+# 1. 基础目录
+mkdir -p "$PREFIX/tmp"
+mkdir -p "$PREFIX/var/log"
+mkdir -p "$PREFIX/var/run"
+
+# 2. sh 符号链接（df 等命令依赖）
+if [ ! -f "$PREFIX/bin/sh" ] && [ -f "$PREFIX/bin/bash" ]; then
+    ln -sf bash "$PREFIX/bin/sh"
+    log "Created sh -> bash symlink"
+fi
+
+# 3. apt 包管理目录
+mkdir -p "$PREFIX/etc/apt/apt.conf.d"
+mkdir -p "$PREFIX/var/lib/apt/lists/partial"
+mkdir -p "$PREFIX/var/cache/apt/archives/partial"
+mkdir -p "$PREFIX/var/lib/dpkg/info"
+
+# 4. apt 软件源配置
+if [ ! -f "$PREFIX/etc/apt/sources.list" ]; then
+    cat > "$PREFIX/etc/apt/sources.list" <<'SOURCES'
+deb https://packages.termux.dev/apt/termux-main stable main
+SOURCES
+    log "Created apt sources.list"
+fi
+
+# 5. bootstrap 已内置 c-ares/libicu/libsqlite，无需额外安装
+log "Node.js runtime dependencies are bundled in bootstrap"
+
+log "stapk-init started"
+
+# Check if already initialized
+if [ -f "$STAPK_STATE/initialized" ]; then
+    log "Already initialized, skipping"
+    echo "ALREADY_INITIALIZED"
+    exit 0
+fi
+
+# Check if SillyTavern directory already exists (existing Termux install)
+if [ -d "$ST_DIR" ]; then
+    log "SillyTavern directory already exists at $ST_DIR - existing installation detected"
+    echo "EXISTING_INSTALL"
+    exit 0
+fi
+
+# Read payload manifest
+MANIFEST="$ASSETS_DIR/payload-manifest.json"
+if [ ! -f "$MANIFEST" ]; then
+    log "ERROR: payload-manifest.json not found at $MANIFEST"
+    echo "ERROR_NO_MANIFEST"
+    exit 1
+fi
+
+# Check disk space (df 可能因缺少 sh 而失败，做容错处理)
+REQUIRED_BYTES=$(grep -o '"required_free_bytes": *[0-9]*' "$MANIFEST" | grep -o '[0-9]*$')
+AVAILABLE_BYTES=$(df "$HOME" 2>/dev/null | tail -1 | awk '{print $4 * 1024}' || echo "")
+# 防御：变量为空时跳过检查，避免 "integer expression expected"
+if [ -n "$REQUIRED_BYTES" ] && [ -n "$AVAILABLE_BYTES" ] && [ "$AVAILABLE_BYTES" -lt "$REQUIRED_BYTES" ]; then
+    log "ERROR: Insufficient space. Required: $REQUIRED_BYTES, Available: $AVAILABLE_BYTES"
+    echo "ERROR_INSUFFICIENT_SPACE:${REQUIRED_BYTES}:${AVAILABLE_BYTES}"
+    exit 1
+fi
+
+# Extract payload (Android aapt 会解压 .gz，APK 内实际文件名为 SillyTavern.tar)
+PAYLOAD_TAR="$ASSETS_DIR/SillyTavern.tar"
+if [ ! -f "$PAYLOAD_TAR" ]; then
+    log "ERROR: SillyTavern.tar not found at $PAYLOAD_TAR"
+    echo "ERROR_NO_PAYLOAD"
+    exit 1
+fi
+
+log "Extracting SillyTavern payload..."
+if ! tar -xf "$PAYLOAD_TAR" -C "$HOME" 2>>"$LOG_FILE"; then
+    log "ERROR: Failed to extract payload"
+    # Clean up partial extraction
+    if [ -d "$ST_DIR" ]; then
+        mv "$ST_DIR" "$STAPK_BACKUPS/failed-init-$(date '+%Y%m%d-%H%M%S')"
+    fi
+    echo "ERROR_EXTRACTION_FAILED"
+    exit 1
+fi
+
+# 修复 Windows 换行符 (git autocrlf 可能导致 CRLF)
+# 注意：sed 's/\r$//' 不生效，因为 \r 在 sed 中不是转义字符，必须用 tr 或 $'\r'
+log "Fixing CRLF line endings..."
+for f in "$ST_DIR"/*.sh; do
+    if [ -f "$f" ]; then
+        tr -d '\r' < "$f" > "$f.tmp" && mv "$f.tmp" "$f"
+    fi
+done
+# 也处理子目录中的 .sh 文件
+find "$ST_DIR" -name "*.sh" -type f 2>/dev/null | while IFS= read -r f; do
+    tr -d '\r' < "$f" > "$f.tmp" && mv "$f.tmp" "$f"
+done
+
+# Copy manifests
+cp "$MANIFEST" "$STAPK_STATE/bundled-payload-manifest.json"
+
+# Generate runtime manifest
+NODE_VER=$(node --version 2>/dev/null || echo "unknown")
+NPM_VER=$(npm --version 2>/dev/null || echo "unknown")
+GIT_VER=$(git --version 2>/dev/null || echo "unknown")
+ST_COMMIT=$(cd "$ST_DIR" && git rev-parse HEAD 2>/dev/null || echo "unknown")
+ST_BRANCH=$(cd "$ST_DIR" && git branch --show-current 2>/dev/null || echo "unknown")
+ST_VERSION=$(grep -o '"version":"[^"]*"' "$ST_DIR/package.json" 2>/dev/null | head -1 | cut -d'"' -f4 || echo "unknown")
+
+cat > "$STAPK_STATE/runtime-manifest.json" <<EOF
+{
+  "commit": "$ST_COMMIT",
+  "branch": "$ST_BRANCH",
+  "remote": "$(cd "$ST_DIR" && git remote get-url origin 2>/dev/null || echo "unknown")",
+  "sillytavern_version": "$ST_VERSION",
+  "node_version": "$NODE_VER",
+  "npm_version": "$NPM_VER",
+  "git_version": "$GIT_VER",
+  "initialized_at": "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+}
+EOF
+
+# Set script permissions
+chmod +x "$ST_DIR/start.sh" 2>/dev/null || true
+
+# Verify installation
+if [ ! -f "$ST_DIR/start.sh" ]; then
+    log "ERROR: start.sh not found after extraction"
+    echo "ERROR_START_SH_MISSING"
+    exit 1
+fi
+
+# Write initialized marker
+echo "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" > "$STAPK_STATE/initialized"
+log "Initialization complete"
+echo "SUCCESS"

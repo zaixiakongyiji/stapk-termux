@@ -1,0 +1,75 @@
+#!/data/data/com.termux/files/usr/bin/bash
+# stAPK Rollback - Rollback SillyTavern to previous commit after failed update
+set -uo pipefail
+
+STAPK_HOME="$HOME/.stapk"
+STAPK_LOGS="$STAPK_HOME/logs"
+STAPK_LOCKS="$STAPK_HOME/locks"
+STAPK_STATE="$STAPK_HOME/state"
+ST_DIR="$HOME/SillyTavern"
+LOG_FILE="$STAPK_LOGS/update.log"
+
+log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" >> "$LOG_FILE"; }
+
+mkdir -p "$STAPK_LOCKS" "$STAPK_LOGS"
+
+# Check SillyTavern exists with git
+if [ ! -d "$ST_DIR/.git" ]; then
+    echo "ERROR_NO_GIT"
+    exit 1
+fi
+
+# Read target commit from argument or state file
+TARGET_COMMIT="${1:-}"
+if [ -z "$TARGET_COMMIT" ]; then
+    STATE_FILE="$STAPK_STATE/last-update-failed-commit"
+    if [ -f "$STATE_FILE" ]; then
+        TARGET_COMMIT=$(cat "$STATE_FILE")
+    fi
+fi
+
+if [ -z "$TARGET_COMMIT" ]; then
+    echo "ERROR_NO_COMMIT"
+    exit 1
+fi
+
+# Verify commit exists in repo
+cd "$ST_DIR"
+if ! git cat-file -e "$TARGET_COMMIT" 2>/dev/null; then
+    log "ERROR: Commit $TARGET_COMMIT not found in repository"
+    echo "ERROR_COMMIT_NOT_FOUND"
+    exit 1
+fi
+
+CURRENT_COMMIT=$(git rev-parse HEAD)
+log "Rolling back from $CURRENT_COMMIT to $TARGET_COMMIT"
+
+# Perform rollback
+if git reset --hard "$TARGET_COMMIT" 2>>"$LOG_FILE"; then
+    NEW_COMMIT=$(git rev-parse HEAD)
+    log "Rollback complete: $NEW_COMMIT"
+
+    # Update runtime manifest
+    ST_VERSION=$(grep -o '"version":"[^"]*"' "$ST_DIR/package.json" 2>/dev/null | head -1 | cut -d'"' -f4 || echo "unknown")
+    cat > "$STAPK_STATE/runtime-manifest.json" <<EOF
+{
+  "commit": "$NEW_COMMIT",
+  "branch": "$(git branch --show-current 2>/dev/null || echo "unknown")",
+  "remote": "$(git remote get-url origin 2>/dev/null || echo "unknown")",
+  "sillytavern_version": "$ST_VERSION",
+  "node_version": "$(node --version 2>/dev/null || echo "unknown")",
+  "npm_version": "$(npm --version 2>/dev/null || echo "unknown")",
+  "git_version": "$(git --version 2>/dev/null | awk '{print $3}' || echo "unknown")",
+  "last_rollback_at": "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+}
+EOF
+
+    # Clear failed state
+    rm -f "$STAPK_STATE/last-update-failed-commit"
+
+    echo "ROLLED_BACK:$NEW_COMMIT"
+else
+    log "ERROR: Rollback failed"
+    echo "ERROR_ROLLBACK_FAILED"
+    exit 1
+fi

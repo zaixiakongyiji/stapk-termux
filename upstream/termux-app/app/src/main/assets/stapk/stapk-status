@@ -1,0 +1,77 @@
+#!/data/data/com.termux/files/usr/bin/bash
+# stAPK Status - Check SillyTavern status and output JSON
+set -uo pipefail
+
+STAPK_HOME="$HOME/.stapk"
+STAPK_STATE="$STAPK_HOME/state"
+ST_DIR="$HOME/SillyTavern"
+
+# Read port from config or default
+PORT=8000
+if [ -f "$ST_DIR/config.yaml" ]; then
+    CFG_PORT=$(grep -E '^\s*port\s*:' "$ST_DIR/config.yaml" 2>/dev/null | awk '{print $2}' | tr -d '\r')
+    if [ -n "$CFG_PORT" ] && [ "$CFG_PORT" -eq "$CFG_PORT" ] 2>/dev/null; then
+        PORT="$CFG_PORT"
+    fi
+fi
+
+# Check states
+INITIALIZED="false"
+if [ -f "$STAPK_STATE/initialized" ]; then
+    INITIALIZED="true"
+fi
+
+# Check for node process
+NODE_PID=$(pgrep -f "node .*server.js" 2>/dev/null | head -1 || echo "")
+NODE_RUNNING="false"
+if [ -n "$NODE_PID" ]; then
+    NODE_RUNNING="true"
+fi
+
+# Check TCP port
+PORT_LISTENING="false"
+if [ "$NODE_RUNNING" = "true" ]; then
+    if timeout 1 bash -c "echo >/dev/tcp/127.0.0.1/$PORT" 2>/dev/null; then
+        PORT_LISTENING="true"
+    fi
+fi
+
+# Determine overall status
+STATUS="stopped"
+if [ "$INITIALIZED" = "false" ]; then
+    STATUS="not_initialized"
+elif [ "$NODE_RUNNING" = "true" ] && [ "$PORT_LISTENING" = "true" ]; then
+    STATUS="running"
+elif [ "$NODE_RUNNING" = "true" ]; then
+    STATUS="starting"
+fi
+
+# Read versions
+ST_VERSION="unknown"
+ST_COMMIT="unknown"
+if [ -f "$ST_DIR/package.json" ]; then
+    ST_VERSION=$(grep -o '"version":"[^"]*"' "$ST_DIR/package.json" | head -1 | cut -d'"' -f4 || echo "unknown")
+fi
+if [ -d "$ST_DIR/.git" ]; then
+    ST_COMMIT=$(cd "$ST_DIR" && git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+fi
+
+NODE_VER=$(node --version 2>/dev/null || echo "unknown")
+NPM_VER=$(npm --version 2>/dev/null || echo "unknown")
+GIT_VER=$(git --version 2>/dev/null | awk '{print $3}' || echo "unknown")
+
+cat <<EOF
+{
+  "status": "$STATUS",
+  "initialized": $INITIALIZED,
+  "node_running": $NODE_RUNNING,
+  "node_pid": "${NODE_PID:-}",
+  "port": $PORT,
+  "port_listening": $PORT_LISTENING,
+  "sillytavern_version": "$ST_VERSION",
+  "sillytavern_commit": "$ST_COMMIT",
+  "node_version": "$NODE_VER",
+  "npm_version": "$NPM_VER",
+  "git_version": "$GIT_VER"
+}
+EOF

@@ -1,0 +1,81 @@
+#!/data/data/com.termux/files/usr/bin/bash
+# stAPK Restore - Restore SillyTavern data from backup
+set -uo pipefail
+
+STAPK_HOME="$HOME/.stapk"
+STAPK_BACKUPS="$STAPK_HOME/backups"
+STAPK_LOGS="$STAPK_HOME/logs"
+STAPK_LOCKS="$STAPK_HOME/locks"
+ST_DIR="$HOME/SillyTavern"
+LOCK_FILE="$STAPK_LOCKS/restore.lock"
+LOG_FILE="$STAPK_LOGS/restore.log"
+
+log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" >> "$LOG_FILE"; }
+
+BACKUP_FILE="${1:-}"
+if [ -z "$BACKUP_FILE" ]; then
+    echo "ERROR_INVALID_BACKUP_FILE: empty path"
+    exit 1
+fi
+if [ ! -f "$BACKUP_FILE" ]; then
+    echo "ERROR_INVALID_BACKUP_FILE: $BACKUP_FILE"
+    exit 1
+fi
+
+mkdir -p "$STAPK_LOCKS" "$STAPK_LOGS"
+
+# Check lock
+if [ -f "$LOCK_FILE" ]; then
+    PID=$(grep -o '"pid":[0-9]*' "$LOCK_FILE" | cut -d: -f2)
+    if [ -n "$PID" ] && kill -0 "$PID" 2>/dev/null; then
+        echo "RESTORE_IN_PROGRESS"
+        exit 0
+    else
+        mkdir -p "$STAPK_LOGS/stale-locks"
+        mv "$LOCK_FILE" "$STAPK_LOGS/stale-locks/restore-$(date '+%Y%m%d-%H%M%S').lock"
+    fi
+fi
+
+# Create lock
+cat > "$LOCK_FILE" <<EOF
+{
+  "operation": "restore",
+  "pid": $$,
+  "created_at": "$(date -u '+%Y-%m-%dT%H:%M:%SZ')",
+  "command": "stapk-restore"
+}
+EOF
+
+cleanup() {
+    rm -f "$LOCK_FILE"
+}
+trap cleanup EXIT
+
+> "$LOG_FILE"
+log "Starting restore from $BACKUP_FILE"
+
+# Backup current data before restore
+BEFORE_DIR="$STAPK_BACKUPS/before-restore-$(date '+%Y%m%d-%H%M%S')"
+mkdir -p "$BEFORE_DIR"
+[ -f "$ST_DIR/config.yaml" ] && cp -f "$ST_DIR/config.yaml" "$BEFORE_DIR/" 2>/dev/null || true
+[ -d "$ST_DIR/data" ] && cp -rf "$ST_DIR/data" "$BEFORE_DIR/" 2>/dev/null || true
+log "Pre-restore backup saved to $BEFORE_DIR"
+
+# Extract backup
+cd "$HOME"
+TAR_LOG="$STAPK_LOGS/restore-tar.log"
+tar -xzf "$BACKUP_FILE" 2>"$TAR_LOG"
+EXIT_CODE=$?
+cat "$TAR_LOG" >> "$LOG_FILE"
+if [ $EXIT_CODE -eq 0 ]; then
+    log "Restore complete"
+    echo "SUCCESS:$BEFORE_DIR"
+else
+    log "ERROR: Restore failed with exit code $EXIT_CODE"
+    # 输出错误详情到 stdout，Java 端 redirectErrorStream 可捕获
+    cat "$TAR_LOG"
+    echo "ERROR_RESTORE_FAILED:$EXIT_CODE"
+    rm -f "$TAR_LOG"
+    exit $EXIT_CODE
+fi
+rm -f "$TAR_LOG"

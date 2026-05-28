@@ -1,0 +1,71 @@
+#!/data/data/com.termux/files/usr/bin/bash
+# stAPK Backup - Backup SillyTavern user data
+set -uo pipefail
+
+STAPK_HOME="$HOME/.stapk"
+STAPK_BACKUPS="$STAPK_HOME/backups"
+STAPK_LOGS="$STAPK_HOME/logs"
+STAPK_LOCKS="$STAPK_HOME/locks"
+ST_DIR="$HOME/SillyTavern"
+LOCK_FILE="$STAPK_LOCKS/backup.lock"
+LOG_FILE="$STAPK_LOGS/backup.log"
+
+log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" >> "$LOG_FILE"; }
+
+mkdir -p "$STAPK_BACKUPS" "$STAPK_LOCKS" "$STAPK_LOGS"
+
+# Check lock
+if [ -f "$LOCK_FILE" ]; then
+    PID=$(grep -o '"pid":[0-9]*' "$LOCK_FILE" | cut -d: -f2)
+    if [ -n "$PID" ] && kill -0 "$PID" 2>/dev/null; then
+        echo "BACKUP_IN_PROGRESS"
+        exit 0
+    else
+        mkdir -p "$STAPK_LOGS/stale-locks"
+        mv "$LOCK_FILE" "$STAPK_LOGS/stale-locks/backup-$(date '+%Y%m%d-%H%M%S').lock"
+    fi
+fi
+
+# Create lock
+cat > "$LOCK_FILE" <<EOF
+{
+  "operation": "backup",
+  "pid": $$,
+  "created_at": "$(date -u '+%Y-%m-%dT%H:%M:%SZ')",
+  "command": "stapk-backup"
+}
+EOF
+
+cleanup() {
+    rm -f "$LOCK_FILE"
+}
+trap cleanup EXIT
+
+> "$LOG_FILE"
+BACKUP_FILE="$STAPK_BACKUPS/sillytavern-backup-$(date '+%Y%m%d-%H%M%S').tar.gz"
+log "Starting backup to $BACKUP_FILE"
+
+# Determine backup items
+BACKUP_ITEMS=()
+[ -f "$ST_DIR/config.yaml" ] && BACKUP_ITEMS+=("SillyTavern/config.yaml")
+[ -d "$ST_DIR/data" ] && BACKUP_ITEMS+=("SillyTavern/data")
+[ -d "$ST_DIR/public/scripts/extensions/third-party" ] && BACKUP_ITEMS+=("SillyTavern/public/scripts/extensions/third-party")
+
+if [ ${#BACKUP_ITEMS[@]} -eq 0 ]; then
+    log "ERROR: Nothing to backup"
+    echo "ERROR_NOTHING_TO_BACKUP"
+    exit 1
+fi
+
+log "Backing up: ${BACKUP_ITEMS[*]}"
+
+cd "$HOME"
+if tar -czf "$BACKUP_FILE" "${BACKUP_ITEMS[@]}" 2>>"$LOG_FILE"; then
+    SIZE=$(stat -c%s "$BACKUP_FILE" 2>/dev/null || stat -f%z "$BACKUP_FILE" 2>/dev/null || echo "unknown")
+    log "Backup complete: $BACKUP_FILE ($SIZE bytes)"
+    echo "SUCCESS:$BACKUP_FILE:$SIZE"
+else
+    log "ERROR: Backup failed"
+    echo "ERROR_BACKUP_FAILED"
+    exit 1
+fi
