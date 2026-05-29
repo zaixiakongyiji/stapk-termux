@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/bash
+#!/data/data/com.stapk.termux/files/usr/bin/bash
 # stAPK Stop - Stop SillyTavern server
 set -uo pipefail
 
@@ -11,33 +11,75 @@ log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" >> "$STAPK_LOGS/stop.log" 2>/de
 
 log "stapk-stop called"
 
-# Kill node server.js processes
-NODE_PIDS=$(pgrep -f "node .*server.js" 2>/dev/null || echo "")
-if [ -n "$NODE_PIDS" ]; then
-    for PID in $NODE_PIDS; do
-        log "Sending SIGTERM to PID $PID"
+# 优先使用 LOCK_FILE 中记录的 PID，避免误杀其他 node 进程
+TARGET_PID=""
+if [ -f "$LOCK_FILE" ]; then
+    TARGET_PID=$(grep -o '"pid":[0-9]*' "$LOCK_FILE" | cut -d: -f2)
+fi
+
+# 如果 LOCK_FILE 中没有有效 PID，回退到 pgrep（但需要更精确的匹配）
+if [ -z "$TARGET_PID" ] || ! kill -0 "$TARGET_PID" 2>/dev/null; then
+    # 使用更精确的匹配：只匹配 SillyTavern 目录下的进程
+    TARGET_PIDS=$(pgrep -f "node.*SillyTavern.*server.js" 2>/dev/null || echo "")
+    if [ -z "$TARGET_PIDS" ]; then
+        # 最后回退：匹配 node server.js
+        TARGET_PIDS=$(pgrep -af "node .*server.js" 2>/dev/null | grep -v "grep" | awk '{print $1}' || echo "")
+    fi
+    if [ -n "$TARGET_PIDS" ]; then
+        log "Using pgrep fallback, PIDs: $TARGET_PIDS"
+    fi
+fi
+
+# 终止目标进程
+if [ -n "$TARGET_PID" ] && kill -0 "$TARGET_PID" 2>/dev/null; then
+    # 使用 LOCK_FILE 中的 PID
+    log "Sending SIGTERM to PID $TARGET_PID (from lock file)"
+    kill "$TARGET_PID" 2>/dev/null || true
+
+    # 等待最多 10 秒优雅退出
+    for i in $(seq 1 10); do
+        if ! kill -0 "$TARGET_PID" 2>/dev/null; then
+            log "Process $TARGET_PID exited gracefully"
+            break
+        fi
+        sleep 1
+    done
+
+    # 如果还在运行，强制 kill
+    if kill -0 "$TARGET_PID" 2>/dev/null; then
+        log "Force killing PID $TARGET_PID"
+        kill -9 "$TARGET_PID" 2>/dev/null || true
+    fi
+elif [ -n "$TARGET_PIDS" ]; then
+    # 使用 pgrep 回退的 PIDs
+    for PID in $TARGET_PIDS; do
+        log "Sending SIGTERM to PID $PID (from pgrep)"
         kill "$PID" 2>/dev/null || true
     done
 
-    # Wait up to 10 seconds for graceful shutdown
+    # 等待优雅退出
     for i in $(seq 1 10); do
-        REMAINING=$(pgrep -f "node .*server.js" 2>/dev/null || echo "")
+        REMAINING=""
+        for PID in $TARGET_PIDS; do
+            if kill -0 "$PID" 2>/dev/null; then
+                REMAINING="$REMAINING $PID"
+            fi
+        done
         if [ -z "$REMAINING" ]; then
             break
         fi
         sleep 1
     done
 
-    # Force kill if still running
-    REMAINING=$(pgrep -f "node .*server.js" 2>/dev/null || echo "")
-    if [ -n "$REMAINING" ]; then
-        for PID in $REMAINING; do
+    # 强制 kill
+    for PID in $TARGET_PIDS; do
+        if kill -0 "$PID" 2>/dev/null; then
             log "Force killing PID $PID"
             kill -9 "$PID" 2>/dev/null || true
-        done
-    fi
+        fi
+    done
 else
-    log "No node server.js process found"
+    log "No SillyTavern process found"
 fi
 
 # Release wake lock

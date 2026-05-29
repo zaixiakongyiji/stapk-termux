@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/bash
+#!/data/data/com.stapk.termux/files/usr/bin/bash
 # stAPK Status - Check SillyTavern status and output JSON
 set -uo pipefail
 

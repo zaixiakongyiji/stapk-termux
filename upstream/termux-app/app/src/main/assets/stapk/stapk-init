@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/bash
+#!/data/data/com.stapk.termux/files/usr/bin/bash
 # stAPK Init - Initialize SillyTavern environment from APK payload
 set -euo pipefail
 
@@ -82,17 +82,23 @@ if [ -n "$REQUIRED_BYTES" ] && [ -n "$AVAILABLE_BYTES" ] && [ "$AVAILABLE_BYTES"
     exit 1
 fi
 
-# Extract payload (Android aapt 会解压 .gz，APK 内实际文件名为 SillyTavern.tar)
-PAYLOAD_TAR="$ASSETS_DIR/SillyTavern.tar"
-if [ ! -f "$PAYLOAD_TAR" ]; then
-    log "ERROR: SillyTavern.tar not found at $PAYLOAD_TAR"
+# 检测 payload 文件（支持 .tar.gz 和 .tar 两种格式向后兼容）
+# build.gradle 中 noCompress "gz" 使 .tar.gz 保持原样，不会被 aapt 解压
+if [ -f "$ASSETS_DIR/SillyTavern.tar.gz" ]; then
+    PAYLOAD_TAR="$ASSETS_DIR/SillyTavern.tar.gz"
+    TAR_FLAGS="-xzf"
+elif [ -f "$ASSETS_DIR/SillyTavern.tar" ]; then
+    PAYLOAD_TAR="$ASSETS_DIR/SillyTavern.tar"
+    TAR_FLAGS="-xf"
+else
+    log "ERROR: SillyTavern payload not found. Looked for SillyTavern.tar.gz and SillyTavern.tar at $ASSETS_DIR"
     echo "ERROR_NO_PAYLOAD"
     exit 1
 fi
 
-log "Extracting SillyTavern payload..."
-if ! tar -xf "$PAYLOAD_TAR" -C "$HOME" 2>>"$LOG_FILE"; then
-    log "ERROR: Failed to extract payload"
+log "Extracting SillyTavern payload from $(basename "$PAYLOAD_TAR")..."
+if ! tar $TAR_FLAGS "$PAYLOAD_TAR" -C "$HOME" 2>>"$LOG_FILE"; then
+    log "ERROR: Failed to extract payload from $(basename "$PAYLOAD_TAR")"
     # Clean up partial extraction
     if [ -d "$ST_DIR" ]; then
         mv "$ST_DIR" "$STAPK_BACKUPS/failed-init-$(date '+%Y%m%d-%H%M%S')"

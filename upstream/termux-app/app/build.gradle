@@ -27,7 +27,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.termux"
+        applicationId "com.stapk.termux"
         minSdkVersion project.properties.minSdkVersion.toInteger()
         targetSdkVersion project.properties.targetSdkVersion.toInteger()
         versionCode 1002
@@ -36,8 +36,8 @@ android {
         if (appVersionName) versionName = appVersionName
         validateVersionName(versionName)
 
-        manifestPlaceholders.TERMUX_PACKAGE_NAME = "com.termux"
-        manifestPlaceholders.TERMUX_APP_NAME = "Termux"
+        manifestPlaceholders.TERMUX_PACKAGE_NAME = "com.stapk.termux"
+        manifestPlaceholders.TERMUX_APP_NAME = "stAPK"
         manifestPlaceholders.TERMUX_API_APP_NAME = "Termux:API"
         manifestPlaceholders.TERMUX_BOOT_APP_NAME = "Termux:Boot"
         manifestPlaceholders.TERMUX_FLOAT_APP_NAME = "Termux:Float"
@@ -45,9 +45,9 @@ android {
         manifestPlaceholders.TERMUX_TASKER_APP_NAME = "Termux:Tasker"
         manifestPlaceholders.TERMUX_WIDGET_APP_NAME = "Termux:Widget"
 
-        // stAPK: 只构建 arm64-v8a native code
+        // stAPK: 构建 arm64-v8a 和 x86_64 native code
         ndk {
-            abiFilters 'arm64-v8a'
+            abiFilters 'arm64-v8a', 'x86_64'
         }
 
         externalNativeBuild {
@@ -61,7 +61,7 @@ android {
                 enable ((gradle.startParameter.taskNames.any { it.contains("Debug") } && splitAPKsForDebugBuilds == "1") ||
                     (gradle.startParameter.taskNames.any { it.contains("Release") } && splitAPKsForReleaseBuilds == "1"))
                 reset ()
-                include 'arm64-v8a'
+                include 'arm64-v8a', 'x86_64'
                 universalApk true
             }
         }
@@ -74,10 +74,18 @@ android {
             storePassword 'xrj45yWGLbsO7W0v'
             keyPassword 'xrj45yWGLbsO7W0v'
         }
+
+        release {
+            storeFile file('release.keystore')
+            keyAlias 'zaixiakongyiji'
+            storePassword 'zaixiakongyiji'
+            keyPassword 'zaixiakongyiji'
+        }
     }
 
     buildTypes {
         release {
+            signingConfig signingConfigs.release
             minifyEnabled true
             shrinkResources false // Reproducible builds
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
@@ -206,15 +214,13 @@ clean {
 
 task downloadBootstraps() {
     doLast {
-        // stAPK: 使用自定义精简 bootstrap（含 nodejs-lts, npm, git），跳过官方下载
-        // 精简版 186MB（原始 311MB → 删除 include/share/doc/man/不需要的 git-core 命令）
-        // 自定义 bootstrap SHA256: 42b92cb598668beb53de33fade07c6764b5d7ccaad246373dbaba53d694ab3b2
-        def version = "2025.03.28-r1+apt-android-7"
+        // stAPK: 使用自定义 bootstrap（含 nodejs-lts, npm, git, ICU, SQLite3, c-ares）
+        // 来源: output/termux-app_debug_arm64-v8a1.apk → libtermux-bootstrap.so
         downloadBootstrap("aarch64", "42b92cb598668beb53de33fade07c6764b5d7ccaad246373dbaba53d694ab3b2", version)
-        // stAPK: 只构建 arm64，跳过其他架构
+        // stAPK: 启用 x86_64 用于模拟器调试
         // downloadBootstrap("arm",     "f3bb9d1b32552b34fff41861dbf193ec5ba2848d67d779ac1c7256da6640f85d", version)
         // downloadBootstrap("i686",    "36db3e1ac3547f9a174fd763bd9a484fa1a3449cdd81e1cf2408ff0454f839c6", version)
-        // downloadBootstrap("x86_64",  "1c124ec2396ee70a51b0b0a574f29aa659526aa2b9f558f993b2fb05d1e51855", version)
+        downloadBootstrap("x86_64",  "83cacdc254b1faf939b8b6ecfb91b548c4a425ca47cc8039ee27510e619664b7", version)
     }
 }
 

@@ -1,6 +1,6 @@
-#!/data/data/com.termux/files/usr/bin/bash
-# stAPK Start - Start SillyTavern server
-set -uo pipefail
+#!/data/data/com.stapk.termux/files/usr/bin/bash
+# stAPK Start - Start SillyTavern server (background)
+set -euo pipefail
 
 STAPK_HOME="$HOME/.stapk"
 STAPK_LOGS="$STAPK_HOME/logs"
@@ -25,21 +25,7 @@ if [ -f "$LOCK_FILE" ]; then
     fi
 fi
 
-# Create lock
 mkdir -p "$STAPK_LOCKS" "$STAPK_LOGS"
-cat > "$LOCK_FILE" <<EOF
-{
-  "operation": "start",
-  "pid": $$,
-  "created_at": "$(date -u '+%Y-%m-%dT%H:%M:%SZ')",
-  "command": "stapk-start"
-}
-EOF
-
-cleanup() {
-    rm -f "$LOCK_FILE"
-}
-trap cleanup EXIT
 
 # Check initialized
 if [ ! -f "$STAPK_HOME/state/initialized" ]; then
@@ -53,24 +39,40 @@ if [ ! -f "$ST_DIR/start.sh" ]; then
     exit 1
 fi
 
-# 修复 Windows 换行符 (payload 构建时可能被 git autocrlf 污染)
+# Fix Windows line endings
 tr -d '\r' < "$ST_DIR/start.sh" > "$ST_DIR/start.sh.tmp" && mv "$ST_DIR/start.sh.tmp" "$ST_DIR/start.sh" 2>/dev/null || true
 
 # Acquire wake lock
 termux-wake-lock 2>/dev/null || log "WARNING: termux-wake-lock failed"
 
-# Clear log and start
+# Ensure dummy xdg-open exists
+cat > "$PREFIX/bin/xdg-open" <<'XEOF'
+#!/data/data/com.stapk.termux/files/usr/bin/bash
+exit 0
+XEOF
+chmod +x "$PREFIX/bin/xdg-open"
+
+# Clear log and start SillyTavern in background
 > "$LOG_FILE"
 log "Starting SillyTavern..."
 
 cd "$ST_DIR"
 export NODE_ENV=production
-bash start.sh >> "$LOG_FILE" 2>&1
-EXIT_CODE=$?
 
-# Release wake lock on exit
-termux-wake-unlock 2>/dev/null || true
+# Start in background with nohup, redirect output to log
+nohup bash start.sh >> "$LOG_FILE" 2>&1 &
+ST_PID=$!
 
-log "SillyTavern exited with code $EXIT_CODE"
-echo "EXIT_CODE:$EXIT_CODE"
-exit $EXIT_CODE
+# Write lock file with actual PID
+cat > "$LOCK_FILE" <<EOF
+{
+  "operation": "start",
+  "pid": $ST_PID,
+  "created_at": "$(date -u '+%Y-%m-%dT%H:%M:%SZ')",
+  "command": "stapk-start"
+}
+EOF
+
+log "Started SillyTavern with PID $ST_PID"
+echo "STARTED:$ST_PID"
+exit 0
