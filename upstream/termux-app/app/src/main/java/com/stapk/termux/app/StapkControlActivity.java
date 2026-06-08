@@ -2,10 +2,6 @@ package com.stapk.termux.app;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.Notification;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.content.ActivityNotFoundException;
 import android.content.ClipData;
 import android.content.ClipboardManager;
@@ -15,7 +11,6 @@ import android.content.res.AssetManager;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -27,8 +22,10 @@ import android.widget.Toast;
 import android.widget.Switch;
 
 import com.stapk.termux.R;
+import com.stapk.termux.app.stapk.StapkBootstrapShebangFixer;
 import com.stapk.termux.app.stapk.DebugRecord;
-import com.stapk.termux.app.stapk.StapkForegroundService;
+import com.stapk.termux.app.stapk.StapkRuntimeController;
+import com.stapk.termux.app.stapk.StapkStatusSnapshot;
 import com.stapk.termux.shared.file.FileUtils;
 import com.stapk.termux.shared.logger.Logger;
 import com.stapk.termux.shared.termux.TermuxConstants;
@@ -76,14 +73,8 @@ public class StapkControlActivity extends Activity {
     // 注意：aapt 会解压 .tar.gz → .tar，所以 APK 内的文件名是 SillyTavern.tar
     private static final String[] PAYLOAD_ASSET_FILES = {"payload-manifest.json", "SillyTavern.tar"};
 
-    // 前台通知 - 防止后台被杀
-    private static final String STAPK_FOREGROUND_CHANNEL_ID = "stapk_foreground";
-    private static final int STAPK_FOREGROUND_NOTIFICATION_ID = 1400;
-
-    private boolean mNotificationShown = false;
-    private NotificationManager mNotificationManager;
-
     private final Handler mHandler = new Handler(Looper.getMainLooper());
+    private final java.util.concurrent.ExecutorService mExecutor = java.util.concurrent.Executors.newCachedThreadPool();
 
     private View mStatusIndicator;
     private TextView mStatusText;
@@ -125,9 +116,7 @@ public class StapkControlActivity extends Activity {
     private final Runnable mStatusPoller = new Runnable() {
         @Override
         public void run() {
-            runStapkStatus();
-            int interval = getPollInterval();
-            mHandler.postDelayed(this, interval);
+            runStapkStatus(true);
         }
     };
 
@@ -158,6 +147,9 @@ public class StapkControlActivity extends Activity {
         mDestroyed = true;
         super.onDestroy();
         mHandler.removeCallbacksAndMessages(null);
+        if (mExecutor != null) {
+            mExecutor.shutdown();
+        }
     }
 
     private void initViews() {
@@ -206,13 +198,21 @@ public class StapkControlActivity extends Activity {
 
     void onBootstrapReady() {
         mBootstrapReady = true;
+        repairBootstrapShebangsIfNeeded();
         deployScriptsIfNeeded();
         startStatusPolling();
         runStapkStatus();
     }
 
+    private void repairBootstrapShebangsIfNeeded() {
+        int repairedCount = StapkBootstrapShebangFixer.repairPrefixScripts(new File(TermuxConstants.TERMUX_PREFIX_DIR_PATH));
+        if (repairedCount > 0) {
+            Logger.logDebug(LOG_TAG, "Repaired " + repairedCount + " bootstrap script shebangs");
+        }
+    }
+
     void deployScriptsIfNeeded() {
-        String[] scripts = {"stapk-init", "stapk-start", "stapk-status", "stapk-stop",
+        String[] scripts = {"stapk-init", "stapk-start", "stapk-runtime", "stapk-status", "stapk-stop",
                 "stapk-update", "stapk-rollback", "stapk-open-url", "stapk-backup",
                 "stapk-restore", "stapk-list-backups", "stapk-report"};
 
@@ -269,28 +269,33 @@ public class StapkControlActivity extends Activity {
         }
 
         // 在后台线程复制大文件，避免阻塞UI
-        new Thread(() -> {
+        mExecutor.execute(() -> {
             AssetManager assets = getAssets();
             try {
                 for (String file : PAYLOAD_ASSET_FILES) {
                     File target = new File(assetsDir, file);
                     if (target.exists()) continue;
+                    File tmpTarget = new File(assetsDir, file + ".tmp");
                     try (InputStream in = assets.open(file);
-                         OutputStream out = new FileOutputStream(target)) {
+                         OutputStream out = new FileOutputStream(tmpTarget)) {
                         byte[] buf = new byte[8192];
                         int len;
                         while ((len = in.read(buf)) > 0) {
                             out.write(buf, 0, len);
                         }
                     }
-                    Logger.logDebug(LOG_TAG, "Deployed payload asset: " + file);
+                    if (tmpTarget.renameTo(target)) {
+                        Logger.logDebug(LOG_TAG, "Deployed payload asset: " + file);
+                    } else {
+                        Logger.logError(LOG_TAG, "Failed to rename temp asset to " + file);
+                    }
                 }
                 Logger.logDebug(LOG_TAG, "Payload assets deployed to " + STAPK_PAYLOAD_ASSETS_DIR_PATH);
             } catch (IOException e) {
                 Logger.logError(LOG_TAG, "Failed to deploy payload assets: " + e.getMessage());
             }
             mHandler.post(onComplete);
-        }).start();
+        });
     }
 
     // ---- Rollback Check ----
@@ -321,13 +326,20 @@ public class StapkControlActivity extends Activity {
     }
 
     void runStapkStatus() {
-        new Thread(() -> {
+        runStapkStatus(false);
+    }
+
+    void runStapkStatus(boolean scheduleNext) {
+        mExecutor.execute(() -> {
             String result = executeScriptSync("stapk-status");
             mHandler.post(() -> {
                 if (isFinishing() || isDestroyed()) return;
                 processStatusResult(result);
+                if (scheduleNext) {
+                    mHandler.postDelayed(mStatusPoller, getPollInterval());
+                }
             });
-        }).start();
+        });
     }
 
     private void processStatusResult(String json) {
@@ -336,22 +348,19 @@ public class StapkControlActivity extends Activity {
             return;
         }
 
-        String status = extractJsonValue(json, "status");
-        String version = extractJsonValue(json, "sillytavern_version");
-        String commit = extractJsonValue(json, "sillytavern_commit");
+        StapkStatusSnapshot snapshot = StapkStatusSnapshot.fromJson(json);
 
-        switch (status) {
+        switch (snapshot.status) {
             case "running":
                 mIsRunning = true;
                 mIsStarting = false;
                 mNeedsInit = false;
                 setStatusUI(getString(R.string.stapk_status_running));
-                setVersionUI(version, commit);
+                setVersionUI(snapshot.version, snapshot.commit);
                 setIndicatorColor(Color.parseColor("#FF4CAF50"));
                 mBtnStart.setVisibility(View.GONE);
                 mBtnStop.setVisibility(View.VISIBLE);
                 mBtnOpen.setEnabled(true);
-                showForegroundNotification();
                 break;
             case "starting":
                 mIsRunning = false;
@@ -361,7 +370,6 @@ public class StapkControlActivity extends Activity {
                 mBtnStart.setVisibility(View.GONE);
                 mBtnStop.setVisibility(View.VISIBLE);
                 mBtnOpen.setEnabled(false);
-                hideForegroundNotification();
                 break;
             case "not_initialized":
                 mNeedsInit = true;
@@ -371,7 +379,6 @@ public class StapkControlActivity extends Activity {
                 mBtnStart.setText(R.string.stapk_btn_init);
                 mBtnStop.setVisibility(View.GONE);
                 mBtnOpen.setEnabled(false);
-                hideForegroundNotification();
                 break;
             case "stopped":
             default:
@@ -379,36 +386,14 @@ public class StapkControlActivity extends Activity {
                 mIsStarting = false;
                 mNeedsInit = false;
                 setStatusUI(getString(R.string.stapk_status_stopped));
-                setVersionUI(version, commit);
+                setVersionUI(snapshot.version, snapshot.commit);
                 setIndicatorColor(Color.parseColor("#FF555555"));
                 mBtnStart.setVisibility(View.VISIBLE);
                 mBtnStart.setText(R.string.stapk_btn_start);
                 mBtnStop.setVisibility(View.GONE);
                 mBtnOpen.setEnabled(false);
-                hideForegroundNotification();
                 break;
         }
-    }
-
-    // ---- Foreground Notification (Service) ----
-
-    private void showForegroundNotification() {
-        if (mNotificationShown) return;
-        mNotificationShown = true;
-        Intent intent = new Intent(this, StapkForegroundService.class);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(intent);
-        } else {
-            startService(intent);
-        }
-    }
-
-    private void hideForegroundNotification() {
-        if (!mNotificationShown) return;
-        mNotificationShown = false;
-        Intent intent = new Intent(this, StapkForegroundService.class);
-        intent.setAction("STOP");
-        startService(intent);
     }
 
     private void setStatusUI(String label) {
@@ -452,18 +437,16 @@ public class StapkControlActivity extends Activity {
         mBtnStop.setVisibility(View.VISIBLE);
         mBtnOpen.setEnabled(false);
 
-        executeScriptInBackground("stapk-start", 10, result -> {
-            String trimmed = result != null ? result.trim() : "";
-            if (trimmed.startsWith("STARTED:")) {
-                showForegroundNotification();
-                Toast.makeText(this, R.string.stapk_msg_start_success, Toast.LENGTH_SHORT).show();
-            } else if (trimmed.contains("ALREADY_RUNNING")) {
-                Toast.makeText(this, R.string.stapk_msg_already_running, Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(this, R.string.stapk_msg_start_failed, Toast.LENGTH_LONG).show();
-            }
-            runStapkStatus();
-        });
+        try {
+            repairBootstrapShebangsIfNeeded();
+            StapkRuntimeController.start(this);
+            Toast.makeText(this, R.string.stapk_msg_start_success, Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            Logger.logError(LOG_TAG, "Failed to start managed runtime: " + e.getMessage());
+            Toast.makeText(this, R.string.stapk_msg_start_failed, Toast.LENGTH_LONG).show();
+        }
+
+        runStapkStatus();
     }
 
     private void runInitialization() {
@@ -708,7 +691,7 @@ public class StapkControlActivity extends Activity {
     }
 
     private void executeScriptInBackground(String scriptName, int timeoutSeconds, ScriptCallback callback, String... args) {
-        new Thread(() -> {
+        mExecutor.execute(() -> {
             // Activity 已销毁，提前退出，避免线程泄漏
             if (mDestroyed) return;
             String result = executeScriptSync(scriptName, timeoutSeconds, args);
@@ -716,7 +699,7 @@ public class StapkControlActivity extends Activity {
                 if (isFinishing() || isDestroyed()) return;
                 callback.onResult(result);
             });
-        }).start();
+        });
     }
 
     private String executeScriptSync(String scriptName) {
@@ -1006,34 +989,4 @@ public class StapkControlActivity extends Activity {
         Toast.makeText(this, R.string.stapk_debug_copied, Toast.LENGTH_SHORT).show();
     }
 
-    // ---- JSON Helpers ----
-
-    private static String extractJsonValue(String json, String key) {
-        String searchKey = "\"" + key + "\"";
-        int keyIndex = json.indexOf(searchKey);
-        if (keyIndex < 0) return "";
-
-        int colonIndex = json.indexOf(':', keyIndex + searchKey.length());
-        if (colonIndex < 0) return "";
-
-        int valueStart = colonIndex + 1;
-        while (valueStart < json.length() && Character.isWhitespace(json.charAt(valueStart))) {
-            valueStart++;
-        }
-
-        if (valueStart >= json.length()) return "";
-
-        if (json.charAt(valueStart) == '"') {
-            int valueEnd = json.indexOf('"', valueStart + 1);
-            if (valueEnd < 0) return "";
-            return json.substring(valueStart + 1, valueEnd);
-        } else {
-            int valueEnd = valueStart;
-            while (valueEnd < json.length() && json.charAt(valueEnd) != ','
-                    && json.charAt(valueEnd) != '}' && !Character.isWhitespace(json.charAt(valueEnd))) {
-                valueEnd++;
-            }
-            return json.substring(valueStart, valueEnd);
-        }
-    }
 }

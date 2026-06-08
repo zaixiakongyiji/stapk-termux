@@ -3,76 +3,72 @@
 set -uo pipefail
 
 STAPK_HOME="$HOME/.stapk"
+STAPK_STATE="$STAPK_HOME/state"
 STAPK_LOCKS="$STAPK_HOME/locks"
 STAPK_LOGS="$STAPK_HOME/logs"
 LOCK_FILE="$STAPK_LOCKS/start.lock"
+RUNTIME_PID_FILE="$STAPK_STATE/runtime-task.pid"
+CHILD_PID_FILE="$STAPK_STATE/runtime-child.pid"
 
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" >> "$STAPK_LOGS/stop.log" 2>/dev/null; }
 
 log "stapk-stop called"
 
-# 优先使用 LOCK_FILE 中记录的 PID，避免误杀其他 node 进程
+# 获取 LOCK_FILE 中的 bash PID
 TARGET_PID=""
 if [ -f "$LOCK_FILE" ]; then
     TARGET_PID=$(grep -o '"pid":[0-9]*' "$LOCK_FILE" | cut -d: -f2)
 fi
 
-# 如果 LOCK_FILE 中没有有效 PID，回退到 pgrep（但需要更精确的匹配）
-if [ -z "$TARGET_PID" ] || ! kill -0 "$TARGET_PID" 2>/dev/null; then
-    # 使用更精确的匹配：只匹配 SillyTavern 目录下的进程
-    TARGET_PIDS=$(pgrep -f "node.*SillyTavern.*server.js" 2>/dev/null || echo "")
-    if [ -z "$TARGET_PIDS" ]; then
-        # 最后回退：匹配 node server.js
-        TARGET_PIDS=$(pgrep -af "node .*server.js" 2>/dev/null | grep -v "grep" | awk '{print $1}' || echo "")
-    fi
-    if [ -n "$TARGET_PIDS" ]; then
-        log "Using pgrep fallback, PIDs: $TARGET_PIDS"
-    fi
+TARGET_RUNTIME_PID=""
+if [ -f "$RUNTIME_PID_FILE" ]; then
+    TARGET_RUNTIME_PID="$(cat "$RUNTIME_PID_FILE" 2>/dev/null || echo "")"
 fi
 
-# 终止目标进程
-if [ -n "$TARGET_PID" ] && kill -0 "$TARGET_PID" 2>/dev/null; then
-    # 使用 LOCK_FILE 中的 PID
-    log "Sending SIGTERM to PID $TARGET_PID (from lock file)"
-    kill "$TARGET_PID" 2>/dev/null || true
+if [ -n "$TARGET_RUNTIME_PID" ] && kill -0 "$TARGET_RUNTIME_PID" 2>/dev/null; then
+    log "Stopping managed runtime PID $TARGET_RUNTIME_PID"
+    kill "$TARGET_RUNTIME_PID" 2>/dev/null || true
+fi
 
-    # 等待最多 10 秒优雅退出
-    for i in $(seq 1 10); do
-        if ! kill -0 "$TARGET_PID" 2>/dev/null; then
-            log "Process $TARGET_PID exited gracefully"
-            break
-        fi
-        sleep 1
-    done
+TARGET_CHILD_PID=""
+if [ -f "$CHILD_PID_FILE" ]; then
+    TARGET_CHILD_PID="$(cat "$CHILD_PID_FILE" 2>/dev/null || echo "")"
+fi
 
-    # 如果还在运行，强制 kill
-    if kill -0 "$TARGET_PID" 2>/dev/null; then
-        log "Force killing PID $TARGET_PID"
-        kill -9 "$TARGET_PID" 2>/dev/null || true
-    fi
-elif [ -n "$TARGET_PIDS" ]; then
-    # 使用 pgrep 回退的 PIDs
-    for PID in $TARGET_PIDS; do
-        log "Sending SIGTERM to PID $PID (from pgrep)"
+# 始终使用 pgrep 查找实际的 node 进程
+TARGET_NODE_PIDS=$(pgrep -f "node.*server.js" 2>/dev/null || echo "")
+
+log "Runtime PID: $TARGET_RUNTIME_PID, Child PID: $TARGET_CHILD_PID, Bash PID from lock: $TARGET_PID, Node PIDs from pgrep: $TARGET_NODE_PIDS"
+
+# 合并所有需要终止的 PID
+PIDS_TO_KILL="$TARGET_RUNTIME_PID $TARGET_CHILD_PID $TARGET_NODE_PIDS $TARGET_PID"
+# 去重并清理空值
+PIDS_TO_KILL=$(echo "$PIDS_TO_KILL" | tr ' ' '\n' | sort -u | grep -v '^$' || echo "")
+
+if [ -n "$PIDS_TO_KILL" ]; then
+    for PID in $PIDS_TO_KILL; do
+        log "Sending SIGTERM to PID $PID"
         kill "$PID" 2>/dev/null || true
     done
 
-    # 等待优雅退出
+    # 等待最多 10 秒优雅退出
     for i in $(seq 1 10); do
         REMAINING=""
-        for PID in $TARGET_PIDS; do
+        for PID in $PIDS_TO_KILL; do
             if kill -0 "$PID" 2>/dev/null; then
-                REMAINING="$REMAINING $PID"
+                REMAINING="1"
+                break
             fi
         done
         if [ -z "$REMAINING" ]; then
+            log "All processes exited gracefully"
             break
         fi
         sleep 1
     done
 
     # 强制 kill
-    for PID in $TARGET_PIDS; do
+    for PID in $PIDS_TO_KILL; do
         if kill -0 "$PID" 2>/dev/null; then
             log "Force killing PID $PID"
             kill -9 "$PID" 2>/dev/null || true
@@ -85,8 +81,8 @@ fi
 # Release wake lock
 termux-wake-unlock 2>/dev/null || log "WARNING: termux-wake-unlock failed"
 
-# Clean up start lock
-rm -f "$LOCK_FILE"
+# Clean up state files
+rm -f "$RUNTIME_PID_FILE" "$CHILD_PID_FILE" "$LOCK_FILE"
 
 log "stapk-stop complete"
 echo "STOPPED"

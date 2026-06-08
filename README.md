@@ -6,8 +6,9 @@ stAPK Termux 是一个定制版 Termux APK，将 [SillyTavern](https://github.co
 
 ## 功能
 
-- **一键启动** — 点击按钮启动 SillyTavern，自动处理后台运行
+- **一键启动** — 点击按钮启动 SillyTavern，无需手动进入终端
 - **图形化控制面板** — 启动、停止、打开 Web UI、查看日志，全是按钮操作
+- **托管后台运行** — SillyTavern 由 Termux 前台服务托管，不依赖脱管 `nohup` 进程
 - **离线可用** — 首次启动无需联网，Node.js 和 SillyTavern 已内置
 - **Git 在线更新** — 一键 `git pull` 更新 SillyTavern 到最新版
 - **备份恢复** — 一键备份/恢复用户数据（角色卡、对话、扩展、配置）
@@ -45,9 +46,9 @@ stAPK Termux 是一个定制版 Termux APK，将 [SillyTavern](https://github.co
 ```
 
 1. 用户点击控制面板按钮
-2. Java 层通过 `ProcessBuilder` 调用对应 shell 脚本（`stapk-start`、`stapk-stop` 等）
-3. 脚本在 Termux 环境中执行实际操作
-4. UI 定时轮询状态并更新显示
+2. Java 层通过 `TermuxService` 启动托管运行时脚本（`stapk-runtime`）
+3. `stapk-runtime` 在 Termux 环境中执行 `bash start.sh`
+4. `TermuxService` 持续托管任务生命周期，UI 定时轮询状态并更新显示
 
 ## 下载
 

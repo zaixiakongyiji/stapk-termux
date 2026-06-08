@@ -1,12 +1,12 @@
 # 工作版 APK Bootstrap 完整内容清单
 
-> **来源 APK**: `output/termux-app_debug_arm64-v8a1.apk` (可成功启动 SillyTavern 酒馆)
+> **来源 APK**: `output/termux-app_debug_arm64-v8a1.apk`（当前 arm64 工作基线）
 > 
 > **大小**: 411 MiB (APK), 其中 libtermux-bootstrap.so = 234 MiB (压缩后)
 > 
-> **日期**: 2026-05-28
+> **日期**: 2026-06-08
 > 
-> **状态**: ✅ 已作为当前项目 bootstrap 基准，修复后 APK 可正常运行。
+> **状态**: ✅ 仍作为当前项目 bootstrap 基准；当前交付包应使用 `arm64-v8a` split APK，不使用 `universal` APK。
 
 ---
 
@@ -407,7 +407,7 @@ Git 仓库初始化时使用的默认模板（hooks 示例、默认描述等）�
 
 ## 6. 与 APK 中其他组件的关系
 
-### APK 结构 (411 MB)
+### APK 结构 (arm64 工作基线，411 MB)
 
 ```
 termux-app_debug_arm64-v8a1.apk
@@ -418,11 +418,12 @@ termux-app_debug_arm64-v8a1.apk
 ├── assets/
 │   ├── SillyTavern.tar             412 MB   SillyTavern payload
 │   ├── payload-manifest.json       0.5 KB   Payload 元数据
-│   └── stapk/                      11 个脚本
+│   └── stapk/                      12 个脚本
 │       ├── stapk-init               5 KB    初始化脚本
-│       ├── stapk-start              2 KB    启动脚本
-│       ├── stapk-stop               1 KB    停止脚本
-│       ├── stapk-status             2 KB    状态检查
+│       ├── stapk-runtime            2.5 KB  受管运行时包装脚本
+│       ├── stapk-start              0.3 KB  兼容启动入口
+│       ├── stapk-stop               2.6 KB  停止脚本
+│       ├── stapk-status             3.2 KB  状态检查
 │       ├── stapk-update             3 KB    Git 更新
 │       ├── stapk-backup             2 KB    备份
 │       ├── stapk-restore            2 KB    恢复
@@ -448,6 +449,12 @@ APK 安装后，TermuxInstaller 将 `libtermux-bootstrap.so` 中的 zip 解压�
 └── tmp/    ← bootstrap 的 tmp/
 ```
 
+### 当前交付约定
+
+- 手机安装包统一使用 `arm64-v8a` split APK。
+- `universal` debug APK 会额外打入 `x86_64` bootstrap，体积会比 `arm64-v8a` 包明显更大，不作为手机测试基线。
+- `assets/stapk/` 下所有脚本必须保持 `LF` 换行；如果出现 `CRLF`，设备侧会报 `pipefail` / `$'\r'` / `unexpected end of file`。
+
 ---
 
 ## ⚠️ 历史问题记录（已修复）
@@ -461,3 +468,4 @@ APK 安装后，TermuxInstaller 将 `libtermux-bootstrap.so` 中的 zip 解压�
 | Payload 文件名不匹配 | Java 找 `.tar.gz`，APK 中 aapt 解压为 `.tar` | `PAYLOAD_ASSET_FILES` 改为 `SillyTavern.tar` |
 | 包名统一 | `com.termux` → `com.stapk.termux` | shebang/C/JNI 全部更新为 `com.stapk.termux` |
 | stapk 脚本混入 bootstrap | 脚本在 `bin/` 和 `assets/` 两份 | 只保留 `assets/stapk/`，bootstrap 内不包含 |
+| bootstrap 中的 Node 工具 shebang 仍指向旧包名 | `npm --version` 返回 `unknown`，SillyTavern 启动时在 `npm install` 阶段直接退出 | 应用启动时修复 `$PREFIX/bin` 与 corepack shim 中残留的 `com.termux` shebang |

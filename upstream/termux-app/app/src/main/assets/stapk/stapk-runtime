@@ -1,0 +1,103 @@
+#!/data/data/com.stapk.termux/files/usr/bin/bash
+# stAPK Runtime - 在 TermuxService 托管下长期运行 SillyTavern
+set -euo pipefail
+
+STAPK_HOME="$HOME/.stapk"
+STAPK_STATE="$STAPK_HOME/state"
+STAPK_LOGS="$STAPK_HOME/logs"
+STAPK_LOCKS="$STAPK_HOME/locks"
+ST_DIR="$HOME/SillyTavern"
+LOG_FILE="$STAPK_LOGS/start.log"
+RUNTIME_PID_FILE="$STAPK_STATE/runtime-task.pid"
+CHILD_PID_FILE="$STAPK_STATE/runtime-child.pid"
+LOCK_FILE="$STAPK_LOCKS/start.lock"
+
+mkdir -p "$STAPK_STATE" "$STAPK_LOGS" "$STAPK_LOCKS"
+
+log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" >> "$LOG_FILE"; }
+
+termux_service_action() {
+    local action="$1"
+    /system/bin/am startservice --user 0 \
+        -n com.stapk.termux/.app.TermuxService \
+        -a "$action" >/dev/null 2>&1
+}
+
+is_pid_alive() {
+    local pid="${1:-}"
+    [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null
+}
+
+cleanup() {
+    local exit_code=$?
+    if is_pid_alive "${CHILD_PID:-}"; then
+        kill "$CHILD_PID" 2>/dev/null || true
+        wait "$CHILD_PID" 2>/dev/null || true
+    fi
+    termux_service_action "com.stapk.termux.service_wake_unlock" || log "WARNING: wake unlock request failed"
+    rm -f "$RUNTIME_PID_FILE" "$CHILD_PID_FILE"
+    log "Managed runtime exited with code $exit_code"
+    exit "$exit_code"
+}
+
+trap cleanup EXIT INT TERM
+
+if [ ! -f "$STAPK_STATE/initialized" ]; then
+    echo "ERROR_NOT_INITIALIZED"
+    exit 1
+fi
+
+if [ ! -f "$ST_DIR/start.sh" ]; then
+    echo "ERROR_START_SH_MISSING"
+    exit 1
+fi
+
+EXISTING_RUNTIME_PID=""
+if [ -f "$RUNTIME_PID_FILE" ]; then
+    EXISTING_RUNTIME_PID="$(cat "$RUNTIME_PID_FILE" 2>/dev/null || echo "")"
+    if is_pid_alive "$EXISTING_RUNTIME_PID"; then
+        echo "ALREADY_RUNNING"
+        exit 0
+    fi
+    rm -f "$RUNTIME_PID_FILE"
+fi
+
+EXISTING_CHILD_PID=""
+if [ -f "$CHILD_PID_FILE" ]; then
+    EXISTING_CHILD_PID="$(cat "$CHILD_PID_FILE" 2>/dev/null || echo "")"
+    if is_pid_alive "$EXISTING_CHILD_PID"; then
+        echo "ALREADY_RUNNING"
+        exit 0
+    fi
+    rm -f "$CHILD_PID_FILE"
+fi
+
+if pgrep -f "node .*server.js" >/dev/null 2>&1; then
+    echo "ALREADY_RUNNING"
+    exit 0
+fi
+
+rm -f "$LOCK_FILE"
+tr -d '\r' < "$ST_DIR/start.sh" > "$ST_DIR/start.sh.tmp" && mv "$ST_DIR/start.sh.tmp" "$ST_DIR/start.sh" 2>/dev/null || true
+termux_service_action "com.stapk.termux.service_wake_lock" || log "WARNING: wake lock request failed"
+
+cat > "$PREFIX/bin/xdg-open" <<'XEOF'
+#!/data/data/com.stapk.termux/files/usr/bin/bash
+exit 0
+XEOF
+chmod +x "$PREFIX/bin/xdg-open"
+
+> "$LOG_FILE"
+log "Starting managed SillyTavern runtime"
+echo "$$" > "$RUNTIME_PID_FILE"
+
+cd "$ST_DIR"
+# 显式补齐 Termux 运行时环境，避免后台任务丢失 PATH/库搜索路径。
+export PATH="$PREFIX/bin:${PATH:-}"
+export LD_LIBRARY_PATH="$PREFIX/lib:${LD_LIBRARY_PATH:-}"
+export NODE_ENV=production
+
+bash start.sh >> "$LOG_FILE" 2>&1 &
+CHILD_PID=$!
+echo "$CHILD_PID" > "$CHILD_PID_FILE"
+wait "$CHILD_PID"

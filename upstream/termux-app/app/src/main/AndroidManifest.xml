@@ -187,10 +187,6 @@
             android:exported="false" />
 
         <service
-            android:name=".app.stapk.StapkForegroundService"
-            android:exported="false" />
-
-        <service
             android:name=".app.RunCommandService"
             android:exported="true"
             android:permission="${TERMUX_PACKAGE_NAME}.permission.RUN_COMMAND">

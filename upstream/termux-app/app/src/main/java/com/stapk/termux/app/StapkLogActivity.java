@@ -25,6 +25,7 @@ public class StapkLogActivity extends Activity {
     private static final String STAPK_LOGS_DIR = TermuxConstants.TERMUX_HOME_DIR_PATH + "/.stapk/logs";
 
     private final Handler mHandler = new Handler(Looper.getMainLooper());
+    private final java.util.concurrent.ExecutorService mExecutor = java.util.concurrent.Executors.newSingleThreadExecutor();
 
     private TextView mLogContent;
     private String mCurrentLog = "start";
@@ -57,13 +58,16 @@ public class StapkLogActivity extends Activity {
     protected void onDestroy() {
         super.onDestroy();
         mHandler.removeCallbacksAndMessages(null);
+        if (mExecutor != null) {
+            mExecutor.shutdown();
+        }
     }
 
     private void loadLogAsync(String filename) {
         mLogContent.setText(R.string.stapk_log_loading);
         // 捕获请求时的日志类型，防止快速切换标签时旧线程覆盖新结果
         final String expectedLog = filename.replace(".log", "");
-        new Thread(() -> {
+        mExecutor.execute(() -> {
             String content = readLogFile(filename);
             mHandler.post(() -> {
                 if (isFinishing() || isDestroyed()) return;
@@ -71,7 +75,7 @@ public class StapkLogActivity extends Activity {
                 if (!mCurrentLog.equals(expectedLog)) return;
                 mLogContent.setText(content);
             });
-        }).start();
+        });
     }
 
     private String readLogFile(String filename) {

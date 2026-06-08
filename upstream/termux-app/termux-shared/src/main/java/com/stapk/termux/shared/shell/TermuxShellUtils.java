@@ -112,17 +112,24 @@ public class TermuxShellUtils {
 
         environment.add("ANDROID__BUILD_VERSION_SDK=" + Build.VERSION.SDK_INT);
 
+        addTermuxCommandEnvironment(environment, isFailSafe, workingDirectory);
+
+        return environment.toArray(new String[0]);
+    }
+
+    static void addTermuxCommandEnvironment(List<String> environment, boolean isFailSafe, String workingDirectory) {
         if (isFailSafe) {
             // Keep the default path so that system binaries can be used in the failsafe session.
             environment.add("PATH= " + System.getenv("PATH"));
-        } else {
-            environment.add("LANG=en_US.UTF-8");
-            environment.add("PATH=" + TermuxConstants.TERMUX_BIN_PREFIX_DIR_PATH);
-            environment.add("PWD=" + workingDirectory);
-            environment.add("TMPDIR=" + TermuxConstants.TERMUX_TMP_PREFIX_DIR_PATH);
+            return;
         }
 
-        return environment.toArray(new String[0]);
+        environment.add("LANG=en_US.UTF-8");
+        environment.add("PATH=" + TermuxConstants.TERMUX_BIN_PREFIX_DIR_PATH);
+        environment.add("PWD=" + workingDirectory);
+        environment.add("TMPDIR=" + TermuxConstants.TERMUX_TMP_PREFIX_DIR_PATH);
+        // Background TermuxTask commands need the shared libraries path to launch $PREFIX/bin/bash.
+        environment.add("LD_LIBRARY_PATH=" + TermuxConstants.TERMUX_PREFIX_DIR_PATH + "/lib");
     }
 
     public static void addToEnvIfPresent(List<String> environment, String name) {

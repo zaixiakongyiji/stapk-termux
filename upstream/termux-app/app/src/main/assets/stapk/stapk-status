@@ -21,8 +21,36 @@ if [ -f "$STAPK_STATE/initialized" ]; then
     INITIALIZED="true"
 fi
 
+# 优先读取托管运行时 PID 文件
+RUNTIME_PID_FILE="$STAPK_STATE/runtime-task.pid"
+CHILD_PID_FILE="$STAPK_STATE/runtime-child.pid"
+
+RUNTIME_PID=""
+RUNTIME_MANAGED="false"
+if [ -f "$RUNTIME_PID_FILE" ]; then
+    RUNTIME_PID="$(cat "$RUNTIME_PID_FILE" 2>/dev/null || echo "")"
+    if [ -n "$RUNTIME_PID" ] && kill -0 "$RUNTIME_PID" 2>/dev/null; then
+        RUNTIME_MANAGED="true"
+    else
+        rm -f "$RUNTIME_PID_FILE"
+        RUNTIME_PID=""
+    fi
+fi
+
+CHILD_PID=""
+if [ -f "$CHILD_PID_FILE" ]; then
+    CHILD_PID="$(cat "$CHILD_PID_FILE" 2>/dev/null || echo "")"
+    if [ -n "$CHILD_PID" ] && ! kill -0 "$CHILD_PID" 2>/dev/null; then
+        rm -f "$CHILD_PID_FILE"
+        CHILD_PID=""
+    fi
+fi
+
 # Check for node process
-NODE_PID=$(pgrep -f "node .*server.js" 2>/dev/null | head -1 || echo "")
+NODE_PID="${CHILD_PID:-}"
+if [ -z "$NODE_PID" ]; then
+    NODE_PID=$(pgrep -f "node .*server.js" 2>/dev/null | head -1 || echo "")
+fi
 NODE_RUNNING="false"
 if [ -n "$NODE_PID" ]; then
     NODE_RUNNING="true"
@@ -40,6 +68,10 @@ fi
 STATUS="stopped"
 if [ "$INITIALIZED" = "false" ]; then
     STATUS="not_initialized"
+elif [ "$RUNTIME_MANAGED" = "true" ] && [ "$PORT_LISTENING" = "true" ]; then
+    STATUS="running"
+elif [ "$RUNTIME_MANAGED" = "true" ]; then
+    STATUS="starting"
 elif [ "$NODE_RUNNING" = "true" ] && [ "$PORT_LISTENING" = "true" ]; then
     STATUS="running"
 elif [ "$NODE_RUNNING" = "true" ]; then
@@ -64,6 +96,9 @@ cat <<EOF
 {
   "status": "$STATUS",
   "initialized": $INITIALIZED,
+  "runtime_managed": $RUNTIME_MANAGED,
+  "runtime_pid": "${RUNTIME_PID:-}",
+  "runtime_child_pid": "${CHILD_PID:-}",
   "node_running": $NODE_RUNNING,
   "node_pid": "${NODE_PID:-}",
   "port": $PORT,
