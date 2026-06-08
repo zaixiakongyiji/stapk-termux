@@ -46,6 +46,11 @@ jobs:
         run: |
           printf 'sdk.dir=%s\n' "$ANDROID_SDK_ROOT" > local.properties
 
+      - name: 授予 Gradle Wrapper 执行权限
+        shell: bash
+        working-directory: upstream/termux-app
+        run: chmod +x ./gradlew
+
       - name: 执行关键单测
         shell: bash
         working-directory: upstream/termux-app
