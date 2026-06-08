@@ -1,5 +1,18 @@
 # 更新日志
 
+## v0.1.2 - 自动发版修复版 (2026-06-08)
+
+### 📦 自动发版修复
+
+- **修复 GitHub Actions 中的 `gradlew` 执行权限问题** — 避免 Linux runner 上出现 `Permission denied`
+- **将自定义 bootstrap 纳入 Git LFS** — 让 CI / Release 能拿到正确的 Termux 运行时压缩包
+- **将 SillyTavern payload 纳入 Git LFS** — 确保正式 release 包包含 `SillyTavern.tar.gz` 和 `payload-manifest.json`
+- **修复 CI Debug 签名文件缺失** — 在工作流中临时生成 `dev_keystore.jks`
+- **降低 CI Debug 构建内存峰值** — 改为上传 `universal` debug APK，避免 `packageDebug` 阶段 OOM
+- **收紧 Release 签名配置** — 缺失 GitHub Secrets 时直接给出明确失败信息
+
+---
+
 ## v0.1.1 - 运行时托管与自动发版版 (2026-06-08)
 
 ### 🚀 运行时与启动链路
