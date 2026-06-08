@@ -79,6 +79,13 @@ with:
   lfs: true
 ```
 
+SillyTavern payload 也遵循同样的规则，以下文件必须通过 Git LFS 跟随仓库提供给 CI：
+
+- `upstream/termux-app/app/src/main/assets/SillyTavern.tar.gz`
+- `upstream/termux-app/app/src/main/assets/payload-manifest.json`
+
+否则 GitHub Actions 虽然能成功产出 APK，但其中会缺少 payload，最终 release 包会异常偏小，且安装后无法初始化 SillyTavern。
+
 ---
 
 ## 版本号规则

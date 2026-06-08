@@ -1,3 +1,5 @@
 upstream/termux-app/app/src/main/assets/stapk/* text eol=lf
+upstream/termux-app/app/src/main/assets/SillyTavern.tar.gz filter=lfs diff=lfs merge=lfs -text
+upstream/termux-app/app/src/main/assets/payload-manifest.json filter=lfs diff=lfs merge=lfs -text
 upstream/termux-app/app/src/main/cpp/bootstrap-aarch64.zip filter=lfs diff=lfs merge=lfs -text
 upstream/termux-app/app/src/main/cpp/bootstrap-x86_64.zip filter=lfs diff=lfs merge=lfs -text
