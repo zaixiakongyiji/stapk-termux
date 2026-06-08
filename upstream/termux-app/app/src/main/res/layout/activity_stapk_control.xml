@@ -241,7 +241,7 @@
             android:id="@+id/app_version_footer"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/stapk_footer_version"
+            android:text="stAPK"
             android:textColor="#FF444466"
             android:textSize="11sp"
             android:layout_marginBottom="16dp"

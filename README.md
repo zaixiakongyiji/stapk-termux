@@ -54,6 +54,8 @@ stAPK Termux 是一个定制版 Termux APK，将 [SillyTavern](https://github.co
 
 前往 [Releases](../../releases) 页面下载最新 APK。
 
+从 `v0.1.0` 之后，推荐使用 GitHub Actions 自动发版。具体流程见 [GitHub 自动构建与发版](docs/reference/github-release-automation.md)。
+
 | 要求 | 说明 |
 |------|------|
 | Android 版本 | 7.0+ |
@@ -91,6 +93,23 @@ cd upstream/termux-app
 ```
 
 > 详细构建指南见 [AGENTS.md](AGENTS.md)
+
+## 自动发版
+
+仓库根目录已经提供 GitHub Actions 工作流：
+
+- `CI`：提交到 `master` 或提交 PR 时自动跑关键单测和 Debug 构建
+- `Release`：推送 `v*` tag 时自动构建 `arm64-v8a release APK` 并上传到 GitHub Release
+
+标准发版方式：
+
+```bash
+git push origin master
+git tag v0.1.1
+git push origin v0.1.1
+```
+
+详细说明见 [GitHub 自动构建与发版](docs/reference/github-release-automation.md)。
 
 ## 目录结构
 

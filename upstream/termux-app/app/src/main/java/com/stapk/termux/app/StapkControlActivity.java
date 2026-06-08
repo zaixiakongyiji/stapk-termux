@@ -21,6 +21,7 @@ import android.widget.Toast;
 
 import android.widget.Switch;
 
+import com.stapk.termux.BuildConfig;
 import com.stapk.termux.R;
 import com.stapk.termux.app.stapk.StapkBootstrapShebangFixer;
 import com.stapk.termux.app.stapk.DebugRecord;
@@ -165,6 +166,7 @@ public class StapkControlActivity extends Activity {
         mBtnBackup = findViewById(R.id.btn_backup);
         mBtnRestore = findViewById(R.id.btn_restore);
         mAppVersionFooter = findViewById(R.id.app_version_footer);
+        mAppVersionFooter.setText(getString(R.string.stapk_footer_version_format, BuildConfig.VERSION_NAME));
 
         // Debug UI
         mDebugToggle = findViewById(R.id.debug_toggle);

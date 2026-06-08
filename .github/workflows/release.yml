@@ -1,0 +1,101 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    env:
+      TERMUX_SPLIT_APKS_FOR_RELEASE_BUILDS: "1"
+      JITPACK_NDK_VERSION: "22.1.7171670"
+      GRADLE_OPTS: -Xmx4096m
+      RELEASE_TAG: ${{ github.ref_name }}
+      TERMUX_RELEASE_KEYSTORE_BASE64: ${{ secrets.TERMUX_RELEASE_KEYSTORE_BASE64 }}
+      TERMUX_RELEASE_STORE_PASSWORD: ${{ secrets.TERMUX_RELEASE_STORE_PASSWORD }}
+      TERMUX_RELEASE_KEY_ALIAS: ${{ secrets.TERMUX_RELEASE_KEY_ALIAS }}
+      TERMUX_RELEASE_KEY_PASSWORD: ${{ secrets.TERMUX_RELEASE_KEY_PASSWORD }}
+    steps:
+      - name: 检出仓库
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 安装 JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - name: 安装 Android SDK 命令行工具
+        uses: android-actions/setup-android@v3
+
+      - name: 安装 Android 构建依赖
+        shell: bash
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager \
+            "platform-tools" \
+            "platforms;android-30" \
+            "build-tools;30.0.3" \
+            "ndk;22.1.7171670"
+
+      - name: 生成 GitHub runner 用 local.properties
+        shell: bash
+        working-directory: upstream/termux-app
+        run: |
+          printf 'sdk.dir=%s\n' "$ANDROID_SDK_ROOT" > local.properties
+
+      - name: 配置可选签名 Secrets
+        shell: bash
+        run: |
+          if [ -n "${TERMUX_RELEASE_KEYSTORE_BASE64}" ]; then
+            echo "${TERMUX_RELEASE_KEYSTORE_BASE64}" | base64 --decode > upstream/termux-app/app/release-ci.keystore
+            echo "TERMUX_RELEASE_STORE_FILE=release-ci.keystore" >> "$GITHUB_ENV"
+            echo "TERMUX_RELEASE_STORE_PASSWORD=${TERMUX_RELEASE_STORE_PASSWORD}" >> "$GITHUB_ENV"
+            echo "TERMUX_RELEASE_KEY_ALIAS=${TERMUX_RELEASE_KEY_ALIAS}" >> "$GITHUB_ENV"
+            echo "TERMUX_RELEASE_KEY_PASSWORD=${TERMUX_RELEASE_KEY_PASSWORD}" >> "$GITHUB_ENV"
+          fi
+
+      - name: 注入版本标签
+        shell: bash
+        run: |
+          echo "TERMUX_APP_VERSION_NAME=${RELEASE_TAG#v}" >> "$GITHUB_ENV"
+          echo "TERMUX_APK_VERSION_TAG=${RELEASE_TAG}" >> "$GITHUB_ENV"
+
+      - name: 构建 Release APK
+        shell: bash
+        working-directory: upstream/termux-app
+        run: ./gradlew --no-daemon :app:assembleRelease
+
+      - name: 整理发布资产
+        shell: bash
+        run: |
+          mkdir -p release-assets
+          APK_SOURCE="upstream/termux-app/app/build/outputs/apk/release/termux-app_${RELEASE_TAG}_arm64-v8a.apk"
+          APK_TARGET="release-assets/stapk-termux_${RELEASE_TAG}_arm64-v8a.apk"
+          cp "$APK_SOURCE" "$APK_TARGET"
+          cp "upstream/termux-app/app/build/outputs/apk/release/output-metadata.json" "release-assets/output-metadata.json"
+          (
+            cd release-assets
+            sha256sum "stapk-termux_${RELEASE_TAG}_arm64-v8a.apk" > "stapk-termux_${RELEASE_TAG}_arm64-v8a.apk.sha256"
+          )
+
+      - name: 上传 release 资产到 GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          generate_release_notes: true
+          overwrite_files: true
+          fail_on_unmatched_files: true
+          files: |
+            release-assets/stapk-termux_${{ github.ref_name }}_arm64-v8a.apk
+            release-assets/stapk-termux_${{ github.ref_name }}_arm64-v8a.apk.sha256
+            release-assets/output-metadata.json

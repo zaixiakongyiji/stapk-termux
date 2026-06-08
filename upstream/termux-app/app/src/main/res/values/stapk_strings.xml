@@ -27,7 +27,7 @@
     <string name="stapk_btn_restore">恢复数据</string>
 
     <!-- Footer -->
-    <string name="stapk_footer_version">stAPK v0.1.0</string>
+    <string name="stapk_footer_version_format">stAPK v%1$s</string>
 
     <!-- Terminal entry -->
     <string name="stapk_terminal_entry">打开终端</string>
