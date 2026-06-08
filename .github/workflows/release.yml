@@ -53,21 +53,38 @@ jobs:
         run: |
           printf 'sdk.dir=%s\n' "$ANDROID_SDK_ROOT" > local.properties
 
+      - name: 生成 CI 用 Debug 签名文件
+        shell: bash
+        working-directory: upstream/termux-app/app
+        run: |
+          keytool -genkeypair \
+            -alias alias \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -storetype JKS \
+            -keystore dev_keystore.jks \
+            -storepass xrj45yWGLbsO7W0v \
+            -keypass xrj45yWGLbsO7W0v \
+            -dname "CN=stAPK Debug,O=stAPK,C=CN"
+
       - name: 授予 Gradle Wrapper 执行权限
         shell: bash
         working-directory: upstream/termux-app
         run: chmod +x ./gradlew
 
-      - name: 配置可选签名 Secrets
+      - name: 配置 Release 签名 Secrets
         shell: bash
         run: |
-          if [ -n "${TERMUX_RELEASE_KEYSTORE_BASE64}" ]; then
-            echo "${TERMUX_RELEASE_KEYSTORE_BASE64}" | base64 --decode > upstream/termux-app/app/release-ci.keystore
-            echo "TERMUX_RELEASE_STORE_FILE=release-ci.keystore" >> "$GITHUB_ENV"
-            echo "TERMUX_RELEASE_STORE_PASSWORD=${TERMUX_RELEASE_STORE_PASSWORD}" >> "$GITHUB_ENV"
-            echo "TERMUX_RELEASE_KEY_ALIAS=${TERMUX_RELEASE_KEY_ALIAS}" >> "$GITHUB_ENV"
-            echo "TERMUX_RELEASE_KEY_PASSWORD=${TERMUX_RELEASE_KEY_PASSWORD}" >> "$GITHUB_ENV"
+          if [ -z "${TERMUX_RELEASE_KEYSTORE_BASE64}" ] || [ -z "${TERMUX_RELEASE_STORE_PASSWORD}" ] || [ -z "${TERMUX_RELEASE_KEY_ALIAS}" ] || [ -z "${TERMUX_RELEASE_KEY_PASSWORD}" ]; then
+            echo "缺少 Release 签名 Secrets，请配置 TERMUX_RELEASE_KEYSTORE_BASE64 / TERMUX_RELEASE_STORE_PASSWORD / TERMUX_RELEASE_KEY_ALIAS / TERMUX_RELEASE_KEY_PASSWORD" >&2
+            exit 1
           fi
+          echo "${TERMUX_RELEASE_KEYSTORE_BASE64}" | base64 --decode > upstream/termux-app/app/release-ci.keystore
+          echo "TERMUX_RELEASE_STORE_FILE=release-ci.keystore" >> "$GITHUB_ENV"
+          echo "TERMUX_RELEASE_STORE_PASSWORD=${TERMUX_RELEASE_STORE_PASSWORD}" >> "$GITHUB_ENV"
+          echo "TERMUX_RELEASE_KEY_ALIAS=${TERMUX_RELEASE_KEY_ALIAS}" >> "$GITHUB_ENV"
+          echo "TERMUX_RELEASE_KEY_PASSWORD=${TERMUX_RELEASE_KEY_PASSWORD}" >> "$GITHUB_ENV"
 
       - name: 注入版本标签
         shell: bash

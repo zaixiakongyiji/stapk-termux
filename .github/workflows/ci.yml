@@ -48,6 +48,21 @@ jobs:
         run: |
           printf 'sdk.dir=%s\n' "$ANDROID_SDK_ROOT" > local.properties
 
+      - name: 生成 CI 用 Debug 签名文件
+        shell: bash
+        working-directory: upstream/termux-app/app
+        run: |
+          keytool -genkeypair \
+            -alias alias \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -storetype JKS \
+            -keystore dev_keystore.jks \
+            -storepass xrj45yWGLbsO7W0v \
+            -keypass xrj45yWGLbsO7W0v \
+            -dname "CN=stAPK Debug,O=stAPK,C=CN"
+
       - name: 授予 Gradle Wrapper 执行权限
         shell: bash
         working-directory: upstream/termux-app

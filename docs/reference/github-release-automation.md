@@ -128,18 +128,20 @@ git push origin v0.1.1
 
 ### 当前默认行为
 
-当前仓库可以直接使用 `upstream/termux-app/app/release.keystore` 构建 release 包，因此 GitHub Actions 在不开启额外 Secrets 的情况下也能完成发布。
+CI 会在运行时临时生成 `debug` 构建所需的 `dev_keystore.jks`，因此 `master` 上的自动测试和 `assembleDebug` 不依赖仓库内现成 keystore。
+
+但 `release` 构建不会使用仓库里的本地签名文件，因为这些文件没有纳入版本控制，GitHub Actions 运行环境也拿不到它们。
 
 ### 推荐做法
 
-工作流同时支持用 GitHub Secrets 覆盖签名材料。后续如果你希望把签名信息从仓库中迁出，可以在仓库的 `Settings -> Secrets and variables -> Actions` 中配置：
+`release.yml` 现在要求在仓库的 `Settings -> Secrets and variables -> Actions` 中显式配置以下 Secrets：
 
 - `TERMUX_RELEASE_KEYSTORE_BASE64`
 - `TERMUX_RELEASE_STORE_PASSWORD`
 - `TERMUX_RELEASE_KEY_ALIAS`
 - `TERMUX_RELEASE_KEY_PASSWORD`
 
-工作流会优先使用这些 Secrets；如果未配置，则回退到当前仓库内的 `release.keystore`。
+如果缺少其中任意一项，Release 工作流会在签名配置阶段直接失败，并给出明确错误信息。
 
 ---
 
