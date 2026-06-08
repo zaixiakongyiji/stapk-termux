@@ -69,6 +69,34 @@ jobs:
           echo "TERMUX_APP_VERSION_NAME=${RELEASE_TAG#v}" >> "$GITHUB_ENV"
           echo "TERMUX_APK_VERSION_TAG=${RELEASE_TAG}" >> "$GITHUB_ENV"
 
+      - name: 从 CHANGELOG 生成 Release 正文
+        shell: bash
+        run: |
+          mkdir -p release-assets
+          python3 <<'PY'
+          from pathlib import Path
+          import os
+          import re
+          import sys
+
+          tag = os.environ["RELEASE_TAG"]
+          changelog = Path("CHANGELOG.md")
+          content = changelog.read_text(encoding="utf-8")
+
+          pattern = re.compile(
+              rf"^##\s+{re.escape(tag)}\b.*?(?=^##\s+v|\Z)",
+              re.MULTILINE | re.DOTALL,
+          )
+          match = pattern.search(content)
+          if not match:
+              print(f"未在 CHANGELOG.md 中找到 {tag} 对应段落", file=sys.stderr)
+              sys.exit(1)
+
+          notes_path = Path("release-assets/release-notes.md")
+          notes_path.write_text(match.group(0).strip() + "\n", encoding="utf-8")
+          print(f"已生成 {notes_path}")
+          PY
+
       - name: 构建 Release APK
         shell: bash
         working-directory: upstream/termux-app
@@ -92,7 +120,7 @@ jobs:
         with:
           tag_name: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
-          generate_release_notes: true
+          body_path: release-assets/release-notes.md
           overwrite_files: true
           fail_on_unmatched_files: true
           files: |

@@ -48,8 +48,9 @@ GitHub 就会自动：
 3. 重写 CI 环境的 `local.properties`
 4. 构建 `arm64-v8a release APK`
 5. 生成 SHA-256 校验文件
-6. 创建或更新对应的 GitHub Release
-7. 上传以下发布资产：
+6. 从 `CHANGELOG.md` 中提取当前 tag 对应版本段落作为 Release 正文
+7. 创建或更新对应的 GitHub Release
+8. 上传以下发布资产：
    - `stapk-termux_<tag>_arm64-v8a.apk`
    - `stapk-termux_<tag>_arm64-v8a.apk.sha256`
    - `output-metadata.json`
@@ -66,6 +67,36 @@ GitHub 就会自动：
    - 例如 `stapk-termux_v0.1.1_arm64-v8a.apk`
 
 控制面板底部的 `stAPK v...` 版本号也会读取当前构建的 `versionName`，因此会自动和 tag 保持一致。
+
+---
+
+## Release 正文来源
+
+GitHub Release 的正文不再依赖自动生成说明，而是直接读取 `CHANGELOG.md` 中与 tag 同名的版本段落。
+
+例如当你推送：
+
+```bash
+git tag v0.1.1
+git push origin v0.1.1
+```
+
+工作流会从 `CHANGELOG.md` 中提取：
+
+```md
+## v0.1.1 - ...
+...
+```
+
+直到下一个 `## v...` 标题之前的全部内容，并将其作为 GitHub Release 页面正文。
+
+因此发版前必须先更新 `CHANGELOG.md`，并保证标题格式与 tag 一致：
+
+```md
+## v0.1.1 - 版本说明 (2026-06-08)
+```
+
+如果工作流找不到对应标题，会直接失败，避免发布出一个没有版本说明的 Release。
 
 ---
 
@@ -96,7 +127,7 @@ GitHub 就会自动：
 
 - 代码已经合并到 `master`
 - `README.md` / 相关文档已同步
-- 如有必要，更新 `CHANGELOG.md`
+- `CHANGELOG.md` 已新增与目标 tag 同名的版本段落
 
 ### 2. 推送 `master`
 
