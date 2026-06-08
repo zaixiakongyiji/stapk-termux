@@ -13,7 +13,7 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     env:
-      TERMUX_SPLIT_APKS_FOR_DEBUG_BUILDS: "1"
+      TERMUX_SPLIT_APKS_FOR_DEBUG_BUILDS: "0"
       JITPACK_NDK_VERSION: "22.1.7171670"
       GRADLE_OPTS: -Xmx4096m
     steps:
@@ -84,10 +84,10 @@ jobs:
         working-directory: upstream/termux-app
         run: ./gradlew --no-daemon :app:assembleDebug
 
-      - name: 上传 arm64 Debug APK
+      - name: 上传 Debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: stapk-debug-arm64-v8a
+          name: stapk-debug-universal
           path: |
-            upstream/termux-app/app/build/outputs/apk/debug/termux-app_debug_arm64-v8a.apk
+            upstream/termux-app/app/build/outputs/apk/debug/termux-app_debug_universal.apk
             upstream/termux-app/app/build/outputs/apk/debug/output-metadata.json
