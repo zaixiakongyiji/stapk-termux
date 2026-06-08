@@ -57,6 +57,30 @@ GitHub 就会自动：
 
 ---
 
+## Bootstrap 大文件约定
+
+项目使用的自定义 bootstrap 不是官方原版，其中：
+
+- `upstream/termux-app/app/src/main/cpp/bootstrap-aarch64.zip`
+- `upstream/termux-app/app/src/main/cpp/bootstrap-x86_64.zip`
+
+由仓库通过 Git LFS 跟踪，而不是在 CI 中临时从官方 release 下载。
+
+原因是：
+
+- `bootstrap-aarch64.zip` 体积超过普通 Git 单文件限制
+- 自定义 bootstrap 与官方 bootstrap 的内容和校验值并不一致
+- GitHub Actions 如果不启用 `lfs: true`，检出的只会是 pointer 文件，构建会失败
+
+因此 `ci.yml` 和 `release.yml` 的 `actions/checkout` 都必须保持：
+
+```yaml
+with:
+  lfs: true
+```
+
+---
+
 ## 版本号规则
 
 工作流会自动做两件事：

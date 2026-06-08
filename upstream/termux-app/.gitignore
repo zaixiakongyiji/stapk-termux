@@ -10,6 +10,8 @@ release/
 .externalNativeBuild
 .cxx
 *.zip
+!app/src/main/cpp/bootstrap-aarch64.zip
+!app/src/main/cpp/bootstrap-x86_64.zip
 
 # Crashlytics configuations
 com_crashlytics_export_strings.xml
