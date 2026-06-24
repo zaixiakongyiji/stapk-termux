@@ -49,13 +49,13 @@ jobs:
 
       - name: 生成 GitHub runner 用 local.properties
         shell: bash
-        working-directory: upstream/termux-app
+        working-directory: mobile
         run: |
           printf 'sdk.dir=%s\n' "$ANDROID_SDK_ROOT" > local.properties
 
       - name: 生成 CI 用 Debug 签名文件
         shell: bash
-        working-directory: upstream/termux-app/app
+        working-directory: mobile/app
         run: |
           keytool -genkeypair \
             -alias alias \
@@ -70,7 +70,7 @@ jobs:
 
       - name: 授予 Gradle Wrapper 执行权限
         shell: bash
-        working-directory: upstream/termux-app
+        working-directory: mobile
         run: chmod +x ./gradlew
 
       - name: 配置 Release 签名 Secrets
@@ -80,7 +80,7 @@ jobs:
             echo "缺少 Release 签名 Secrets，请配置 TERMUX_RELEASE_KEYSTORE_BASE64 / TERMUX_RELEASE_STORE_PASSWORD / TERMUX_RELEASE_KEY_ALIAS / TERMUX_RELEASE_KEY_PASSWORD" >&2
             exit 1
           fi
-          echo "${TERMUX_RELEASE_KEYSTORE_BASE64}" | base64 --decode > upstream/termux-app/app/release-ci.keystore
+          echo "${TERMUX_RELEASE_KEYSTORE_BASE64}" | base64 --decode > mobile/app/release-ci.keystore
           echo "TERMUX_RELEASE_STORE_FILE=release-ci.keystore" >> "$GITHUB_ENV"
           echo "TERMUX_RELEASE_STORE_PASSWORD=${TERMUX_RELEASE_STORE_PASSWORD}" >> "$GITHUB_ENV"
           echo "TERMUX_RELEASE_KEY_ALIAS=${TERMUX_RELEASE_KEY_ALIAS}" >> "$GITHUB_ENV"
@@ -122,20 +122,20 @@ jobs:
 
       - name: 构建 Release APK
         shell: bash
-        working-directory: upstream/termux-app
+        working-directory: mobile
         run: ./gradlew --no-daemon :app:assembleRelease
 
       - name: 整理发布资产
         shell: bash
         run: |
           mkdir -p release-assets
-          APK_SOURCE="upstream/termux-app/app/build/outputs/apk/release/termux-app_${RELEASE_TAG}_arm64-v8a.apk"
-          APK_TARGET="release-assets/stapk-termux_${RELEASE_TAG}_arm64-v8a.apk"
+          APK_SOURCE="mobile/app/build/outputs/apk/release/app-release.apk"
+          APK_TARGET="release-assets/stapk-mobile_${RELEASE_TAG}_arm64-v8a.apk"
           cp "$APK_SOURCE" "$APK_TARGET"
-          cp "upstream/termux-app/app/build/outputs/apk/release/output-metadata.json" "release-assets/output-metadata.json"
+          cp "mobile/app/build/outputs/apk/release/output-metadata.json" "release-assets/output-metadata.json"
           (
             cd release-assets
-            sha256sum "stapk-termux_${RELEASE_TAG}_arm64-v8a.apk" > "stapk-termux_${RELEASE_TAG}_arm64-v8a.apk.sha256"
+            sha256sum "stapk-mobile_${RELEASE_TAG}_arm64-v8a.apk" > "stapk-mobile_${RELEASE_TAG}_arm64-v8a.apk.sha256"
           )
 
       - name: 上传 release 资产到 GitHub Release
@@ -147,6 +147,6 @@ jobs:
           overwrite_files: true
           fail_on_unmatched_files: true
           files: |
-            release-assets/stapk-termux_${{ github.ref_name }}_arm64-v8a.apk
-            release-assets/stapk-termux_${{ github.ref_name }}_arm64-v8a.apk.sha256
+            release-assets/stapk-mobile_${{ github.ref_name }}_arm64-v8a.apk
+            release-assets/stapk-mobile_${{ github.ref_name }}_arm64-v8a.apk.sha256
             release-assets/output-metadata.json

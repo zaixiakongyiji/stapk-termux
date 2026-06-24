@@ -19,6 +19,15 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = System.getenv("TERMUX_RELEASE_STORE_FILE")?.let { file(it) }
+            storePassword = System.getenv("TERMUX_RELEASE_STORE_PASSWORD")
+            keyAlias = System.getenv("TERMUX_RELEASE_KEY_ALIAS")
+            keyPassword = System.getenv("TERMUX_RELEASE_KEY_PASSWORD")
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -26,6 +35,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {

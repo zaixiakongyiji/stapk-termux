@@ -44,13 +44,13 @@ jobs:
 
       - name: 生成 GitHub runner 用 local.properties
         shell: bash
-        working-directory: upstream/termux-app
+        working-directory: mobile
         run: |
           printf 'sdk.dir=%s\n' "$ANDROID_SDK_ROOT" > local.properties
 
       - name: 生成 CI 用 Debug 签名文件
         shell: bash
-        working-directory: upstream/termux-app/app
+        working-directory: mobile/app
         run: |
           keytool -genkeypair \
             -alias alias \
@@ -65,29 +65,24 @@ jobs:
 
       - name: 授予 Gradle Wrapper 执行权限
         shell: bash
-        working-directory: upstream/termux-app
+        working-directory: mobile
         run: chmod +x ./gradlew
 
       - name: 执行关键单测
         shell: bash
-        working-directory: upstream/termux-app
+        working-directory: mobile
         run: |
-          ./gradlew --no-daemon :app:testDebugUnitTest \
-            --tests "com.stapk.termux.app.stapk.StapkScriptAssetsTest" \
-            --tests "com.stapk.termux.shared.shell.TermuxShellUtilsTest" \
-            --tests "com.stapk.termux.app.stapk.StapkBootstrapShebangFixerTest" \
-            --tests "com.stapk.termux.app.stapk.StapkRuntimeControllerTest" \
-            --tests "com.stapk.termux.app.stapk.StapkStatusSnapshotTest"
+          ./gradlew --no-daemon :app:testDebugUnitTest
 
       - name: 构建 Debug APK
         shell: bash
-        working-directory: upstream/termux-app
+        working-directory: mobile
         run: ./gradlew --no-daemon :app:assembleDebug
 
       - name: 上传 Debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: stapk-debug-universal
+          name: stapk-debug-app
           path: |
-            upstream/termux-app/app/build/outputs/apk/debug/termux-app_debug_universal.apk
-            upstream/termux-app/app/build/outputs/apk/debug/output-metadata.json
+            mobile/app/build/outputs/apk/debug/app-debug.apk
+            mobile/app/build/outputs/apk/debug/output-metadata.json

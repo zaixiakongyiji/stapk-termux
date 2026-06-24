@@ -53,6 +53,3 @@ local.properties
 *.keystore
 
 # ===== POC 临时文件 =====
-mobile/app/src/main/assets/runtime-poc.zip
-mobile/app/src/main/assets/payload.tgz
-mobile/app/src/main/assets/payload-manifest.json
