@@ -1,0 +1,35 @@
+# Runtime POC 依赖清单
+
+- libandroid-support.so
+- libc++_shared.so
+- libcares.so
+- libcrypto.so.3
+- libicudata.so
+- libicudata.so.78
+- libicudata.so.78.3
+- libicui18n.so
+- libicui18n.so.78
+- libicui18n.so.78.3
+- libicuio.so
+- libicuio.so.78
+- libicuio.so.78.3
+- libicutest.so
+- libicutest.so.78
+- libicutest.so.78.3
+- libicutu.so
+- libicutu.so.78
+- libicutu.so.78.3
+- libicuuc.so
+- libicuuc.so.78
+- libicuuc.so.78.3
+- libnghttp2.so
+- libsqlite3.53.1.so
+- libsqlite3.so
+- libsqlite3.so.0
+- libsqlite3.so.3.53.1
+- libssl.so.3
+- libz.so.1 (symlink to libz.so.1.3.2)
+- libz.so.1.3.2
+- libzstd.so.1 (symlink to libzstd.so.1.5.7)
+- libzstd.so.1.5.7
+- node
