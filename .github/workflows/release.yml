@@ -132,7 +132,6 @@ jobs:
           APK_SOURCE="mobile/app/build/outputs/apk/release/app-release.apk"
           APK_TARGET="release-assets/stapk-mobile_${RELEASE_TAG}_arm64-v8a.apk"
           cp "$APK_SOURCE" "$APK_TARGET"
-          cp "mobile/app/build/outputs/apk/release/output-metadata.json" "release-assets/output-metadata.json"
           (
             cd release-assets
             sha256sum "stapk-mobile_${RELEASE_TAG}_arm64-v8a.apk" > "stapk-mobile_${RELEASE_TAG}_arm64-v8a.apk.sha256"
@@ -149,4 +148,3 @@ jobs:
           files: |
             release-assets/stapk-mobile_${{ github.ref_name }}_arm64-v8a.apk
             release-assets/stapk-mobile_${{ github.ref_name }}_arm64-v8a.apk.sha256
-            release-assets/output-metadata.json
