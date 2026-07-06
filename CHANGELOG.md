@@ -49,6 +49,11 @@
 - **补齐后台任务运行环境** — 修复 `LD_LIBRARY_PATH`、`PATH` 等环境变量传递，避免托管任务拉起后找不到基础运行时
 - **脚本与 Intent 合同测试补齐** — 为状态解析、启动 Intent、Shell 环境和脚本格式增加单测覆盖
 
+## [Unreleased]
+### Added
+- 支持 Node.js 24.17.0 (LTS) 运行时，替换旧版 Node 18 POC 运行时。
+- 新增跨平台 Python 脚本 `scripts/build-runtime-archive.sh`（内部调用 Python）以提取 Node 运行时并生成清单。
+
 ### 📦 发布流程
 
 - **接入 GitHub Actions CI** — `master` 上的 `push / pull_request` 会自动执行关键单测和 Debug 构建

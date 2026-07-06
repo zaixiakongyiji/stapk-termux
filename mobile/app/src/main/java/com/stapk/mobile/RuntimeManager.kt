@@ -31,13 +31,16 @@ class RuntimeManager(context: Context) {
             return
         }
         
-        Log.d(TAG, "Extracting runtime-poc.zip...")
+        Log.d(TAG, "Extracting runtime-android-arm64-node24.zip...")
         runtimeDir.mkdirs()
         binDir.mkdirs()
         libDir.mkdirs()
 
         try {
-            appContext.assets.open("runtime-poc.zip").use { input ->
+            // unzip the asset to runtime/
+            val runtimeDir = File(appContext.filesDir, "runtime")
+
+            appContext.assets.open("runtime-android-arm64-node24.zip").use { input ->
                 ZipInputStream(input).use { zis ->
                     var entry = zis.nextEntry
                     while (entry != null) {

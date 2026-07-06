@@ -1,15 +1,40 @@
 {
-  "sillytavern_repo": "https://github.com/SillyTavern/SillyTavern.git",
-  "branch": "release",
-  "commit": "51ad27fb86d39a3daca3adaa970375c9670c12df",
-  "sillytavern_version": "1.18.0",
-  "node_version": "v18.19.1",
-  "npm_version": "9.2.0",
-  "created_at": "2026-05-28T03:36:51Z",
-  "payload_unpacked_size_bytes": 393488188,
-  "required_free_bytes": 590232282,
+  "tools": {
+    "git": "git version 2.45.1.windows.1",
+    "node": "v22.22.0",
+    "npm": "10.9.4",
+    "tar": "bsdtar 3.8.4 - libarchive 3.8.4 zlib/1.2.13.1-motley liblzma/5.8.1 bz2lib/1.0.8 libzstd/1.5.7 cng/2.0 libb2/bundled"
+  },
+  "sillytavern": {
+    "repo": "https://github.com/SillyTavern/SillyTavern.git",
+    "requested_ref": "release",
+    "resolved_commit": "51ad27fb86d39a3daca3adaa970375c9670c12df",
+    "version": "1.18.0"
+  },
+  "lockfile_sha256": "3c3215f303bf9e849e28155ffd76dd20e71bcb06d38c138ccaa86a524934144b",
+  "runtime": {
+    "node_version": "v24.17.0"
+  },
+  "patch_queue_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "engine_check": {
+    "required": ">= 20",
+    "required_major": 20,
+    "build_node": "v22.22.0",
+    "runtime_node": "v24.17.0",
+    "passed": true,
+    "override": false
+  },
   "native_addon_scan": {
-    "has_native_addon": false,
-    "checked_patterns": ["*.node", "binding.gyp", "node-gyp", "prebuild", "node-pre-gyp", "bindings", "nan", "node-addon-api"]
+    "passed": true,
+    "override": false,
+    "native_addons": [],
+    "incompatible_deps": [],
+    "build_intent_signals": []
+  },
+  "payload": {
+    "archive_size_bytes": 125862687,
+    "unpacked_size_bytes": 355634241,
+    "required_free_bytes": 426761089,
+    "sha256": "da0d6b2fcdd4d85fd18678872784f0712edfdc62e3c23ebf807b8fb8772f918f"
   }
 }
