@@ -26,8 +26,7 @@ stAPK Mobile 是一个完全原生的 Android 客户端，将 [SillyTavern](http
 │  ┌────────────────────────────────┐  │
 │  │   Android UI (Kotlin)           │  │
 │  │   MainActivity / WebView       │  │
-│  │   ┌──────┐ ┌──────┐ ┌──────┐  │  │
-│  │   │ 启动  │ │ 备份  │ │ 恢复  │  │  │
+│  │   ┌──────┐ ┌──────┐ └──────┘  │  │
 │  │   └──────┘ └──────┘ └──────┘  │  │
 │  └──────────────┬─────────────────┘  │
 │                 │ 调用 JNI / Process │
@@ -99,7 +98,7 @@ git push origin v0.1.1
 stapk-termux/
 ├── mobile/                 # 原生 Android 客户端源码
 │   └── app/src/main/
-│       ├── assets/         # 存放 payload.tgz 和 runtime-poc.zip (LFS)
+│       ├── assets/         # 存放 payload.tgz 和 runtime-android-arm64-node24.zip (LFS)
 │       ├── java/           # Kotlin 核心代码 (RuntimeManager 等)
 │       └── res/            # UI 布局
 ├── .github/workflows/      # CI/CD 自动化构建脚本
