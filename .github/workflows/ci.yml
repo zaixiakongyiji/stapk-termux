@@ -29,6 +29,11 @@ jobs:
           java-version: "17"
           cache: gradle
 
+      - name: 安装 Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
       - name: 安装 Android SDK 命令行工具
         uses: android-actions/setup-android@v3
 
@@ -67,6 +72,22 @@ jobs:
         shell: bash
         working-directory: mobile
         run: chmod +x ./gradlew
+
+      - name: 验证 SillyTavern Payload 转换
+        shell: bash
+        run: |
+          echo "Node version: $(node --version)"
+          echo "YAML dependency version:"
+          npm ls yaml || true
+          node scripts/stapk-transform.mjs --ref release --runtime mobile/app/src/main/assets/runtime-android-arm64-node24.zip --out build/ci-payload
+
+      - name: 上传 Transform 报告
+        uses: actions/upload-artifact@v4
+        with:
+          name: transform-reports-ci
+          path: |
+            build/stapk-transform/reports/
+            build/ci-payload/payload-manifest.json
 
       - name: 执行关键单测
         shell: bash
