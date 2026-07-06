@@ -38,8 +38,6 @@ class RuntimeManager(context: Context) {
 
         try {
             // unzip the asset to runtime/
-            val runtimeDir = File(appContext.filesDir, "runtime")
-
             appContext.assets.open("runtime-android-arm64-node24.zip").use { input ->
                 ZipInputStream(input).use { zis ->
                     var entry = zis.nextEntry
