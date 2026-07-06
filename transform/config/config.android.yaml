@@ -1,0 +1,21 @@
+listen: false
+listenAddress:
+  ipv4: 127.0.0.1
+  ipv6: '[::1]'
+protocol:
+  ipv4: true
+  ipv6: false
+browserLaunch:
+  enabled: false
+  hostname: '127.0.0.1'
+  port: -1
+  avoidLocalhost: true
+ssl:
+  enabled: false
+whitelistMode: true
+whitelist:
+  - ::1
+  - 127.0.0.1
+enableCorsProxy: false
+disableCsrfProtection: false
+securityOverride: false
