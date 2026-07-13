@@ -1,40 +1,28 @@
 package com.stapk.mobile
 
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import java.net.URI
 
-class TavernWebViewClient : WebViewClient() {
+internal fun shouldOpenExternally(url: String?): Boolean {
+    val uri = runCatching { URI(url.orEmpty()) }.getOrNull() ?: return false
+    return uri.isAbsolute && uri.scheme.equals("https", ignoreCase = true)
+}
+
+class TavernWebViewClient(private val context: Context) : WebViewClient() {
     override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
-        return false // Let WebView load the URL directly
-    }
+        val url = request?.url?.toString()
+        if (request?.isForMainFrame != true || !shouldOpenExternally(url)) {
+            return false
+        }
 
-    override fun onPageFinished(view: WebView?, url: String?) {
-        super.onPageFinished(view, url)
-        view?.evaluateJavascript(
-            """
-            document.addEventListener('click', function(e) {
-                var target = e.target.closest('a');
-                if (target && target.hasAttribute('download') && target.href.startsWith('blob:')) {
-                    var fileName = target.getAttribute('download');
-                    var xhr = new XMLHttpRequest();
-                    xhr.open('GET', target.href, true);
-                    xhr.responseType = 'blob';
-                    xhr.onload = function(e) {
-                        if (this.status == 200) {
-                            var reader = new FileReader();
-                            reader.readAsDataURL(this.response);
-                            reader.onloadend = function() {
-                                AndroidDownloader.getBase64FromBlobData(reader.result, '', fileName);
-                            }
-                        }
-                    };
-                    xhr.send();
-                    e.preventDefault();
-                    e.stopPropagation();
-                }
-            }, true);
-            """.trimIndent(), null
-        )
+        return runCatching {
+            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+            true
+        }.getOrDefault(false)
     }
 }

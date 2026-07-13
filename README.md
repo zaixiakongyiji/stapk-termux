@@ -1,50 +1,48 @@
 # stAPK Mobile
 
-> 一键安装 SillyTavern，无需命令行 —— 在手机上运行你的 AI 角色扮演服务端。
+> 将 SillyTavern 转换为无 Node.js 运行时的 Android 原生应用。
 
-stAPK Mobile 是一个完全原生的 Android 客户端，将 [SillyTavern](https://github.com/SillyTavern/SillyTavern)（AI 角色扮演前端）和底层的 Node.js 运行环境打包进一个 APK 中。安装后直接使用图形化控制面板操作，无需任何命令行基础，告别 Termux 依赖。
+stAPK Mobile 的 0.3.0 主线是把 [SillyTavern](https://github.com/SillyTavern/SillyTavern) 官方 Web UI 转换成一个 Android APK。APK 运行时不再内置 Node.js、npm、`node_modules` 或 `server.js`；Android 侧通过 WebView 加载静态前端资源，并由 Kotlin/Java 本地 HTTP 兼容后端提供 MVP 所需接口。
 
-## 功能
+> 当前仓库仍保留 0.2.x 的“私有 Node.js + payload.tgz + WebView”实现作为迁移来源。新开发以 [no-node 原生适配设计](docs/superpowers/specs/2026-07-09-stapk-no-node-native-adapter-design.md) 和 [实施计划](docs/plan/2026-07-09-stapk-no-node-native-adapter-implementation-plan.md) 为准。
 
-- **一键启动** — 图形化面板启动 SillyTavern，直观展示实时运行日志。
-- **内置原生环境** — 抛弃 Termux 依赖，使用内置私有 Node.js 与 Payload，避免环境污染。
-- **后台保活服务** — 支持在手机自带浏览器中打开，同时自动开启前台服务 (Foreground Service) 并持有唤醒锁 (WakeLock)，有效防止服务被杀。
-- **一键备份/恢复** — 基于 Android SAF (存储访问框架)，一键将角色卡、聊天等数据导出为 `.zip` 或从外部导入。
-- **纯净更新** — 后续发版更新直接覆盖安装 APK 即可，无需手动 git pull。
+## 目标能力
+
+- **官方 Web UI** — 保留 SillyTavern 的前端界面，避免重新实现聊天产品。
+- **无运行时 Node.js** — APK 不携带 Node.js、npm、`node_modules`、runtime zip 或 payload tar 解压流程。
+- **原生本地后端** — Android 内部 HTTP server 提供静态资源、角色卡、聊天记录、设置和 OpenAI-compatible MVP 接口。
+- **应用私有数据** — 用户数据落在 app-private 目录，并从 0.2.x `filesDir/SillyTavern/data` 幂等迁移。
+- **可重复转换** — 构建期脚本从 upstream SillyTavern ref 生成 no-node Web 资产、API 契约和 manifest。
 
 ## 截图
 
-![stAPK 控制面板日志界面](docs/images/screenshot-log.png)
+![stAPK 0.2.x 控制面板日志界面](docs/images/screenshot-log.png)
 
 ![stAPK 沉浸全屏界面](docs/images/screenshot-ui.png)
 
-## 工作原理
+## 目标工作原理
 
 ```text
 ┌──────────────────────────────────────┐
 │           stAPK Mobile               │
 │  ┌────────────────────────────────┐  │
 │  │   Android UI (Kotlin)           │  │
-│  │   MainActivity / WebView       │  │
-│  │   ┌──────┐ ┌──────┐ └──────┘  │  │
-│  │   └──────┘ └──────┘ └──────┘  │  │
+│  │   MainActivity / WebView        │  │
+│  │   SillyTavern official Web UI   │  │
 │  └──────────────┬─────────────────┘  │
-│                 │ 调用 JNI / Process │
+│                 │ 127.0.0.1:<port>   │
 │  ┌──────────────▼─────────────────┐  │
-│  │   RuntimeManager               │  │
-│  │   解压 Payload.tgz              │  │
-│  │   ┌────────────────────────┐   │  │
-│  │   │  libnode.so             │   │  │
-│  │   │  执行 server.js         │   │  │
-│  │   │  → localhost:8000       │   │  │
-│  │   └────────────────────────┘   │  │
+│  │   NativeLocalServer            │  │
+│  │   Static Web assets            │  │
+│  │   Character / Chat / Settings  │  │
+│  │   OpenAI-compatible adapter    │  │
 │  └────────────────────────────────┘  │
 └──────────────────────────────────────┘
 ```
 
-1. 用户初次启动，`RuntimeManager` 自动解压内置的 `payload.tgz`。**注意：只有日志显示 `Payload ready` 后，才可以启动服务。**
-2. 点击启动后，通过私有目录下的 Node.js 二进制文件直接拉起 `server.js`。
-3. `KeepAliveService` 负责在切出应用（如点击 Open Browser）时维持 CPU 唤醒，防止断连。
+1. 构建期脚本拉取指定 SillyTavern upstream ref，只提取和补丁化浏览器端 Web 资产。
+2. APK 启动后，原生本地 HTTP server 随应用生命周期启动，随机选择 loopback 端口。
+3. WebView 加载官方 Web UI；前端请求由原生兼容后端处理，MVP 阶段只开放 OpenAI-compatible 聊天能力。
 
 ## 下载
 
@@ -62,7 +60,7 @@ stAPK Mobile 是一个完全原生的 Android 客户端，将 [SillyTavern](http
 # 1. 克隆代码
 git clone https://github.com/zaixiakongyiji/stapk-termux.git
 
-# 2. 拉取 LFS 大文件 (Node.js 运行时与 Payload)
+# 2. 当前 0.2.x 构建仍可能需要 LFS 大文件；0.3.0 no-node 路线会移除运行时 Node 资产
 git lfs pull
 
 # 3. 构建 APK
@@ -98,7 +96,7 @@ git push origin v0.1.1
 stapk-termux/
 ├── mobile/                 # 原生 Android 客户端源码
 │   └── app/src/main/
-│       ├── assets/         # 存放 payload.tgz 和 runtime-android-arm64-node24.zip (LFS)
+│       ├── assets/         # 当前仍含 0.2.x legacy assets；0.3.0 将替换为 no-node Web 资产
 │       ├── java/           # Kotlin 核心代码 (RuntimeManager 等)
 │       └── res/            # UI 布局
 ├── .github/workflows/      # CI/CD 自动化构建脚本
@@ -107,12 +105,12 @@ stapk-termux/
 
 ## 许可证
 
-本应用为 [SillyTavern](https://github.com/SillyTavern/SillyTavern) 的非官方 Android 打包外壳。内置的 SillyTavern 遵循其原始许可证 ([AGPL-3.0](https://www.gnu.org/licenses/agpl-3.0.html))。外壳相关自定义代码保留在本仓库。
+本应用为 [SillyTavern](https://github.com/SillyTavern/SillyTavern) 的非官方 Android 转换产物。内置或转换生成的 SillyTavern Web 资产遵循其原始许可证 ([AGPL-3.0](https://www.gnu.org/licenses/agpl-3.0.html))。外壳和原生兼容后端相关自定义代码保留在本仓库。
 
 ## 致谢
 
 - [SillyTavern](https://sillytavern.app) — AI 角色扮演前端
-- [Node.js](https://nodejs.org/) — 运行时环境
+- [Node.js](https://nodejs.org/) — 构建期工具链
 
 ---
 

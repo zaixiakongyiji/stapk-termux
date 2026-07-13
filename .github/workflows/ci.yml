@@ -43,8 +43,8 @@ jobs:
           yes | sdkmanager --licenses >/dev/null || true
           sdkmanager \
             "platform-tools" \
-            "platforms;android-30" \
-            "build-tools;30.0.3" \
+            "platforms;android-34" \
+            "build-tools;34.0.0" \
             "ndk;22.1.7171670"
 
       - name: 生成 GitHub runner 用 local.properties
@@ -73,21 +73,26 @@ jobs:
         working-directory: mobile
         run: chmod +x ./gradlew
 
-      - name: 验证 SillyTavern Payload 转换
+      - name: 验证 no-node SillyTavern 转换
         shell: bash
         run: |
+          START_TIME=$(date +%s)
           echo "Node version: $(node --version)"
           echo "YAML dependency version:"
+          npm ci
           npm ls yaml || true
-          node scripts/stapk-transform.mjs --ref release --runtime mobile/app/src/main/assets/runtime-android-arm64-node24.zip --out build/ci-payload
+          npm run test:no-node
+          npm run transform:no-node
+          npm run transform:no-node:verify
+          END_TIME=$(date +%s)
+          echo "no_node_transform_seconds=$((END_TIME - START_TIME))" >> "$GITHUB_STEP_SUMMARY"
 
       - name: 上传 Transform 报告
         uses: actions/upload-artifact@v4
         with:
           name: transform-reports-ci
           path: |
-            build/stapk-transform/reports/
-            build/ci-payload/payload-manifest.json
+            build/no-node-payload/
 
       - name: 执行关键单测
         shell: bash

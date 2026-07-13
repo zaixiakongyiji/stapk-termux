@@ -1,357 +1,237 @@
 package com.stapk.mobile
 
-import android.content.Intent
-import android.os.Bundle
-import android.widget.Button
-import android.widget.TextView
 import android.app.Activity
-import android.util.Log
-import android.view.View
-import android.webkit.WebView
+import android.content.ComponentName
+import android.content.Intent
+import android.content.ServiceConnection
 import android.net.Uri
+import android.os.Bundle
+import android.os.IBinder
+import android.view.View
 import android.webkit.ValueCallback
-import java.net.HttpURLConnection
-import java.net.URL
-import java.util.concurrent.Executors
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import android.webkit.WebChromeClient
+import android.webkit.WebView
+import android.widget.TextView
+import androidx.core.content.ContextCompat
+import com.stapk.mobile.nativeadapter.NativeAdapterState
+import com.stapk.mobile.nativeadapter.NativeAdapterStatus
+import com.stapk.mobile.nativeadapter.NativeHttpService
+
+internal enum class MainScreen {
+    LOADING,
+    WEB,
+    ERROR
+}
+
+internal data class MainUiModel(
+    val screen: MainScreen,
+    val url: String? = null,
+    val message: String? = null
+)
+
+internal fun toMainUiModel(state: NativeAdapterState): MainUiModel = when (state.status) {
+    NativeAdapterStatus.RUNNING -> state.port?.let { port ->
+        MainUiModel(MainScreen.WEB, url = "http://127.0.0.1:$port/")
+    } ?: MainUiModel(MainScreen.ERROR)
+
+    NativeAdapterStatus.FAILED,
+    NativeAdapterStatus.MIGRATION_FAILED -> MainUiModel(
+        MainScreen.ERROR,
+        message = state.message.takeIf { it.isNotBlank() }
+    )
+
+    else -> MainUiModel(MainScreen.LOADING)
+}
 
 class MainActivity : Activity() {
+    companion object {
+        private const val FILE_CHOOSER_REQUEST_CODE = 1001
+        private const val NOTIFICATION_PERMISSION_REQUEST_CODE = 1004
+        private const val STATE_POLL_INTERVAL_MS = 250L
+    }
 
-    private lateinit var tvLog: TextView
     private lateinit var webView: WebView
-    private lateinit var topControls: View
-    private lateinit var btnFullscreenOverlay: Button
-    private lateinit var btnBackup: Button
-    private lateinit var btnRestore: Button
-    private lateinit var btnManageExtensions: Button
-    private lateinit var btnStartServer: Button
-    private lateinit var btnOpenBrowser: Button
-    private lateinit var runtimeManager: RuntimeManager
-    private val executor = Executors.newSingleThreadExecutor()
-    private var isServerRunning = false
-    private var isFullscreen = false
+    private lateinit var loadingView: View
+    private lateinit var errorView: View
+    private lateinit var errorText: TextView
+    private var nativeService: NativeHttpService? = null
+    private var isBound = false
     private var fileUploadCallback: ValueCallback<Array<Uri>>? = null
-    private val FILE_CHOOSER_REQUEST_CODE = 1001
-    private val BACKUP_REQUEST_CODE = 1002
-    private val RESTORE_REQUEST_CODE = 1003
+
+    private val statePoll = Runnable { renderServiceState() }
+
+    private val connection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
+            val localBinder = binder as? NativeHttpService.LocalBinder
+            nativeService = localBinder?.service()
+            if (nativeService == null) {
+                showError(getString(R.string.service_bind_failed))
+                return
+            }
+            renderServiceState()
+        }
+
+        override fun onServiceDisconnected(name: ComponentName?) {
+            nativeService = null
+            showError(getString(R.string.service_disconnected))
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        if (android.os.Build.VERSION.SDK_INT >= 33) { // Build.VERSION_CODES.TIRAMISU
-            if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
-                requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 1004)
-            }
-        }
-
-        tvLog = findViewById(R.id.tvLog)
+        loadingView = findViewById(R.id.loadingView)
         webView = findViewById(R.id.webView)
-        topControls = findViewById(R.id.topControls)
-        btnFullscreenOverlay = findViewById(R.id.btnFullscreenOverlay)
-        btnBackup = findViewById(R.id.btnBackup)
-        btnRestore = findViewById(R.id.btnRestore)
-        btnManageExtensions = findViewById(R.id.btnManageExtensions)
-        btnStartServer = findViewById(R.id.btnStartServer)
-        btnOpenBrowser = findViewById(R.id.btnOpenBrowser)
-        
+        errorView = findViewById(R.id.errorView)
+        errorText = findViewById(R.id.errorText)
+
+        requestNotificationPermissionIfNeeded()
+        configureWebView()
+        findViewById<View>(R.id.retryButton).setOnClickListener { startNativeAdapter() }
+        startNativeAdapter()
+    }
+
+    private fun requestNotificationPermissionIfNeeded() {
+        if (
+            android.os.Build.VERSION.SDK_INT >= 33 &&
+            checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) !=
+            android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) {
+            requestPermissions(
+                arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
+                NOTIFICATION_PERMISSION_REQUEST_CODE
+            )
+        }
+    }
+
+    private fun configureWebView() {
         webView.settings.javaScriptEnabled = true
         webView.settings.domStorageEnabled = true
-        webView.settings.allowFileAccess = true
         webView.settings.databaseEnabled = true
         webView.settings.mediaPlaybackRequiresUserGesture = false
-        webView.webViewClient = TavernWebViewClient()
-        
-        webView.webChromeClient = object : android.webkit.WebChromeClient() {
+        webView.settings.allowFileAccess = false
+        webView.webViewClient = TavernWebViewClient(this)
+        webView.webChromeClient = object : WebChromeClient() {
             override fun onShowFileChooser(
                 webView: WebView?,
                 filePathCallback: ValueCallback<Array<Uri>>?,
                 fileChooserParams: FileChooserParams?
             ): Boolean {
+                if (filePathCallback == null) return false
                 fileUploadCallback?.onReceiveValue(null)
                 fileUploadCallback = filePathCallback
-                
                 val intent = fileChooserParams?.createIntent()
-                try {
-                    if (intent != null) {
-                        startActivityForResult(intent, FILE_CHOOSER_REQUEST_CODE)
-                    }
-                } catch (e: Exception) {
+                if (intent == null) {
                     fileUploadCallback?.onReceiveValue(null)
                     fileUploadCallback = null
                     return false
                 }
-                return true
-            }
-        }
-        
-        webView.addJavascriptInterface(BlobDownloader(), "AndroidDownloader")
-        
-        runtimeManager = RuntimeManager(this)
-
-        btnFullscreenOverlay.setOnClickListener {
-            topControls.visibility = View.GONE
-            btnFullscreenOverlay.visibility = View.GONE
-            isFullscreen = true
-        }
-
-        findViewById<Button>(R.id.btnRun).setOnClickListener {
-            runCommandAsync("--version")
-        }
-
-        findViewById<Button>(R.id.btnRunEnv).setOnClickListener {
-            runCommandAsync("-e", "console.log(process.versions)")
-        }
-
-        btnManageExtensions.setOnClickListener {
-            executor.execute {
-                val extensionsDir = java.io.File(filesDir, "SillyTavern/public/scripts/extensions/third-party")
-                if (!extensionsDir.exists() || !extensionsDir.isDirectory) {
-                    runOnUiThread { appendLog("No extensions directory found.") }
-                    return@execute
+                return runCatching {
+                    startActivityForResult(intent, FILE_CHOOSER_REQUEST_CODE)
+                    true
+                }.getOrElse {
+                    fileUploadCallback?.onReceiveValue(null)
+                    fileUploadCallback = null
+                    false
                 }
-                val extensions = extensionsDir.listFiles()?.filter { it.isDirectory }?.map { it.name } ?: emptyList()
-                if (extensions.isEmpty()) {
-                    runOnUiThread { appendLog("No broken extensions found.") }
-                    return@execute
-                }
-                var deletedCount = 0
-                extensionsDir.listFiles()?.forEach { dir ->
-                    if (dir.isDirectory && (dir.listFiles()?.isEmpty() == true || dir.listFiles() == null)) {
-                        dir.deleteRecursively()
-                        deletedCount++
-                        runOnUiThread { appendLog("Deleted empty/broken extension: ${dir.name}") }
-                    }
-                }
-                if (deletedCount == 0) {
-                    runOnUiThread { appendLog("Extensions are healthy.") }
-                } else {
-                    runOnUiThread { appendLog("Cleaned up $deletedCount broken extension(s).") }
-                }
-            }
-        }
-
-        btnStartServer.setOnClickListener {
-            if (!isServerRunning) {
-                appendLog("Starting SillyTavern server...")
-                runtimeManager.startSillyTavern()
-                isServerRunning = true
-                btnStartServer.text = "Stop Server"
-                pollServer(btnOpenBrowser)
-            } else {
-                appendLog("Stopping server...")
-                runtimeManager.stopSillyTavern()
-                isServerRunning = false
-                btnStartServer.text = "Start Server"
-                btnOpenBrowser.isEnabled = false
-            }
-        }
-
-        btnOpenBrowser.setOnClickListener {
-            if (isServerRunning) {
-                val serviceIntent = Intent(this, KeepAliveService::class.java)
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                    startForegroundService(serviceIntent)
-                } else {
-                    startService(serviceIntent)
-                }
-            }
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("http://127.0.0.1:8000"))
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            startActivity(intent)
-        }
-
-        btnBackup.setOnClickListener {
-            val dateFormat = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US)
-            val dateStr = dateFormat.format(Date())
-            val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
-                addCategory(Intent.CATEGORY_OPENABLE)
-                type = "application/zip"
-                putExtra(Intent.EXTRA_TITLE, "stAPK_Backup_$dateStr.zip")
-            }
-            startActivityForResult(intent, BACKUP_REQUEST_CODE)
-        }
-
-        btnRestore.setOnClickListener {
-            val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
-                addCategory(Intent.CATEGORY_OPENABLE)
-                type = "application/zip"
-            }
-            startActivityForResult(intent, RESTORE_REQUEST_CODE)
-        }
-        
-        appendLog("Initializing RuntimeManager...")
-        executor.execute {
-            try {
-                runtimeManager.extractRuntimeIfNeeded()
-                runOnUiThread { appendLog("Runtime ready. Extracting payload...") }
-                runtimeManager.deployPayloadIfNeeded()
-                runOnUiThread { appendLog("Payload ready.") }
-            } catch (e: Exception) {
-                runOnUiThread { appendLog("Initialization failed: ${e.message}") }
             }
         }
     }
 
-    override fun onResume() {
-        super.onResume()
-        val serviceIntent = Intent(this, KeepAliveService::class.java)
-        stopService(serviceIntent)
+    private fun startNativeAdapter() {
+        showLoading()
+        val intent = Intent(this, NativeHttpService::class.java)
+            .setAction(NativeHttpService.ACTION_START)
+
+        val startError = runCatching {
+            ContextCompat.startForegroundService(this, intent)
+        }.exceptionOrNull()
+        if (startError != null) {
+            showError(getString(R.string.start_failed_detail, startError.message.orEmpty()))
+            return
+        }
+
+        if (!isBound) {
+            isBound = bindService(intent, connection, BIND_AUTO_CREATE)
+            if (!isBound) {
+                showError(getString(R.string.service_bind_failed))
+            }
+        } else {
+            webView.removeCallbacks(statePoll)
+            webView.postDelayed(statePoll, STATE_POLL_INTERVAL_MS)
+        }
+    }
+
+    private fun renderServiceState() {
+        webView.removeCallbacks(statePoll)
+        val model = nativeService?.currentState()?.let(::toMainUiModel)
+            ?: MainUiModel(MainScreen.LOADING)
+
+        when (model.screen) {
+            MainScreen.LOADING -> {
+                showLoading()
+                webView.postDelayed(statePoll, STATE_POLL_INTERVAL_MS)
+            }
+
+            MainScreen.WEB -> {
+                loadingView.visibility = View.GONE
+                errorView.visibility = View.GONE
+                webView.visibility = View.VISIBLE
+                if (webView.url != model.url) {
+                    webView.loadUrl(requireNotNull(model.url))
+                }
+            }
+
+            MainScreen.ERROR -> showError(model.message ?: getString(R.string.start_failed))
+        }
+    }
+
+    private fun showLoading() {
+        loadingView.visibility = View.VISIBLE
+        webView.visibility = View.GONE
+        errorView.visibility = View.GONE
+    }
+
+    private fun showError(message: String) {
+        webView.removeCallbacks(statePoll)
+        loadingView.visibility = View.GONE
+        webView.visibility = View.GONE
+        errorView.visibility = View.VISIBLE
+        errorText.text = message
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (requestCode == FILE_CHOOSER_REQUEST_CODE) {
+            val uris = if (resultCode == RESULT_OK) {
+                WebChromeClient.FileChooserParams.parseResult(resultCode, data)
+            } else {
+                null
+            }
+            fileUploadCallback?.onReceiveValue(uris)
+            fileUploadCallback = null
+            return
+        }
+        super.onActivityResult(requestCode, resultCode, data)
     }
 
     override fun onBackPressed() {
-        if (isFullscreen) {
-            topControls.visibility = View.VISIBLE
-            btnFullscreenOverlay.visibility = View.VISIBLE
-            isFullscreen = false
+        if (webView.canGoBack()) {
+            webView.goBack()
         } else {
-            super.onBackPressed()
+            moveTaskToBack(true)
         }
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: android.content.Intent?) {
-        if (requestCode == FILE_CHOOSER_REQUEST_CODE) {
-            if (fileUploadCallback == null) return
-            if (resultCode == Activity.RESULT_OK && data != null) {
-                val uris = if (data.clipData != null) {
-                    val count = data.clipData!!.itemCount
-                    Array(count) { i -> data.clipData!!.getItemAt(i).uri }
-                } else if (data.data != null) {
-                    arrayOf(data.data!!)
-                } else null
-                fileUploadCallback?.onReceiveValue(uris)
-            } else {
-                fileUploadCallback?.onReceiveValue(null)
-            }
-            fileUploadCallback = null
-        } else if (requestCode == BACKUP_REQUEST_CODE) {
-            if (resultCode == Activity.RESULT_OK && data?.data != null) {
-                executor.execute {
-                    runOnUiThread { appendLog("Starting backup...") }
-                    try {
-                        contentResolver.openOutputStream(data.data!!)?.use { outStream ->
-                            val success = runtimeManager.backupData(outStream)
-                            runOnUiThread { 
-                                if (success) appendLog("Backup saved successfully!")
-                                else appendLog("Backup failed.")
-                            }
-                        }
-                    } catch (e: Exception) {
-                        runOnUiThread { appendLog("Error writing backup: ${e.message}") }
-                    }
-                }
-            } else {
-                appendLog("Backup cancelled.")
-            }
-        } else if (requestCode == RESTORE_REQUEST_CODE) {
-            if (resultCode == Activity.RESULT_OK && data?.data != null) {
-                executor.execute {
-                    runOnUiThread { appendLog("Starting restore...") }
-                    try {
-                        contentResolver.openInputStream(data.data!!)?.use { inStream ->
-                            val success = runtimeManager.restoreData(inStream)
-                            runOnUiThread { 
-                                if (success) appendLog("Restore complete! Please start server.")
-                                else appendLog("Restore failed.")
-                            }
-                        }
-                    } catch (e: Exception) {
-                        runOnUiThread { appendLog("Error reading backup: ${e.message}") }
-                    }
-                }
-            } else {
-                appendLog("Restore cancelled.")
-            }
-        } else {
-            super.onActivityResult(requestCode, resultCode, data)
-        }
-    }
-
-    inner class BlobDownloader {
-        @android.webkit.JavascriptInterface
-        fun getBase64FromBlobData(base64Data: String, mimeType: String, fileName: String) {
-            try {
-                val base64 = base64Data.replaceFirst("^data:[^;]*;base64,".toRegex(), "")
-                val bytes = android.util.Base64.decode(base64, android.util.Base64.DEFAULT)
-                
-                val downloadsDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS)
-                downloadsDir.mkdirs()
-                
-                var file = java.io.File(downloadsDir, fileName)
-                var counter = 1
-                val nameWithoutExt = file.nameWithoutExtension
-                val ext = file.extension
-                while (file.exists()) {
-                    file = java.io.File(downloadsDir, "${nameWithoutExt}_$counter.$ext")
-                    counter++
-                }
-
-                java.io.FileOutputStream(file).use { it.write(bytes) }
-                runOnUiThread {
-                    appendLog("File downloaded to: ${file.absolutePath}")
-                    android.widget.Toast.makeText(this@MainActivity, "Saved: ${file.name} to Downloads", android.widget.Toast.LENGTH_SHORT).show()
-                }
-            } catch (e: Exception) {
-                runOnUiThread { appendLog("Download failed: ${e.message}") }
-            }
-        }
-    }
-
-    private fun pollServer(btnOpenBrowser: Button) {
-        Thread {
-            var attempts = 0
-            var success = false
-            while (attempts < 300 && isServerRunning && !success) { // SillyTavern takes longer to start
-                try {
-                    val url = URL("http://127.0.0.1:8000")
-                    val conn = url.openConnection() as HttpURLConnection
-                    conn.connectTimeout = 1000
-                    conn.readTimeout = 1000
-                    val code = conn.responseCode
-                    if (code == 200) {
-                        success = true
-                    }
-                    conn.disconnect()
-                } catch (e: Exception) {
-                    Log.v("MainActivity", "Poll failed: ${e.message}")
-                }
-                if (!success) {
-                    Thread.sleep(1000)
-                    attempts++
-                }
-            }
-            runOnUiThread {
-                if (success) {
-                    appendLog("Server is up! Loading UI...")
-                    btnOpenBrowser.isEnabled = true
-                    webView.loadUrl("http://127.0.0.1:8000")
-                    btnFullscreenOverlay.visibility = View.VISIBLE
-                } else if (isServerRunning) {
-                    appendLog("Failed to reach server after 300 seconds.")
-                }
-            }
-        }.start()
-    }
-
-    private fun runCommandAsync(vararg args: String) {
-        appendLog("Executing: node ${args.joinToString(" ")}")
-        executor.execute {
-            val result = runtimeManager.runNodeCommand(*args)
-            runOnUiThread {
-                appendLog(result)
-            }
-        }
-    }
-
-    private fun appendLog(text: String) {
-        tvLog.append("\n$text")
     }
 
     override fun onDestroy() {
+        webView.removeCallbacks(statePoll)
+        fileUploadCallback?.onReceiveValue(null)
+        fileUploadCallback = null
+        if (isBound) {
+            unbindService(connection)
+            isBound = false
+        }
+        nativeService = null
         super.onDestroy()
-        runtimeManager.stopSillyTavern()
-        executor.shutdown()
     }
 }
