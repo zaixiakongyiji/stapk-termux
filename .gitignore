@@ -1,5 +1,6 @@
 # ===== 构建产物 =====
 output/
+output-test/
 payload/SillyTavern.tar.gz
 payload/payload-manifest.json
 payload/work/
@@ -43,6 +44,7 @@ docs/superpowers/specs/2026-05-27-stapk-termux-design.md
 # ===== Gradle（根目录）=====
 .gradle/
 build/
+node_modules/
 local.properties
 *.apk
 *.apk.idsig
@@ -53,3 +55,4 @@ local.properties
 *.keystore
 
 # ===== POC 临时文件 =====
+test-runtime-*.json

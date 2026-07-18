@@ -1,0 +1,130 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://stapk.local/schemas/api-contract.schema.json",
+  "title": "stAPK no-node Web API contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "generatedAt", "upstream", "webRoot", "endpoints", "summary"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "generatedAt": { "type": "string" },
+    "upstream": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ref"],
+      "properties": {
+        "ref": { "type": "string" },
+        "commit": { "type": "string" },
+        "version": { "type": "string" }
+      }
+    },
+    "webRoot": { "type": "string" },
+    "endpoints": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/endpoint" }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["implemented", "external_optional", "unsupported_hidden", "needs_review"],
+      "properties": {
+        "implemented": { "type": "integer", "minimum": 0 },
+        "external_optional": { "type": "integer", "minimum": 0 },
+        "unsupported_hidden": { "type": "integer", "minimum": 0 },
+        "needs_review": { "type": "integer", "minimum": 0 }
+      }
+    }
+  },
+  "$defs": {
+    "status": {
+      "enum": ["implemented", "external_optional", "unsupported_hidden", "needs_review"]
+    },
+    "capabilityId": {
+      "enum": [
+        "core.settings",
+        "core.personas",
+        "core.characters",
+        "core.groups",
+        "core.chats",
+        "core.world_info",
+        "core.backgrounds",
+        "core.files",
+        "core.tokenizers",
+        "core.data_management",
+        "remote.embeddings",
+        "remote.image",
+        "remote.tts",
+        "remote.stt",
+        "remote.caption",
+        "remote.translation",
+        "excluded.extensions",
+        "excluded.local_models",
+        "excluded.multiuser"
+      ]
+    },
+    "endpoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "method",
+        "path",
+        "status",
+        "capability",
+        "exposure",
+        "inferredMethod",
+        "dynamic",
+        "sourceFiles",
+        "sourceLocations"
+      ],
+      "properties": {
+        "method": { "type": "string", "pattern": "^[A-Z]+$" },
+        "path": { "type": "string", "pattern": "^/api/" },
+        "status": { "$ref": "#/$defs/status" },
+        "capability": { "$ref": "#/$defs/capabilityId" },
+        "exposure": {
+          "enum": ["visible_when_implemented", "visible_when_configured", "hidden"]
+        },
+        "inferredMethod": { "type": "boolean" },
+        "dynamic": { "type": "boolean" },
+        "sourceFiles": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string" }
+        },
+        "sourceLocations": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["file", "line", "expression"],
+            "properties": {
+              "file": { "type": "string" },
+              "line": { "type": "integer", "minimum": 1 },
+              "expression": { "type": "string" }
+            }
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "status": { "const": "external_optional" } }, "required": ["status"] },
+          "then": {
+            "properties": {
+              "capability": { "type": "string", "pattern": "^remote\\." }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "status": { "const": "unsupported_hidden" } }, "required": ["status"] },
+          "then": {
+            "properties": {
+              "exposure": { "not": { "const": "visible_when_implemented" } }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

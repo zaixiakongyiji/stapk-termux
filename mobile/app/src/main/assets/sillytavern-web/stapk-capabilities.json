@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "capabilities": {
+    "core.settings": true,
+    "core.personas": true,
+    "core.characters": true,
+    "core.groups": true,
+    "core.chats": true,
+    "core.world_info": true,
+    "core.backgrounds": true,
+    "core.files": true,
+    "core.tokenizers": true,
+    "native.extensions": true,
+    "core.data_management": true,
+    "remote.embeddings": false,
+    "remote.image": false,
+    "remote.tts": false,
+    "remote.stt": false,
+    "remote.caption": false,
+    "remote.translation": false,
+    "excluded.extensions": false,
+    "excluded.local_models": false,
+    "excluded.multiuser": false
+  }
+}

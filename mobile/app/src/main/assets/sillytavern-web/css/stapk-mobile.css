@@ -1,0 +1,69 @@
+/* no-node MVP 不暴露尚未由 Android native adapter 实现的入口。 */
+.stapk-mobile-unsupported,
+.userBackupButton,
+.userResetAllButton,
+label[for="extensions_notify_updates"],
+#extensions_settings .extension_container:not(#expressions_container),
+#extensions_settings2 .extension_container:not(#qr_container):not(#regex_container):not(#summarize_container),
+#extensions_settings2 ~ hr,
+#extensions_settings2 ~ .alignitemscenter.flex-container.justifyCenter.wide100p,
+#extensions_settings2 ~ .alignitemsflexstart.flex-container.wide100p,
+#main-API-selector-block,
+#external_import_button,
+.external_import_button,
+label[for="expression_override"],
+label[for="expression_override"] + small,
+label[for="expression_override"] + small + .flex-container,
+.expression_api_block,
+.expression_llm_prompt_block,
+.expression_prompt_type_block,
+label[for="expression_translate"],
+#expression_translate,
+#sd_container,
+#sd_wand_container,
+#sd_gen,
+#sd_dropdown,
+.sd_message_gen,
+#tts_container,
+#tts_wand_container,
+#ttsExtensionMenuItem,
+#ttsExtensionNarrateAll,
+.mes_narrate,
+#stt_container,
+#vectors_container {
+    display: none !important;
+}
+
+.btn_move,
+.btn_branch {
+    display: none !important;
+}
+
+#qr_container {
+    display: block !important;
+}
+
+#stapk-video-background {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    pointer-events: none;
+}
+
+#stapk-video-background[hidden] {
+    display: none !important;
+}
+
+#bg1.contain #stapk-video-background {
+    object-fit: contain;
+}
+
+#bg1.stretch #stapk-video-background {
+    object-fit: fill;
+}
+
+#bg1.center #stapk-video-background {
+    object-fit: none;
+}

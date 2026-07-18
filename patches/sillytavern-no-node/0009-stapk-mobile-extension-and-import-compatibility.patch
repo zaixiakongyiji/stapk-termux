@@ -1,0 +1,286 @@
+diff --git a/public/css/stapk-mobile.css b/public/css/stapk-mobile.css
+index a4ea49c..b3ecd16 100644
+--- a/public/css/stapk-mobile.css
++++ b/public/css/stapk-mobile.css
+@@ -3,10 +3,7 @@
+ .userBackupButton,
+ .userResetAllButton,
+ label[for="extensions_notify_updates"],
+-#extensions_details,
+-#extensions_install,
+-#third_party_extension_button,
+ #extensions_settings .extension_container:not(#expressions_container),
+-#extensions_settings2 .extension_container:not(#qr_container),
++#extensions_settings2 .extension_container:not(#qr_container):not(#regex_container):not(#summarize_container),
+ #extensions_settings2 ~ hr,
+ #extensions_settings2 ~ .alignitemscenter.flex-container.justifyCenter.wide100p,
+@@ -36,6 +33,12 @@ label[for="expression_translate"],
+ #vectors_container {
+     display: none !important;
+ }
++
++.btn_move,
++.btn_branch {
++    display: none !important;
++}
++
+ #qr_container {
+     display: block !important;
+ }
+diff --git a/public/script.js b/public/script.js
+index 78b7807..77c2f57 100644
+--- a/public/script.js
++++ b/public/script.js
+@@ -10452,23 +10452,32 @@ function selectImportedChar(charId) {
+  * @param {Boolean} [options.importTags=false] Whether to import tags
+  * @returns {Promise<string>}
+  */
++function resolveCharacterImportFormat(file) {
++    const extension = file.name.match(/\.([^.]+)$/)?.[1]?.toLowerCase();
++    if (['json', 'png'].includes(extension)) return extension;
++    if (file.type === 'image/png') return 'png';
++    if (['application/json', 'text/json'].includes(file.type)) return 'json';
++    return null;
++}
++
+ async function importCharacter(file, { preserveFileName = '', importTags = false } = {}) {
+     if (is_group_generating || is_send_press) {
+         toastr.error(t`Cannot import characters while generating. Stop the request and try again.`, t`Import aborted`);
+         throw new Error('Cannot import character while generating');
+     }
+ 
+-    const ext = file.name.match(/\.(\w+)$/);
+-    if (!ext || !(['json', 'png'].includes(ext[1].toLowerCase()))) {
++    const format = resolveCharacterImportFormat(file);
++    if (!format) {
++        toastr.warning(t`Only PNG and JSON character cards are supported.`);
+         return;
+     }
+ 
+     const exists = preserveFileName ? characters.find(character => character.avatar === preserveFileName) : undefined;
+ 
+-    const format = ext[1].toLowerCase();
+     $('#character_import_file_type').val(format);
+     const formData = new FormData();
+-    formData.append('avatar', file);
++    const uploadName = file.name.match(/\.[^.]+$/) ? file.name : `character.${format}`;
++    formData.append('avatar', file, uploadName);
+     formData.append('file_type', format);
+     formData.append('user_name', name1);
+     if (preserveFileName) formData.append('preserved_name', preserveFileName);
+diff --git a/public/scripts/extensions.js b/public/scripts/extensions.js
+index d551b12..d955f74 100644
+--- a/public/scripts/extensions.js
++++ b/public/scripts/extensions.js
+@@ -291,6 +291,26 @@ function getNameSelector(name, { prefix = 'third-party' } = {}) {
+     return CSS.escape(nameWithoutPrefix);
+ }
+ 
++/**
++ * Discovers extensions from the API.
++ * @returns {Promise<{name: string, type: string}[]>}
++ */
++async function discoverExtensions() {
++    try {
++        const response = await fetch('/api/extensions/discover');
++
++        if (response.ok) {
++            return await response.json();
++        }
++
++        console.error('Extension discovery failed', response.status, response.statusText);
++        return [];
++    } catch (err) {
++        console.error('Extension discovery failed', err);
++        return [];
++    }
++}
++
+ function onDisableExtensionClick() {
+     const name = $(this).data('name');
+     disableExtension(name, false);
+@@ -1772,12 +1792,7 @@ export async function loadExtensionSettings(settings, versionChanged, enableAuto
+ 
+     // Activate offline extensions
+     await eventSource.emit(event_types.EXTENSIONS_FIRST_LOAD);
+-    const extensions = [
+-        { name: 'quick-reply', type: 'system' },
+-        { name: 'attachments', type: 'system' },
+-        { name: 'gallery', type: 'system' },
+-        { name: 'expressions', type: 'system' },
+-    ];
++    const extensions = await discoverExtensions();
+     extensionNames = extensions.map(x => x.name);
+     extensionTypes = Object.fromEntries(extensions.map(x => [x.name, x.type]));
+     manifests = await getManifests(extensionNames);
+@@ -2206,30 +2221,8 @@ export async function writeExtensionFieldBulk(avatars, key, value, { filterPath
+  * @returns {Promise<void>}
+  */
+ export async function openThirdPartyExtensionMenu(suggestUrl = '') {
+-    const isCurrentUserAdmin = isAdmin();
+-    const html = await renderTemplateAsync('installExtension', { isCurrentUserAdmin });
+-    const okButton = isCurrentUserAdmin ? t`Install just for me` : t`Install`;
+-
+-    let global = false;
+-    const installForAllButton = {
+-        text: t`Install for all users`,
+-        appendAtEnd: false,
+-        action: async () => {
+-            global = true;
+-            await popup.complete(POPUP_RESULT.AFFIRMATIVE);
+-        },
+-    };
+-    /** @type {import('./popup.js').CustomPopupInput} */
+-    const branchNameInput = {
+-        id: 'extension_branch_name',
+-        label: t`Branch or tag name (optional)`,
+-        type: 'text',
+-        tooltip: 'e.g. main, dev, v1.0.0',
+-    };
+-
+-    const customButtons = isCurrentUserAdmin ? [installForAllButton] : [];
+-    const customInputs = [branchNameInput];
+-    const popup = new Popup(html, POPUP_TYPE.INPUT, suggestUrl ?? '', { okButton, customButtons, customInputs });
++    const html = await renderTemplateAsync('installExtension', { isCurrentUserAdmin: false });
++    const popup = new Popup(html, POPUP_TYPE.INPUT, suggestUrl ?? '', { okButton: t`Install` });
+     const input = await popup.show();
+ 
+     if (!input) {
+@@ -2238,8 +2231,7 @@ export async function openThirdPartyExtensionMenu(suggestUrl = '') {
+     }
+ 
+     const url = String(input).trim();
+-    const branchName = String(popup.inputResults.get('extension_branch_name') ?? '').trim();
+-    await installExtension(url, global, branchName);
++    await installExtension(url, false);
+ }
+ 
+ /**
+diff --git a/public/scripts/extensions/memory/index.js b/public/scripts/extensions/memory/index.js
+index af268ba..73b1815 100644
+--- a/public/scripts/extensions/memory/index.js
++++ b/public/scripts/extensions/memory/index.js
+@@ -108,7 +108,7 @@ const defaultTemplate = '[Summary: {{summary}}]';
+ const defaultSettings = {
+     memoryFrozen: false,
+     SkipWIAN: false,
+-    source: summary_sources.extras,
++    source: summary_sources.main,
+     prompt: defaultPrompt,
+     template: defaultTemplate,
+     position: extension_prompt_types.IN_PROMPT,
+@@ -149,6 +149,11 @@ function loadSettings() {
+         }
+     }
+ 
++    if (extension_settings.memory.source !== summary_sources.main) {
++        extension_settings.memory.source = summary_sources.main;
++        saveSettingsDebounced();
++    }
++
+     $('#summary_source').val(extension_settings.memory.source).trigger('change');
+     $('#memory_frozen').prop('checked', extension_settings.memory.memoryFrozen).trigger('input');
+     $('#memory_skipWIAN').prop('checked', extension_settings.memory.SkipWIAN).trigger('input');
+@@ -476,18 +481,16 @@ async function onChatEvent() {
+  * @returns {Promise<string>} Summarized text
+  */
+ async function forceSummarizeChat(quiet) {
+-    if (extension_settings.memory.source === summary_sources.extras) {
+-        toastr.warning('Force summarization is not supported for Extras API');
+-        return;
++    if (extension_settings.memory.source !== summary_sources.main) {
++        toastr.warning('Only Main API summarization is supported');
++        return '';
+     }
+ 
+     const context = getContext();
+     const skipWIAN = extension_settings.memory.SkipWIAN;
+ 
+     const toast = quiet ? jQuery() : toastr.info('Summarizing chat...', 'Please wait', { timeOut: 0, extendedTimeOut: 0 });
+-    const value = extension_settings.memory.source === summary_sources.main
+-        ? await summarizeChatMain(context, true, skipWIAN)
+-        : await summarizeChatWebLLM(context, true);
++    const value = await summarizeChatMain(context, true, skipWIAN);
+ 
+     toastr.clear(toast);
+ 
+@@ -514,6 +517,10 @@ async function summarizeCallback(args, text) {
+     }
+ 
+     const source = args.source || extension_settings.memory.source;
++    if (source !== summary_sources.main) {
++        toastr.warning('Only Main API summarization is supported');
++        return '';
++    }
+     const prompt = substituteParamsExtended((args.prompt || extension_settings.memory.prompt), { words: extension_settings.memory.promptWords });
+ 
+     try {
+@@ -539,20 +546,11 @@ async function summarizeCallback(args, text) {
+ }
+ 
+ async function summarizeChat(context) {
+-    const skipWIAN = extension_settings.memory.SkipWIAN;
+-    switch (extension_settings.memory.source) {
+-        case summary_sources.extras:
+-            await summarizeChatExtras(context);
+-            break;
+-        case summary_sources.main:
+-            await summarizeChatMain(context, false, skipWIAN);
+-            break;
+-        case summary_sources.webllm:
+-            await summarizeChatWebLLM(context, false);
+-            break;
+-        default:
+-            break;
++    if (extension_settings.memory.source !== summary_sources.main) {
++        return;
+     }
++    const skipWIAN = extension_settings.memory.SkipWIAN;
++    await summarizeChatMain(context, false, skipWIAN);
+ }
+ 
+ /**
+@@ -1085,7 +1083,7 @@ export async function init() {
+         name: 'summarize',
+         callback: summarizeCallback,
+         namedArgumentList: [
+-            new SlashCommandNamedArgument('source', 'API to use for summarization', [ARGUMENT_TYPE.STRING], false, false, '', Object.values(summary_sources)),
++            new SlashCommandNamedArgument('source', 'API to use for summarization', [ARGUMENT_TYPE.STRING], false, false, '', [summary_sources.main]),
+             SlashCommandNamedArgument.fromProps({
+                 name: 'prompt',
+                 description: 'prompt to use for summarization',
+diff --git a/public/scripts/extensions/memory/settings.html b/public/scripts/extensions/memory/settings.html
+index b53fe91..95541c4 100644
+--- a/public/scripts/extensions/memory/settings.html
++++ b/public/scripts/extensions/memory/settings.html
+@@ -12,8 +12,6 @@
+                 <label for="summary_source" data-i18n="ext_sum_with">Summarize with:</label>
+                 <select id="summary_source" class="text_pole">
+                     <option value="main" data-i18n="ext_sum_main_api">Main API</option>
+-                    <option value="extras">Extras API (deprecated)</option>
+-                    <option value="webllm" data-i18n="ext_sum_webllm">WebLLM Extension</option>
+                 </select><br>
+ 
+                 <div class="flex-container justifyspacebetween alignitemscenter">
+diff --git a/public/scripts/world-info.js b/public/scripts/world-info.js
+index 49577d7..621d6d3 100644
+--- a/public/scripts/world-info.js
++++ b/public/scripts/world-info.js
+@@ -5797,10 +5797,16 @@ export async function importWorldInfo(file) {
+ 
+         if (data.name) {
+             await updateWorldInfoList();
++            worldInfoCache.delete(data.name);
++            const imported = await loadWorldInfo(data.name);
++            if (!imported || !imported.entries || typeof imported.entries !== 'object' || Array.isArray(imported.entries)) {
++                throw new Error('Imported World Info has no valid entries object');
++            }
+ 
+             const newIndex = world_names.indexOf(data.name);
+             if (newIndex >= 0) {
+-                $('#world_editor_select').val(newIndex).trigger('change');
++                $('#world_editor_select').val(newIndex);
++                await showWorldEditor(data.name);
+             }
+ 
+             toastr.success(t`World Info "${data.name}" imported successfully!`);

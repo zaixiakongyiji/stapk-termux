@@ -1,0 +1,274 @@
+diff --git a/public/css/stapk-mobile.css b/public/css/stapk-mobile.css
+new file mode 100644
+index 0000000..8bf9f06
+--- /dev/null
++++ b/public/css/stapk-mobile.css
+@@ -0,0 +1,39 @@
++/* no-node MVP 不暴露尚未由 Android native adapter 实现的入口。 */
++.stapk-mobile-unsupported,
++.userBackupButton,
++.userResetAllButton,
++label[for="extensions_notify_updates"],
++#extensions_details,
++#extensions_install,
++#third_party_extension_button,
++#extensions_settings,
++#extensions_settings2 .extension_container:not(#qr_container),
++#extensions_settings2 ~ hr,
++#extensions_settings2 ~ .alignitemscenter.flex-container.justifyCenter.wide100p,
++#extensions_settings2 ~ .alignitemsflexstart.flex-container.wide100p,
++#main-API-selector-block,
++#external_import_button,
++.external_import_button,
++#WI-SP-button,
++#world_button,
++.chat_lorebook_button,
++#set_character_world,
++#import_character_info,
++#character_world_template,
++#sd_container,
++#sd_wand_container,
++#sd_gen,
++#sd_dropdown,
++.sd_message_gen,
++#tts_container,
++#tts_wand_container,
++#ttsExtensionMenuItem,
++#ttsExtensionNarrateAll,
++.mes_narrate,
++#stt_container,
++#vectors_container {
++    display: none !important;
++}
++#qr_container {
++    display: block !important;
++}
+diff --git a/public/index.html b/public/index.html
+index 230b2d8..6c04554 100644
+--- a/public/index.html
++++ b/public/index.html
+@@ -44,6 +44,7 @@
+     <link rel="stylesheet" type="text/css" href="css/mobile-styles.css">
+     <link rel="stylesheet" type="text/css" href="css/macros.css">
+     <link rel="stylesheet" type="text/css" href="css/user.css">
++    <link rel="stylesheet" type="text/css" href="css/stapk-mobile.css">
+     <link rel="icon" type="image/x-icon" href="favicon.ico">
+     <!-- Scripts are loaded at the end of the body to improve page load speed -->
+ </head>
+@@ -683,7 +684,7 @@
+                                     <span data-i18n="Max prompt cost:">Max prompt cost:</span> <span id="chutes_max_prompt_cost" data-i18n="Unknown">Unknown</span>
+                                 </div>
+                                 <hr>
+-                                <div class="range-block">
++                                <div class="range-block stapk-mobile-unsupported">
+                                     <label for="stream_toggle" title="Enable OpenAI completion streaming" data-i18n="[title]Enable OpenAI completion streaming" class="checkbox_label widthFreeExpand">
+                                         <input id="stream_toggle" type="checkbox" /><span data-i18n="Streaming">
+                                             Streaming</span>
+@@ -2279,11 +2280,7 @@
+                 <div class="flex-container flexFlowColumn">
+                     <div id="main-API-selector-block">
+                         <select id="main_api">
+-                            <option value="textgenerationwebui" data-i18n="Text Completion">Text Completion</option>
+                             <option value="openai" data-i18n="Chat Completion">Chat Completion</option>
+-                            <option value="novel" data-i18n="NovelAI">NovelAI</option>
+-                            <option value="koboldhorde" data-i18n="AI Horde">AI Horde</option>
+-                            <option value="kobold" data-i18n="KoboldAI">KoboldAI Classic</option>
+                         </select>
+                     </div>
+                     <div id="kobold_horde" style="position: relative;"> <!-- shows the kobold settings -->
+@@ -2904,33 +2901,6 @@
+                                 <option value="openai">OpenAI</option>
+                                 <option value="custom" data-i18n="Custom (OpenAI-compatible)">Custom (OpenAI-compatible)</option>
+                             </optgroup>
+-                            <optgroup>
+-                                <option value="ai21">AI21</option>
+-                                <option value="aimlapi">AI/ML API</option>
+-                                <option value="azure_openai">Azure OpenAI</option>
+-                                <option value="chutes">Chutes</option>
+-                                <option value="claude">Claude</option>
+-                                <option value="workers_ai">Cloudflare Workers AI</option>
+-                                <option value="cohere">Cohere</option>
+-                                <!-- Temporarily disabled. -->
+-                                <!-- <option value="cometapi">CometAPI</option> -->
+-                                <option value="deepseek">DeepSeek</option>
+-                                <option value="electronhub">Electron Hub</option>
+-                                <option value="fireworks">Fireworks AI</option>
+-                                <option value="groq">Groq</option>
+-                                <option value="makersuite">Google AI Studio</option>
+-                                <option value="vertexai">Google Vertex AI</option>
+-                                <option value="mistralai">MistralAI</option>
+-                                <option value="minimax">MiniMax</option>
+-                                <option value="moonshot">Moonshot AI</option>
+-                                <option value="nanogpt">NanoGPT</option>
+-                                <option value="openrouter">OpenRouter</option>
+-                                <option value="perplexity">Perplexity</option>
+-                                <option value="pollinations">Pollinations</option>
+-                                <option value="siliconflow">SiliconFlow</option>
+-                                <option value="xai">xAI (Grok)</option>
+-                                <option value="zai">Z.AI (GLM)</option>
+-                            </optgroup>
+                         </select>
+                         <div class="inline-drawer wide100p" data-source="openai,claude,mistralai,makersuite,vertexai,deepseek,xai,zai,moonshot">
+                             <div class="inline-drawer-toggle inline-drawer-header">
+@@ -6073,12 +6042,6 @@
+                                             <label class="flex1 height100p" for="char-management-dropdown">
+                                                 <select id="char-management-dropdown" class="text_pole">
+                                                     <option value="default" disabled selected data-i18n="More...">More...</option>
+-                                                    <option id="set_character_world" data-i18n="Link to World Info">
+-                                                        Link to World Info
+-                                                    </option>
+-                                                    <option id="import_character_info" data-i18n="Import Card Lore">
+-                                                        Import Card Lore
+-                                                    </option>
+                                                     <option id="set_chat_character_settings" data-i18n="Character Settings Overrides">
+                                                         Character Settings Overrides
+                                                     </option>
+@@ -6215,7 +6178,6 @@
+                                     <label class="flex1 height100p" for="group-chat-lorebook-dropdown">
+                                         <select id="group-chat-lorebook-dropdown" class="text_pole">
+                                             <option value="default" disabled selected data-i18n="More...">More...</option>
+-                                            <option id="group_chat_lorebook_link" data-i18n="Link to Chat Lorebook">Link to Chat Lorebook</option>
+                                         </select>
+                                     </label>
+                                     <div id="group_tags_div" class="wide100p">
+@@ -6345,9 +6308,9 @@
+                         </div>
+                     </div>
+                     <div id="rm_character_import" class="right_menu" style="display: none;">
+                         <form id="form_import" action="javascript:void(null);" method="post" enctype="multipart/form-data">
+-                            <input multiple type="file" id="character_import_file" accept=".json, image/png, .yaml, .yml, .charx, .byaf" name="avatar">
++                            <input multiple type="file" id="character_import_file" accept=".json, image/png" name="avatar">
+                             <input id="character_import_file_type" name="file_type" class="text_pole" value="" autocomplete="off">
+                         </form>
+-                        <input type="file" id="character_replace_file" accept=".json, image/png, .yaml, .yml, .charx, .byaf" name="replace_avatar" hidden>
++                        <input type="file" id="character_replace_file" accept=".json, image/png" name="replace_avatar" hidden>
+                     </div>
+diff --git a/public/script.js b/public/script.js
+--- a/public/script.js
++++ b/public/script.js
+@@ -10402,21 +10402,12 @@ export async function processDroppedFiles(files, data = new Map()) {
+     const allowedMimeTypes = [
+         'application/json',
+         'image/png',
+-        'application/yaml',
+-        'application/x-yaml',
+-        'text/yaml',
+-        'text/x-yaml',
+     ];
+ 
+-    const allowedExtensions = [
+-        'charx',
+-        'byaf',
+-    ];
+-
+     const avatarFileNames = [];
+     for (const file of files) {
+         const extension = file.name.split('.').pop().toLowerCase();
+-        if (allowedMimeTypes.some(x => file.type.startsWith(x)) || allowedExtensions.includes(extension)) {
++        if (allowedMimeTypes.some(x => file.type.startsWith(x))) {
+             const preservedName = data instanceof Map && data.get(file);
+             const avatarFileName = await importCharacter(file, { preserveFileName: preservedName });
+             if (avatarFileName !== undefined) {
+@@ -10474,7 +10465,7 @@ async function importCharacter(file, { preserveFileName = '', importTags = false
+     }
+ 
+     const ext = file.name.match(/\.(\w+)$/);
+-    if (!ext || !(['json', 'png', 'yaml', 'yml', 'charx', 'byaf'].includes(ext[1].toLowerCase()))) {
++    if (!ext || !(['json', 'png'].includes(ext[1].toLowerCase()))) {
+         return;
+     }
+ 
+@@ -12320,23 +12320,16 @@
+             case 'replace_update': {
+-                let onlineUrl = getCharacterSource(this_chid);
+-
+-                const POPUP_RESULT_URL = POPUP_RESULT.CUSTOM1, POPUP_RESULT_FILE = POPUP_RESULT.CUSTOM2;
++                const POPUP_RESULT_FILE = POPUP_RESULT.CUSTOM1;
+                 const result = await Popup.show.confirm(t`Replace Character`,
+                     `<p>${t`Choose a new character card to replace this character with.`}</p>` +
+-                    `<p>${t`You can also replace this character with the one from the online source.`}${onlineUrl ? `<br />This character was downloaded from: <var>${onlineUrl}</var>` : ''}</p>` +
+                     `<p>${t`All chats, assets and group memberships will be preserved, but local changes to the character data will be lost.`}<br />${t`Proceed?`}</p>`,
+                     {
+                         okButton: false,
+                         customButtons: [{
+-                            text: t`Replace with URL`,
+-                            result: POPUP_RESULT_URL,
+-                            classes: ['popup-button-ok'],
+-                        }, {
+                             text: t`Replace with File`,
+                             result: POPUP_RESULT_FILE,
+                             classes: ['popup-button-ok'],
+                         }],
+-                        defaultResult: onlineUrl ? POPUP_RESULT_URL : POPUP_RESULT_FILE,
++                        defaultResult: POPUP_RESULT_FILE,
+                     });
+ 
+                 // Remember the chat currently selected, so we can reload it after the replacement
+@@ -12365,19 +12358,6 @@
+                         $('#character_replace_file').off('change').on('change', uploadReplacementCard).trigger('click');
+                         break;
+                     }
+-                    case POPUP_RESULT_URL: {
+-                        const inputUrl = await Popup.show.input(t`Replace Character from URL`,
+-                            `<p>${t`Enter the URL of the character card to replace this character with.`}</p>` +
+-                            (onlineUrl ? `<p>${t`This character was downloaded from: <var>${onlineUrl}</var>`}</p>` : ''),
+-                            onlineUrl);
+-                        if (!inputUrl) {
+-                            break;
+-                        }
+-                        onlineUrl = inputUrl;
+-                        await importFromExternalUrl(onlineUrl, { preserveFileName: characters[this_chid].avatar });
+-                        await postReplace();
+-                        break;
+-                    }
+                 }
+             } break;
+             case 'import_tags': {
+@@ -12487,6 +12467,4 @@
+     charDragDropHandler = new DragAndDropHandler('body', async (files, event) => {
+-        if (!files.length) {
+-            await importFromURL(event.originalEvent.dataTransfer.items, files);
+-        }
++        if (!files.length) return;
+         await processDroppedFiles(files);
+     }, { noAnimation: true });
+diff --git a/public/scripts/extensions.js b/public/scripts/extensions.js
+index 4f93a1a..0000000 100644
+--- a/public/scripts/extensions.js
++++ b/public/scripts/extensions.js
+@@ -290,27 +290,7 @@ function getNameSelector(name, { prefix = 'third-party' } = {}) {
+     const nameWithoutPrefix = prefix && name.startsWith(prefix) ? name.slice(prefix.length) : name;
+     return CSS.escape(nameWithoutPrefix);
+ }
+ 
+-/**
+- * Discovers extensions from the API.
+- * @returns {Promise<{name: string, type: string}[]>}
+- */
+-async function discoverExtensions() {
+-    try {
+-        const response = await fetch('/api/extensions/discover');
+-
+-        if (response.ok) {
+-            const extensions = await response.json();
+-            return extensions;
+-        } else {
+-            return [];
+-        }
+-    } catch (err) {
+-        console.error(err);
+-        return [];
+-    }
+-}
+-
+ function onDisableExtensionClick() {
+     const name = $(this).data('name');
+     disableExtension(name, false);
+@@ -1793,6 +1773,6 @@ export async function loadExtensionSettings(settings, versionChanged, enableAuto
+     // Activate offline extensions
+     await eventSource.emit(event_types.EXTENSIONS_FIRST_LOAD);
+-    const extensions = await discoverExtensions();
++    const extensions = [{ name: 'quick-reply', type: 'system' }];
+     extensionNames = extensions.map(x => x.name);
+     extensionTypes = Object.fromEntries(extensions.map(x => [x.name, x.type]));
+     manifests = await getManifests(extensionNames);

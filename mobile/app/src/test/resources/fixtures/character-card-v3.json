@@ -1,0 +1,30 @@
+{
+  "spec": "chara_card_v3",
+  "spec_version": "3.0",
+  "vendor_top": {
+    "marker": "v3-top"
+  },
+  "data": {
+    "name": "V3 Character",
+    "description": "V3 description",
+    "vendor_data": {
+      "marker": "v3-data"
+    },
+    "extensions": {
+      "vendor_extension": {
+        "marker": "v3-extension",
+        "array": [1, 2, 3]
+      }
+    },
+    "character_book": {
+      "name": "V3 Book",
+      "entries": [
+        {
+          "keys": ["beta"],
+          "content": "V3 lore",
+          "enabled": true
+        }
+      ]
+    }
+  }
+}

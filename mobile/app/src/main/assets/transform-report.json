@@ -1,0 +1,36 @@
+{
+  "ok": true,
+  "generatedAt": "2026-07-18T11:02:10.176Z",
+  "output": "C:\\Users\\31029\\Documents\\GitHub\\stapk-termux\\build\\no-node-payload",
+  "upstream": {
+    "repo": "https://github.com/SillyTavern/SillyTavern.git",
+    "ref": "release",
+    "commit": "8172dcd0ee672d3cd9a5e5f7af134f91a45cd2b8",
+    "version": "1.18.0"
+  },
+  "patches": [
+    "0001-stapk-mobile-default-openai-compatible.patch",
+    "0002-stapk-mobile-hide-unsupported-mvp-features.patch",
+    "0003-stapk-mobile-chat-management.patch",
+    "0004-stapk-mobile-world-info.patch",
+    "0005-stapk-mobile-media-management.patch",
+    "0006-stapk-mobile-openai-tokenizer.patch",
+    "0007-stapk-mobile-saf-export.patch",
+    "0008-stapk-mobile-capability-gates.patch",
+    "0009-stapk-mobile-extension-and-import-compatibility.patch",
+    "0010-stapk-mobile-unicode-and-embedded-lorebook.patch"
+  ],
+  "apiSummary": {
+    "implemented": 98,
+    "external_optional": 136,
+    "unsupported_hidden": 105,
+    "needs_review": 0
+  },
+  "verification": {
+    "ok": true,
+    "errors": [],
+    "warnings": [],
+    "scannedFiles": 600,
+    "scannedDirectories": 47
+  }
+}

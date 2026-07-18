@@ -1,0 +1,70 @@
+diff --git a/public/script.js b/public/script.js
+--- a/public/script.js
++++ b/public/script.js
+@@ -11458,20 +11458,20 @@ $(document).ready(function () {
+                 body: JSON.stringify(body),
+                 headers: getRequestHeaders(),
+             });
+-            const data = await response.json();
+             if (!response.ok) {
+                 // display error message
+-                console.log(data.message);
++                const message = await response.text();
++                console.log(message);
+                 await delay(250);
+-                toastr.error(`Error: ${data.message}`);
++                toastr.error(`Error: ${message || response.statusText}`);
+                 return;
+             } else {
+                 const mimeType = format == 'txt' ? 'text/plain' : 'application/octet-stream';
+                 // success, handle response data
+-                console.log(data);
++                const result = await response.blob();
+                 await delay(250);
+-                toastr.success(data.message);
+-                download(data.result, body.exportfilename, mimeType);
++                toastr.success(`Chat saved to ${body.exportfilename}`);
++                download(result, body.exportfilename, mimeType);
+             }
+         } catch (error) {
+             // display error message
+diff --git a/public/scripts/stats.js b/public/scripts/stats.js
+--- a/public/scripts/stats.js
++++ b/public/scripts/stats.js
+@@ -153,7 +153,8 @@ async function characterStatsHandler(characters, this_chid) {
+     // Get stats from server
+     await getStats();
+     // Get character stats
+-    let myStats = charStats[characters[this_chid].avatar];
++    const statsKey = characters[this_chid].avatar.replace(/\.png$/i, '');
++    let myStats = charStats[statsKey];
+     if (myStats === undefined) {
+         myStats = {
+             total_gen_time: 0,
+@@ -165,7 +166,7 @@ async function characterStatsHandler(characters, this_chid) {
+             date_last_chat: 0,
+             date_first_chat: new Date('9999-12-31T23:59:59.999Z').getTime(),
+         };
+-        charStats[characters[this_chid].avatar] = myStats;
++        charStats[statsKey] = myStats;
+         updateStats();
+     }
+     // Create HTML with stats
+@@ -274,7 +275,8 @@ async function statMesProcess(line, type, characters, this_chid, oldMessage) {
+     }
+     await getStats();
+ 
+-    let stat = charStats[characters[this_chid].avatar];
++    const statsKey = characters[this_chid].avatar.replace(/\.png$/i, '');
++    let stat = charStats[statsKey];
+ 
+     if (!stat) {
+         stat = {
+@@ -320,6 +322,7 @@ async function statMesProcess(line, type, characters, this_chid, oldMessage) {
+         stat.date_first_chat ?? new Date('9999-12-31T23:59:59.999Z').getTime(),
+         Date.now(),
+     );
++    charStats[statsKey] = stat;
+     updateStats();
+ }
+ 

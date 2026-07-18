@@ -1,0 +1,6 @@
+[mcp_servers.stapk-emulator]
+type = "stdio"
+command = "node"
+args = ["scripts/mcp/stapk-emulator-mcp.mjs"]
+startup_timeout_sec = 15
+tool_timeout_sec = 240

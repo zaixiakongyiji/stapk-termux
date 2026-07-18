@@ -1,0 +1,561 @@
+{
+  "version": 1,
+  "implemented": [
+    {
+      "method": "POST",
+      "path": "/api/settings/get",
+      "reason": "MVP 读取基础设置"
+    },
+    {
+      "method": "POST",
+      "path": "/api/settings/save",
+      "reason": "MVP 保存设置"
+    },
+    {
+      "method": "POST",
+      "path": "/api/characters/all",
+      "reason": "MVP 角色卡列表"
+    },
+    {
+      "method": "POST",
+      "path": "/api/characters/create",
+      "reason": "MVP 创建角色卡"
+    },
+    {
+      "method": "POST",
+      "path": "/api/characters/get",
+      "reason": "MVP 读取角色卡"
+    },
+    {
+      "method": "POST",
+      "path": "/api/characters/edit",
+      "reason": "MVP 编辑角色卡"
+    },
+    {
+      "method": "POST",
+      "path": "/api/characters/delete",
+      "reason": "MVP 删除角色卡"
+    },
+    {
+      "method": "POST",
+      "path": "/api/characters/chats",
+      "reason": "MVP 读取角色卡聊天"
+    },
+    {
+      "method": "POST",
+      "path": "/api/characters/import",
+      "reason": "Task 3 导入 PNG/JSON 角色卡"
+    },
+    {
+      "method": "POST",
+      "path": "/api/characters/export",
+      "reason": "Task 3 导出 PNG/JSON 角色卡"
+    },
+    {
+      "method": "POST",
+      "path": "/api/characters/duplicate",
+      "reason": "Task 3 复制角色卡和头像"
+    },
+    {
+      "method": "POST",
+      "path": "/api/characters/rename",
+      "reason": "Task 3 重命名角色卡"
+    },
+    {
+      "method": "POST",
+      "path": "/api/characters/merge-attributes",
+      "reason": "Task 3 合并角色属性"
+    },
+    {
+      "method": "POST",
+      "path": "/api/characters/edit-avatar",
+      "reason": "Task 3 编辑角色头像"
+    },
+    {
+      "method": "POST",
+      "path": "/api/chats/get",
+      "reason": "MVP 读取聊天"
+    },
+    {
+      "method": "POST",
+      "path": "/api/chats/save",
+      "reason": "MVP 保存聊天"
+    },
+    {
+      "method": "POST",
+      "path": "/api/chats/delete",
+      "reason": "MVP 删除聊天"
+    },
+    {
+      "method": "POST",
+      "path": "/api/chats/search",
+      "reason": "MVP 搜索聊天"
+    },
+    {
+      "method": "POST",
+      "path": "/api/chats/recent",
+      "reason": "Task 5 读取最近普通聊天和群聊"
+    },
+    {
+      "method": "POST",
+      "path": "/api/chats/rename",
+      "reason": "Task 5 安全重命名聊天"
+    },
+    {
+      "method": "POST",
+      "path": "/api/chats/import",
+      "reason": "Task 5 导入普通聊天 JSONL"
+    },
+    {
+      "method": "POST",
+      "path": "/api/chats/export",
+      "reason": "Task 5 通过 ticket 导出 JSONL 或 TXT"
+    },
+    {
+      "method": "POST",
+      "path": "/api/backups/chat/get",
+      "reason": "Task 5 列出聊天快照"
+    },
+    {
+      "method": "POST",
+      "path": "/api/backups/chat/download",
+      "reason": "Task 5 下载聊天快照"
+    },
+    {
+      "method": "POST",
+      "path": "/api/backups/chat/delete",
+      "reason": "Task 5 删除聊天快照"
+    },
+    {
+      "method": "POST",
+      "path": "/api/stats/get",
+      "reason": "Task 5 读取单用户聊天统计"
+    },
+    {
+      "method": "POST",
+      "path": "/api/stats/recreate",
+      "reason": "Task 5 重建单用户聊天统计"
+    },
+    {
+      "method": "POST",
+      "path": "/api/stats/update",
+      "reason": "Task 5 原子合并单用户聊天统计"
+    },
+    {
+      "method": "POST",
+      "path": "/api/worldinfo/list",
+      "reason": "Task 6 列出 World Info 名称"
+    },
+    {
+      "method": "POST",
+      "path": "/api/worldinfo/get",
+      "reason": "Task 6 读取完整 World Info JSON"
+    },
+    {
+      "method": "POST",
+      "path": "/api/worldinfo/edit",
+      "reason": "Task 6 原子保存 World Info JSON"
+    },
+    {
+      "method": "POST",
+      "path": "/api/worldinfo/delete",
+      "reason": "Task 6 删除单个 World Info"
+    },
+    {
+      "method": "POST",
+      "path": "/api/worldinfo/import",
+      "reason": "Task 6 导入官方 World Info 和 Lorebook V2/V3"
+    },
+    {
+      "method": "POST",
+      "path": "/api/backgrounds/all",
+      "reason": "Task 7 列出本地背景"
+    },
+    {
+      "method": "POST",
+      "path": "/api/backgrounds/folders",
+      "reason": "Task 7 读取背景虚拟文件夹"
+    },
+    {
+      "method": "POST",
+      "path": "/api/backgrounds/upload",
+      "reason": "Task 7 上传本地背景"
+    },
+    {
+      "method": "POST",
+      "path": "/api/backgrounds/rename",
+      "reason": "Task 7 重命名本地背景"
+    },
+    {
+      "method": "POST",
+      "path": "/api/backgrounds/delete",
+      "reason": "Task 7 删除本地背景"
+    },
+    {
+      "method": "POST",
+      "path": "/api/files/sanitize-filename",
+      "reason": "Task 7 清理附件文件名"
+    },
+    {
+      "method": "POST",
+      "path": "/api/files/upload",
+      "reason": "Task 7 上传聊天附件"
+    },
+    {
+      "method": "POST",
+      "path": "/api/files/delete",
+      "reason": "Task 7 删除聊天附件"
+    },
+    {
+      "method": "POST",
+      "path": "/api/files/verify",
+      "reason": "Task 7 校验聊天附件"
+    },
+    {
+      "method": "POST",
+      "path": "/api/stapk/exports/create",
+      "reason": "Task 9 暂存前端生成数据并创建 SAF 导出 ticket"
+    },
+    {
+      "method": "POST",
+      "path": "/api/images/upload",
+      "reason": "Task 7 上传角色图库媒体"
+    },
+    {
+      "method": "POST",
+      "path": "/api/images/list",
+      "reason": "Task 7 列出角色图库媒体"
+    },
+    {
+      "method": "POST",
+      "path": "/api/images/folders",
+      "reason": "Task 7 列出角色图库目录"
+    },
+    {
+      "method": "POST",
+      "path": "/api/images/delete",
+      "reason": "Task 7 删除角色图库媒体"
+    },
+    {
+      "method": "POST",
+      "path": "/api/image-metadata",
+      "reason": "Task 7 读取图片元数据"
+    },
+    {
+      "method": "POST",
+      "path": "/api/image-metadata/all",
+      "reason": "Task 7 批量读取图片元数据"
+    },
+    {
+      "method": "POST",
+      "path": "/api/image-metadata/cleanup",
+      "reason": "Task 7 清理失效图片元数据"
+    },
+    {
+      "method": "POST",
+      "path": "/api/image-metadata/folders/get",
+      "reason": "Task 7 读取图片虚拟文件夹"
+    },
+    {
+      "method": "POST",
+      "path": "/api/image-metadata/folders/create",
+      "reason": "Task 7 创建图片虚拟文件夹"
+    },
+    {
+      "method": "POST",
+      "path": "/api/image-metadata/folders/update",
+      "reason": "Task 7 更新图片虚拟文件夹"
+    },
+    {
+      "method": "POST",
+      "path": "/api/image-metadata/folders/delete",
+      "reason": "Task 7 删除图片虚拟文件夹"
+    },
+    {
+      "method": "POST",
+      "path": "/api/image-metadata/folders/assign",
+      "reason": "Task 7 分配图片虚拟文件夹"
+    },
+    {
+      "method": "POST",
+      "path": "/api/image-metadata/folders/unassign",
+      "reason": "Task 7 解除图片虚拟文件夹"
+    },
+    {
+      "method": "POST",
+      "path": "/api/image-metadata/folders/set-thumbnails",
+      "reason": "Task 7 设置虚拟文件夹封面"
+    },
+    {
+      "method": "GET",
+      "path": "/api/sprites/get",
+      "reason": "Task 7 读取角色 sprites"
+    },
+    {
+      "method": "POST",
+      "path": "/api/sprites/upload",
+      "reason": "Task 7 上传单个角色 sprite"
+    },
+    {
+      "method": "POST",
+      "path": "/api/sprites/upload-zip",
+      "reason": "Task 7 安全导入角色 sprite ZIP"
+    },
+    {
+      "method": "POST",
+      "path": "/api/sprites/delete",
+      "reason": "Task 7 删除指定角色 sprite"
+    },
+    {
+      "method": "POST",
+      "path": "/api/groups/all",
+      "reason": "Task 4 读取群组列表"
+    },
+    {
+      "method": "POST",
+      "path": "/api/groups/create",
+      "reason": "Task 4 创建群组"
+    },
+    {
+      "method": "POST",
+      "path": "/api/groups/edit",
+      "reason": "Task 4 编辑群组"
+    },
+    {
+      "method": "POST",
+      "path": "/api/groups/delete",
+      "reason": "Task 4 删除群组"
+    },
+    {
+      "method": "POST",
+      "path": "/api/chats/group/get",
+      "reason": "Task 4 读取群聊"
+    },
+    {
+      "method": "POST",
+      "path": "/api/chats/group/save",
+      "reason": "Task 4 保存群聊"
+    },
+    {
+      "method": "POST",
+      "path": "/api/chats/group/delete",
+      "reason": "Task 4 删除群聊"
+    },
+    {
+      "method": "POST",
+      "path": "/api/chats/group/info",
+      "reason": "Task 4 读取群聊摘要"
+    },
+    {
+      "method": "POST",
+      "path": "/api/chats/group/import",
+      "reason": "Task 4 导入群聊 JSONL"
+    },
+    {
+      "method": "POST",
+      "path": "/api/secrets/read",
+      "reason": "MVP 读取已保存密钥"
+    },
+    {
+      "method": "POST",
+      "path": "/api/secrets/write",
+      "reason": "MVP 保存密钥"
+    },
+    {
+      "method": "POST",
+      "path": "/api/secrets/delete",
+      "reason": "MVP 删除密钥"
+    },
+    {
+      "method": "POST",
+      "path": "/api/backends/chat-completions/status",
+      "reason": "MVP 检查 OpenAI-compatible endpoint 状态"
+    },
+    {
+      "method": "POST",
+      "path": "/api/backends/chat-completions/generate",
+      "reason": "MVP OpenAI-compatible 非流式聊天生成"
+    },
+    {
+      "method": "POST",
+      "path": "/api/avatars/get",
+      "reason": "Task 2 Persona 头像列表"
+    },
+    {
+      "method": "POST",
+      "path": "/api/avatars/upload",
+      "reason": "Task 2 Persona 头像上传"
+    },
+    {
+      "method": "POST",
+      "path": "/api/avatars/delete",
+      "reason": "Task 2 Persona 头像删除"
+    },
+    {
+      "method": "GET",
+      "path": "/api/users/me",
+      "reason": "Task 2 单用户资料和设置快照入口"
+    },
+    {
+      "method": "POST",
+      "path": "/api/users/change-avatar",
+      "reason": "Task 2 切换用户头像"
+    },
+    {
+      "method": "POST",
+      "path": "/api/users/reset-settings",
+      "reason": "Task 2 重置设置"
+    },
+    {
+      "method": "POST",
+      "path": "/api/themes/save",
+      "reason": "Task 2 保存主题"
+    },
+    {
+      "method": "POST",
+      "path": "/api/themes/delete",
+      "reason": "Task 2 删除主题"
+    },
+    {
+      "method": "POST",
+      "path": "/api/presets/save",
+      "reason": "Task 2 保存 OpenAI preset"
+    },
+    {
+      "method": "POST",
+      "path": "/api/presets/delete",
+      "reason": "Task 2 删除 OpenAI preset"
+    },
+    {
+      "method": "POST",
+      "path": "/api/presets/restore",
+      "reason": "Task 2 恢复 transformed preset"
+    },
+    {
+      "method": "POST",
+      "path": "/api/settings/get-snapshots",
+      "reason": "Task 2 列出设置快照"
+    },
+    {
+      "method": "POST",
+      "path": "/api/settings/load-snapshot",
+      "reason": "Task 2 读取设置快照"
+    },
+    {
+      "method": "POST",
+      "path": "/api/settings/make-snapshot",
+      "reason": "Task 2 创建设置快照"
+    },
+    {
+      "method": "POST",
+      "path": "/api/settings/restore-snapshot",
+      "reason": "Task 2 恢复设置快照"
+    },
+    {
+      "method": "POST",
+      "path": "/api/quick-replies/save",
+      "reason": "Task 2 保存 Quick Replies"
+    },
+    {
+      "method": "POST",
+      "path": "/api/quick-replies/delete",
+      "reason": "Task 2 删除 Quick Replies"
+    },
+    {
+      "method": "POST",
+      "path": "/api/moving-ui/save",
+      "reason": "Task 2 保存 moving UI"
+    },
+    {
+      "method": "POST",
+      "path": "/api/tokenizers/openai/encode",
+      "reason": "Task 8 使用本地 CL100K/O200K 编码文本"
+    },
+    {
+      "method": "POST",
+      "path": "/api/tokenizers/openai/decode",
+      "reason": "Task 8 使用本地 CL100K/O200K 解码 token"
+    },
+    {
+      "method": "POST",
+      "path": "/api/tokenizers/openai/count",
+      "reason": "Task 8 计算 OpenAI-compatible chat token 数"
+    },
+    {
+      "method": "POST",
+      "path": "/api/backends/chat-completions/bias",
+      "reason": "Task 8 生成 OpenAI-compatible logit bias"
+    },
+    {
+      "method": "GET",
+      "path": "/api/extensions/discover",
+      "reason": "扩展兼容阶段发现系统与本地第三方扩展"
+    },
+    {
+      "method": "POST",
+      "path": "/api/extensions/install",
+      "reason": "扩展兼容阶段安装公开 GitHub client-only 扩展"
+    },
+    {
+      "method": "POST",
+      "path": "/api/extensions/version",
+      "reason": "扩展兼容阶段检查已安装扩展版本"
+    },
+    {
+      "method": "POST",
+      "path": "/api/extensions/update",
+      "reason": "扩展兼容阶段原子更新已安装扩展"
+    },
+    {
+      "method": "POST",
+      "path": "/api/extensions/delete",
+      "reason": "扩展兼容阶段删除本地第三方扩展"
+    }
+  ],
+  "unsupportedHidden": [
+    {
+      "prefix": "/api/tokenizers",
+      "reason": "Task 8 仅支持 OpenAI-compatible tokenizer"
+    },
+    {
+      "prefix": "/api/extensions/branches",
+      "reason": "扩展兼容阶段不支持分支列表"
+    },
+    {
+      "prefix": "/api/extensions/move",
+      "reason": "扩展兼容阶段不支持全局与本地目录移动"
+    },
+    {
+      "prefix": "/api/extensions/switch",
+      "reason": "扩展兼容阶段不支持切换分支或标签"
+    },
+    {
+      "prefix": "/api/plugins/fandom",
+      "reason": "MVP 不支持 Fandom 插件"
+    },
+    {
+      "prefix": "/api/assets",
+      "reason": "MVP 不支持资源库"
+    },
+    {
+      "prefix": "/api/secrets/find",
+      "reason": "MVP 不支持查找 secrets"
+    },
+    {
+      "prefix": "/api/secrets/rename",
+      "reason": "MVP 不支持重命名 secrets"
+    },
+    {
+      "prefix": "/api/secrets/rotate",
+      "reason": "MVP 不支持轮换 secrets"
+    },
+    {
+      "prefix": "/api/secrets/settings",
+      "reason": "MVP 不支持 secrets 设置"
+    },
+    {
+      "prefix": "/api/secrets/view",
+      "reason": "MVP 不支持查看 secrets"
+    }
+  ]
+}

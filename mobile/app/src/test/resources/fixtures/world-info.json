@@ -1,0 +1,35 @@
+{
+  "entries": {
+    "7": {
+      "uid": 7,
+      "key": ["moon", "night"],
+      "keysecondary": ["silver"],
+      "content": "The moon controls the silver tide.",
+      "comment": "Moon lore",
+      "constant": false,
+      "selective": true,
+      "order": 120,
+      "position": 0,
+      "disable": false,
+      "excludeRecursion": true,
+      "preventRecursion": false,
+      "delay": 2,
+      "probability": 85,
+      "useProbability": true,
+      "depth": 4,
+      "role": 0,
+      "group": "celestial",
+      "scanDepth": 3,
+      "caseSensitive": false,
+      "matchWholeWords": true,
+      "useGroupScoring": true,
+      "automationId": "moon-hook",
+      "unknownEntryField": {
+        "preserve": true
+      }
+    }
+  },
+  "unknownBookField": {
+    "source": "fixture"
+  }
+}

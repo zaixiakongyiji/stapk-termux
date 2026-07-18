@@ -1,0 +1,324 @@
+{
+  "$schema": "../schemas/capability-contract.schema.json",
+  "schemaVersion": 1,
+  "capabilities": [
+    {
+      "id": "core.settings",
+      "kind": "core",
+      "defaultStatus": "needs_review",
+      "endpointPrefixes": [
+        "/api/moving-ui",
+        "/api/presets",
+        "/api/quick-replies",
+        "/api/secrets/delete",
+        "/api/secrets/read",
+        "/api/secrets/write",
+        "/api/settings",
+        "/api/themes",
+        "/api/users/me",
+        "/api/users/reset-settings"
+      ],
+      "uiPolicy": "visible_when_implemented"
+    },
+    {
+      "id": "core.personas",
+      "kind": "core",
+      "defaultStatus": "needs_review",
+      "endpointPrefixes": [
+        "/api/avatars",
+        "/api/users/change-avatar",
+        "/api/sprites"
+      ],
+      "uiPolicy": "visible_when_implemented"
+    },
+    {
+      "id": "core.characters",
+      "kind": "core",
+      "defaultStatus": "needs_review",
+      "endpointPrefixes": [
+        "/api/characters"
+      ],
+      "uiPolicy": "visible_when_implemented"
+    },
+    {
+      "id": "core.groups",
+      "kind": "core",
+      "defaultStatus": "needs_review",
+      "endpointPrefixes": [
+        "/api/chats/group",
+        "/api/groups"
+      ],
+      "uiPolicy": "visible_when_implemented"
+    },
+    {
+      "id": "core.chats",
+      "kind": "core",
+      "defaultStatus": "needs_review",
+      "endpointPrefixes": [
+        "/api/backends/chat-completions/bias",
+        "/api/backends/chat-completions/generate",
+        "/api/backends/chat-completions/status",
+        "/api/chats/delete",
+        "/api/chats/export",
+        "/api/chats/get",
+        "/api/chats/import",
+        "/api/chats/recent",
+        "/api/chats/rename",
+        "/api/chats/save",
+        "/api/chats/search",
+        "/api/stats"
+      ],
+      "uiPolicy": "visible_when_implemented"
+    },
+    {
+      "id": "core.world_info",
+      "kind": "core",
+      "defaultStatus": "needs_review",
+      "endpointPrefixes": [
+        "/api/worldinfo"
+      ],
+      "uiPolicy": "visible_when_implemented"
+    },
+    {
+      "id": "core.backgrounds",
+      "kind": "core",
+      "defaultStatus": "needs_review",
+      "endpointPrefixes": [
+        "/api/backgrounds"
+      ],
+      "uiPolicy": "visible_when_implemented"
+    },
+    {
+      "id": "core.files",
+      "kind": "core",
+      "defaultStatus": "needs_review",
+      "endpointPrefixes": [
+        "/api/files",
+        "/api/image-metadata",
+        "/api/images",
+        "/api/stapk/exports"
+      ],
+      "uiPolicy": "visible_when_implemented"
+    },
+    {
+      "id": "core.tokenizers",
+      "kind": "core",
+      "defaultStatus": "needs_review",
+      "endpointPrefixes": [
+        "/api/tokenizers/openai/encode",
+        "/api/tokenizers/openai/decode",
+        "/api/tokenizers/openai/count"
+      ],
+      "uiPolicy": "visible_when_implemented"
+    },
+    {
+      "id": "native.extensions",
+      "kind": "core",
+      "defaultStatus": "needs_review",
+      "endpointPrefixes": [
+        "/api/extensions/discover",
+        "/api/extensions/install",
+        "/api/extensions/version",
+        "/api/extensions/update",
+        "/api/extensions/delete"
+      ],
+      "uiPolicy": "visible_when_implemented"
+    },
+    {
+      "id": "core.data_management",
+      "kind": "core",
+      "defaultStatus": "needs_review",
+      "endpointPrefixes": [
+        "/api/backups"
+      ],
+      "uiPolicy": "visible_when_implemented"
+    },
+    {
+      "id": "remote.embeddings",
+      "kind": "external_optional",
+      "defaultStatus": "external_optional",
+      "endpointPrefixes": [
+        "/api/openai/chutes/models/embedding",
+        "/api/openai/nanogpt/models/embedding",
+        "/api/openai/siliconflow/models/embedding",
+        "/api/openai/workers-ai/models/embedding",
+        "/api/openrouter/models/embedding",
+        "/api/vector"
+      ],
+      "uiPolicy": "visible_when_configured"
+    },
+    {
+      "id": "remote.image",
+      "kind": "external_optional",
+      "defaultStatus": "external_optional",
+      "endpointPrefixes": [
+        "/api/backends/chat-completions/multimodal-models",
+        "/api/google/generate-image",
+        "/api/google/generate-video",
+        "/api/horde/generate-image",
+        "/api/horde/sd-models",
+        "/api/horde/sd-samplers",
+        "/api/image",
+        "/api/novelai/generate-image",
+        "/api/openai/generate-image",
+        "/api/openai/generate-video",
+        "/api/openrouter/image",
+        "/api/openrouter/models/image",
+        "/api/openrouter/models/multimodal",
+        "/api/sd"
+      ],
+      "uiPolicy": "visible_when_configured"
+    },
+    {
+      "id": "remote.tts",
+      "kind": "external_optional",
+      "defaultStatus": "external_optional",
+      "endpointPrefixes": [
+        "/api/azure",
+        "/api/edge-tts",
+        "/api/google/generate-native-tts",
+        "/api/google/generate-voice",
+        "/api/google/list-native-voices",
+        "/api/google/list-voices",
+        "/api/minimax",
+        "/api/novelai/generate-voice",
+        "/api/openai/chutes/generate-voice",
+        "/api/openai/custom/generate-voice",
+        "/api/openai/electronhub/generate-voice",
+        "/api/openai/electronhub/models",
+        "/api/openai/generate-voice",
+        "/api/plugins/edge-tts",
+        "/api/speech",
+        "/api/text-to-speech",
+        "/api/tts",
+        "/api/volcengine"
+      ],
+      "uiPolicy": "visible_when_configured"
+    },
+    {
+      "id": "remote.stt",
+      "kind": "external_optional",
+      "defaultStatus": "external_optional",
+      "endpointPrefixes": [
+        "/api/speech-to-text"
+      ],
+      "uiPolicy": "visible_when_configured"
+    },
+    {
+      "id": "remote.caption",
+      "kind": "external_optional",
+      "defaultStatus": "external_optional",
+      "endpointPrefixes": [
+        "/api/anthropic/caption-image",
+        "/api/caption",
+        "/api/extra/caption",
+        "/api/google/caption-image",
+        "/api/horde/caption-image",
+        "/api/openai/caption-image"
+      ],
+      "uiPolicy": "visible_when_configured"
+    },
+    {
+      "id": "remote.translation",
+      "kind": "external_optional",
+      "defaultStatus": "external_optional",
+      "endpointPrefixes": [
+        "/api/translate"
+      ],
+      "uiPolicy": "visible_when_configured"
+    },
+    {
+      "id": "excluded.extensions",
+      "kind": "excluded",
+      "defaultStatus": "unsupported_hidden",
+      "endpointPrefixes": [
+        "/api/assets",
+        "/api/classify",
+        "/api/content/importURL",
+        "/api/content/importUUID",
+        "/api/data-maid",
+        "/api/extra/classify",
+        "/api/extensions/branches",
+        "/api/extensions/move",
+        "/api/extensions/switch",
+        "/api/modules",
+        "/api/plugins/fandom",
+        "/api/plugins/office",
+        "/api/search",
+        "/api/secrets/find",
+        "/api/secrets/rename",
+        "/api/secrets/rotate",
+        "/api/secrets/settings",
+        "/api/secrets/view",
+        "/api/summarize"
+      ],
+      "uiPolicy": "hidden"
+    },
+    {
+      "id": "excluded.local_models",
+      "kind": "excluded",
+      "defaultStatus": "unsupported_hidden",
+      "endpointPrefixes": [
+        "/api/backends/kobold",
+        "/api/backends/koboldhorde",
+        "/api/backends/text-completions",
+        "/api/horde/cancel-task",
+        "/api/horde/generate-text",
+        "/api/horde/status",
+        "/api/horde/task-status",
+        "/api/horde/text-models",
+        "/api/horde/text-workers",
+        "/api/horde/user-info",
+        "/api/nanogpt",
+        "/api/novelai/generate",
+        "/api/novelai/status",
+        "/api/openrouter/credits",
+        "/api/openrouter/models/providers",
+        "/api/tokenizers/claude",
+        "/api/tokenizers/command-a",
+        "/api/tokenizers/command-r",
+        "/api/tokenizers/deepseek",
+        "/api/tokenizers/gemma",
+        "/api/tokenizers/gpt2",
+        "/api/tokenizers/jamba",
+        "/api/tokenizers/llama",
+        "/api/tokenizers/llama3",
+        "/api/tokenizers/mistral",
+        "/api/tokenizers/nemo",
+        "/api/tokenizers/nerdstash",
+        "/api/tokenizers/nerdstash_v2",
+        "/api/tokenizers/qwen2",
+        "/api/tokenizers/remote",
+        "/api/tokenizers/yi"
+      ],
+      "uiPolicy": "hidden"
+    },
+    {
+      "id": "excluded.multiuser",
+      "kind": "excluded",
+      "defaultStatus": "unsupported_hidden",
+      "endpointPrefixes": [
+        "/api/ping",
+        "/api/users/backup",
+        "/api/users/change-name",
+        "/api/users/change-password",
+        "/api/users/create",
+        "/api/users/delete",
+        "/api/users/demote",
+        "/api/users/disable",
+        "/api/users/enable",
+        "/api/users/get",
+        "/api/users/list",
+        "/api/users/login",
+        "/api/users/logout",
+        "/api/users/promote",
+        "/api/users/recover-step1",
+        "/api/users/recover-step2",
+        "/api/users/reset-step1",
+        "/api/users/reset-step2",
+        "/api/users/slugify"
+      ],
+      "uiPolicy": "hidden"
+    }
+  ]
+}

@@ -1,40 +1,56 @@
 package com.stapk.mobile
 
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import java.net.URI
 
-class TavernWebViewClient : WebViewClient() {
+internal fun shouldOpenExternally(url: String?): Boolean {
+    val uri = runCatching { URI(url.orEmpty()) }.getOrNull() ?: return false
+    return uri.isAbsolute && uri.scheme.equals("https", ignoreCase = true)
+}
+
+internal fun isAllowedLoopbackUrl(url: String?, expectedPort: Int? = null): Boolean {
+    if (expectedPort == null) return false
+    val uri = runCatching { URI(url.orEmpty()) }.getOrNull() ?: return false
+    return uri.isAbsolute &&
+        uri.scheme.equals("http", ignoreCase = true) &&
+        uri.host == "127.0.0.1" &&
+        uri.port == expectedPort
+}
+
+internal fun shouldBlockMainFrameNavigation(url: String?, expectedPort: Int? = null): Boolean {
+    val uri = runCatching { URI(url.orEmpty()) }.getOrNull() ?: return false
+    return uri.isAbsolute && !isAllowedLoopbackUrl(url, expectedPort)
+}
+
+class TavernWebViewClient(
+    private val context: Context,
+    private val trustedLoopbackPort: () -> Int? = { null },
+    private val onLoopbackPageFinished: (WebView) -> Unit = {}
+) : WebViewClient() {
     override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
-        return false // Let WebView load the URL directly
+        val url = request?.url?.toString()
+        if (
+            request?.isForMainFrame != true ||
+            !shouldBlockMainFrameNavigation(url, trustedLoopbackPort())
+        ) {
+            return false
+        }
+
+        if (shouldOpenExternally(url)) {
+            runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
+        }
+        return true
     }
 
     override fun onPageFinished(view: WebView?, url: String?) {
         super.onPageFinished(view, url)
-        view?.evaluateJavascript(
-            """
-            document.addEventListener('click', function(e) {
-                var target = e.target.closest('a');
-                if (target && target.hasAttribute('download') && target.href.startsWith('blob:')) {
-                    var fileName = target.getAttribute('download');
-                    var xhr = new XMLHttpRequest();
-                    xhr.open('GET', target.href, true);
-                    xhr.responseType = 'blob';
-                    xhr.onload = function(e) {
-                        if (this.status == 200) {
-                            var reader = new FileReader();
-                            reader.readAsDataURL(this.response);
-                            reader.onloadend = function() {
-                                AndroidDownloader.getBase64FromBlobData(reader.result, '', fileName);
-                            }
-                        }
-                    };
-                    xhr.send();
-                    e.preventDefault();
-                    e.stopPropagation();
-                }
-            }, true);
-            """.trimIndent(), null
-        )
+        if (view != null && isAllowedLoopbackUrl(url, trustedLoopbackPort())) {
+            onLoopbackPageFinished(view)
+        }
     }
 }

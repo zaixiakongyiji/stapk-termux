@@ -1,3 +1,11 @@
 <resources>
     <string name="app_name">stAPK Mobile</string>
+    <string name="loading_sillytavern">正在启动 SillyTavern…</string>
+    <string name="start_failed">启动失败</string>
+    <string name="start_failed_detail">启动失败：%1$s</string>
+    <string name="service_bind_failed">无法连接本地服务</string>
+    <string name="service_disconnected">本地服务连接已断开</string>
+    <string name="retry">重试</string>
+    <string name="export_saved">文件已保存</string>
+    <string name="export_failed">文件保存失败</string>
 </resources>

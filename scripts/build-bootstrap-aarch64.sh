@@ -1,6 +1,7 @@
 #!/bin/bash
 # stAPK Bootstrap Build Script
 # Builds a custom aarch64 Termux bootstrap with Node.js, Git, and dependencies.
+# Target Node.js major version >= 20.
 #
 # Prerequisites:
 #   - Linux x86_64 host (WSL2 Ubuntu 24.04 OK)
@@ -63,6 +64,23 @@ cd "$PACKAGES_DIR"
 # The termux-packages repo has scripts/generate-bootstraps.sh or similar.
 # We configure which packages to include, then build.
 
+echo "Verifying Node.js versions in termux-packages..."
+NODEJS_LTS_VERSION=$(grep -oP '(?<=TERMUX_PKG_VERSION=)[0-9]+' "$PACKAGES_DIR/packages/nodejs-lts/build.sh" | head -n 1 || echo "0")
+NODEJS_CURRENT_VERSION=$(grep -oP '(?<=TERMUX_PKG_VERSION=)[0-9]+' "$PACKAGES_DIR/packages/nodejs/build.sh" | head -n 1 || echo "0")
+
+if [ "$NODEJS_LTS_VERSION" -ge 20 ]; then
+    echo "Check passed: nodejs-lts major version is $NODEJS_LTS_VERSION (>= 20)"
+    # Keep nodejs-lts in BOOTSTRAP_PACKAGES
+elif [ "$NODEJS_CURRENT_VERSION" -ge 20 ]; then
+    echo "Check passed: nodejs major version is $NODEJS_CURRENT_VERSION (>= 20). Switching from nodejs-lts to nodejs."
+    # Replace nodejs-lts with nodejs in the array
+    BOOTSTRAP_PACKAGES=( "${BOOTSTRAP_PACKAGES[@]/nodejs-lts/nodejs}" )
+else
+    echo "ERROR: Neither nodejs-lts ($NODEJS_LTS_VERSION) nor nodejs ($NODEJS_CURRENT_VERSION) satisfies >= 20 requirement."
+    exit 1
+fi
+
+
 echo ""
 echo "=== Build Instructions ==="
 echo ""
@@ -85,6 +103,10 @@ echo "  cp bootstrap-*.zip $PROJECT_ROOT/upstream/termux-app/app/src/main/cpp/"
 echo ""
 echo "Then modify the Termux App build.gradle to use the local bootstrap"
 echo "instead of downloading from GitHub."
+echo ""
+echo "After generation, verify the output archive format:"
+echo "  unzip -p bootstrap-*.zip bin/node | file -"
+echo "Ensure it reports as aarch64 ELF."
 echo ""
 
 # Create output directory

@@ -1,0 +1,298 @@
+diff --git a/public/css/stapk-mobile.css b/public/css/stapk-mobile.css
+index 0c8f0af..95452e4 100644
+--- a/public/css/stapk-mobile.css
++++ b/public/css/stapk-mobile.css
+@@ -4,7 +4,7 @@ label[for="extensions_notify_updates"],
+ #extensions_details,
+ #extensions_install,
+ #third_party_extension_button,
+-#extensions_settings,
++#extensions_settings .extension_container:not(#expressions_container),
+ #extensions_settings2 .extension_container:not(#qr_container),
+ #extensions_settings2 ~ hr,
+ #extensions_settings2 ~ .alignitemscenter.flex-container.justifyCenter.wide100p,
+@@ -12,6 +12,14 @@ label[for="extensions_notify_updates"],
+ #main-API-selector-block,
+ #external_import_button,
+ .external_import_button,
++label[for="expression_override"],
++label[for="expression_override"] + small,
++label[for="expression_override"] + small + .flex-container,
++.expression_api_block,
++.expression_llm_prompt_block,
++.expression_prompt_type_block,
++label[for="expression_translate"],
++#expression_translate,
+ #sd_container,
+ #sd_wand_container,
+ #sd_gen,
+@@ -29,3 +37,28 @@ label[for="expression_translate"],
+ #qr_container {
+     display: block !important;
+ }
++
++#stapk-video-background {
++    position: absolute;
++    inset: 0;
++    width: 100%;
++    height: 100%;
++    object-fit: cover;
++    pointer-events: none;
++}
++
++#stapk-video-background[hidden] {
++    display: none !important;
++}
++
++#bg1.contain #stapk-video-background {
++    object-fit: contain;
++}
++
++#bg1.stretch #stapk-video-background {
++    object-fit: fill;
++}
++
++#bg1.center #stapk-video-background {
++    object-fit: none;
++}
+diff --git a/public/scripts/backgrounds.js b/public/scripts/backgrounds.js
+index 0000000..0000000 100644
+--- a/public/scripts/backgrounds.js
++++ b/public/scripts/backgrounds.js
+@@ -1,9 +1,9 @@
+ import { Fuse, localforage } from '../lib.js';
+ import { characters, chat_metadata, eventSource, event_types, generateQuietPrompt, getCurrentChatId, getRequestHeaders, getThumbnailUrl, saveMetadata, saveSettingsDebounced, this_chid } from '../script.js';
+-import { openThirdPartyExtensionMenu, saveMetadataDebounced } from './extensions.js';
++import { saveMetadataDebounced } from './extensions.js';
+ import { SlashCommand } from './slash-commands/SlashCommand.js';
+ import { SlashCommandParser } from './slash-commands/SlashCommandParser.js';
+-import { createThumbnail, flashHighlight, getBase64Async, stringFormat, debounce, setupScrollToTop, saveBase64AsFile, getFileExtension, sortIgnoreCaseAndAccents } from './utils.js';
++import { createThumbnail, flashHighlight, getBase64Async, stringFormat, debounce, setupScrollToTop, saveBase64AsFile, getFileExtension, getVideoThumbnail, sortIgnoreCaseAndAccents } from './utils.js';
+ import { debounce_timeout } from './constants.js';
+ import { t } from './i18n.js';
+ import { callGenericPopup, Popup, POPUP_TYPE } from './popup.js';
+@@ -52,7 +52,8 @@ const THUMBNAIL_CONFIG = {
+     height: 90,
+ };
+ 
+-const ANIMATED_BACKGROUND_EXTENSIONS = ['mp4', 'webp', 'gif', 'apng'];
++const VIDEO_BACKGROUND_EXTENSIONS = ['mp4', 'webm'];
++const ANIMATED_BACKGROUND_EXTENSIONS = [...VIDEO_BACKGROUND_EXTENSIONS, 'webp', 'gif', 'apng'];
+ 
+ /**
+  * Cache for image metadata.
+@@ -248,7 +249,7 @@ export function loadBackgroundSettings(settings) {
+  */
+ async function forceSetBackground(backgroundInfo) {
+     saveBackgroundMetadata(backgroundInfo.url);
+-    $('#bg1').css('background-image', backgroundInfo.url);
++    applyBackground(backgroundInfo.url);
+ 
+     const list = chat_metadata[LIST_METADATA_KEY] || [];
+     const bg = backgroundInfo.path;
+@@ -263,7 +264,7 @@ async function forceSetBackground(backgroundInfo) {
+ async function onChatChanged() {
+     const lockedUrl = chat_metadata[BG_METADATA_KEY];
+ 
+-    $('#bg1').css('background-image', lockedUrl || background_settings.url);
++    applyBackground(lockedUrl || background_settings.url);
+ 
+     renderChatBackgrounds();
+     highlightLockedBackground();
+@@ -325,7 +326,7 @@ function onLockBackgroundClick(event = null) {
+     // Take the global background's URL and save it to the chat's metadata.
+     const urlToLock = event ? $(event.target).closest('.bg_example').data('url') : background_settings.url;
+     saveBackgroundMetadata(urlToLock);
+-    $('#bg1').css('background-image', urlToLock);
++    applyBackground(urlToLock);
+ 
+     // Update UI states to reflect the new lock.
+     highlightLockedBackground();
+@@ -341,7 +342,7 @@ function onUnlockBackgroundClick(_event = null) {
+     removeBackgroundMetadata();
+ 
+     // Revert the view to the current global background.
+-    $('#bg1').css('background-image', background_settings.url);
++    applyBackground(background_settings.url);
+ 
+     // Update UI states to reflect the removal of the lock.
+     highlightLockedBackground();
+@@ -380,7 +381,7 @@ function onSelectBackgroundClick(e) {
+     if ((isChatBackgroundLocked() || isCustom) && !bypassGlobalLock) {
+         // If a background is locked, update the locked background directly
+         saveBackgroundMetadata(backgroundCssUrl);
+-        $('#bg1').css('background-image', backgroundCssUrl);
++        applyBackground(backgroundCssUrl);
+     } else {
+         // Otherwise, update the global background setting
+         setBackground(bgFile, backgroundCssUrl);
+@@ -443,13 +444,18 @@ async function getThumbnailFromStorage(bg, isCustom) {
+ 
+     try {
+         const url = isCustom ? bg : getBackgroundPath(bg);
+-        const response = await fetch(url, { cache: 'force-cache' });
+-        if (!response.ok) {
+-            throw new Error('Fetch failed with status: ' + response.status);
++        let thumbnailBase64;
++        if (isVideoBackground(bg)) {
++            thumbnailBase64 = await getVideoThumbnail(url, THUMBNAIL_CONFIG.width, THUMBNAIL_CONFIG.height);
++        } else {
++            const response = await fetch(url, { cache: 'force-cache' });
++            if (!response.ok) {
++                throw new Error('Fetch failed with status: ' + response.status);
++            }
++            const imageBlob = await response.blob();
++            const imageBase64 = await getBase64Async(imageBlob);
++            thumbnailBase64 = await createThumbnail(imageBase64, THUMBNAIL_CONFIG.width, THUMBNAIL_CONFIG.height);
+         }
+-        const imageBlob = await response.blob();
+-        const imageBase64 = await getBase64Async(imageBlob);
+-        const thumbnailBase64 = await createThumbnail(imageBase64, THUMBNAIL_CONFIG.width, THUMBNAIL_CONFIG.height);
+         const thumbnailBlob = await fetch(thumbnailBase64).then(res => res.blob());
+         await THUMBNAIL_STORAGE.setItem(bg, thumbnailBlob);
+         const blobUrl = URL.createObjectURL(thumbnailBlob);
+@@ -1408,6 +1414,51 @@ function generateUrlParameter(bg, isCustom) {
+     return isCustom ? `url("${encodeURI(bg)}")` : `url("${getBackgroundPath(bg)}")`;
+ }
+ 
++function extractBackgroundSource(value) {
++    const match = String(value ?? '').match(/^url\((['"]?)(.*?)\1\)$/);
++    return match?.[2] || '';
++}
++
++function isVideoBackground(value) {
++    const source = extractBackgroundSource(value) || String(value ?? '');
++    const path = source.split(/[?#]/, 1)[0].toLowerCase();
++    return VIDEO_BACKGROUND_EXTENSIONS.some(extension => path.endsWith(`.${extension}`));
++}
++
++function applyBackground(url) {
++    const background = $('#bg1');
++    const source = extractBackgroundSource(url);
++    let video = document.getElementById('stapk-video-background');
++
++    if (source && isVideoBackground(source)) {
++        background.css('background-image', 'none');
++        if (!(video instanceof HTMLVideoElement)) {
++            video = document.createElement('video');
++            video.id = 'stapk-video-background';
++            video.autoplay = true;
++            video.muted = true;
++            video.loop = true;
++            video.playsInline = true;
++            background.append(video);
++        }
++        if (video.getAttribute('src') !== source) {
++            video.setAttribute('src', source);
++            video.load();
++        }
++        video.hidden = false;
++        void video.play().catch(error => console.debug('Video background autoplay was blocked:', error));
++        return;
++    }
++
++    if (video instanceof HTMLVideoElement) {
++        video.pause();
++        video.hidden = true;
++        video.removeAttribute('src');
++        video.load();
++    }
++    background.css('background-image', url);
++}
++
+ function isAnimatedBackgroundExtension(fileName) {
+     const fileExtension = fileName.split('.').pop().toLowerCase();
+     return ANIMATED_BACKGROUND_EXTENSIONS.includes(fileExtension);
+@@ -1439,7 +1490,7 @@ async function resolveImageUrl(bg, isCustom, isAnimated = null) {
+ async function setBackground(bg, url) {
+     // Only change the visual background if one is not locked for the current chat.
+     if (!isChatBackgroundLocked()) {
+-        $('#bg1').css('background-image', url);
++        applyBackground(url);
+     }
+     background_settings.name = bg;
+     background_settings.url = url;
+@@ -1483,7 +1534,6 @@ async function onBackgroundUploadSelected(e) {
+         const formData = new FormData();
+         formData.append('avatar', file);
+ 
+-        await convertFileIfVideo(formData);
+         switch (getActiveBackgroundTab()) {
+             case BG_SOURCES.GLOBAL:
+                 await uploadBackground(formData);
+@@ -1501,45 +1551,6 @@ async function onBackgroundUploadSelected(e) {
+     input.value = '';
+ }
+ 
+-/**
+- * Converts a video file to an animated webp format if the file is a video.
+- * @param {FormData} formData
+- * @returns {Promise<void>}
+- */
+-async function convertFileIfVideo(formData) {
+-    const file = formData.get('avatar');
+-    if (!(file instanceof File)) {
+-        return;
+-    }
+-    if (!file.type.startsWith('video/')) {
+-        return;
+-    }
+-    if (typeof globalThis.convertVideoToAnimatedWebp !== 'function') {
+-        toastr.warning(t`Click here to install the Video Background Loader extension`, t`Video background uploads require a downloadable add-on`, {
+-            timeOut: 0,
+-            extendedTimeOut: 0,
+-            onclick: () => openThirdPartyExtensionMenu('https://github.com/SillyTavern/Extension-VideoBackgroundLoader'),
+-        });
+-        return;
+-    }
+-
+-    let toastMessage = jQuery();
+-    try {
+-        toastMessage = toastr.info(t`Preparing video for upload. This may take several minutes.`, t`Please wait`, { timeOut: 0, extendedTimeOut: 0 });
+-        const sourceBuffer = await file.arrayBuffer();
+-        const convertedBuffer = await globalThis.convertVideoToAnimatedWebp({ buffer: new Uint8Array(sourceBuffer), name: file.name });
+-        const convertedFileName = file.name.replace(/\.[^/.]+$/, '.webp');
+-        const convertedFile = new File([new Uint8Array(convertedBuffer)], convertedFileName, { type: 'image/webp' });
+-        formData.set('avatar', convertedFile);
+-        toastMessage.remove();
+-    } catch (error) {
+-        formData.delete('avatar');
+-        toastMessage.remove();
+-        console.error('Error converting video to animated webp:', error);
+-        toastr.error(t`Error converting video to animated webp`);
+-    }
+-}
+-
+ /**
+  * Uploads a background to the server
+  * @param {FormData} formData
+diff --git a/public/scripts/extensions.js b/public/scripts/extensions.js
+index 0000000..0000000 100644
+--- a/public/scripts/extensions.js
++++ b/public/scripts/extensions.js
+@@ -1773,7 +1773,12 @@ export async function loadExtensionSettings(settings, versionChanged, enableAuto
+ 
+     // Activate offline extensions
+     await eventSource.emit(event_types.EXTENSIONS_FIRST_LOAD);
+-    const extensions = [{ name: 'quick-reply', type: 'system' }];
++    const extensions = [
++        { name: 'quick-reply', type: 'system' },
++        { name: 'attachments', type: 'system' },
++        { name: 'gallery', type: 'system' },
++        { name: 'expressions', type: 'system' },
++    ];
+     extensionNames = extensions.map(x => x.name);
+     extensionTypes = Object.fromEntries(extensions.map(x => [x.name, x.type]));
+     manifests = await getManifests(extensionNames);
+diff --git a/public/scripts/extensions/expressions/index.js b/public/scripts/extensions/expressions/index.js
+index 0000000..0000000 100644
+--- a/public/scripts/extensions/expressions/index.js
++++ b/public/scripts/extensions/expressions/index.js
+@@ -2190,6 +2190,7 @@ export async function init() {
+     addExpressionImage();
+     addVisualNovelMode();
+     migrateSettings();
++    extension_settings.expressions.api = EXPRESSION_API.none;
+     await addSettings();
+     const wrapper = new ModuleWorkerWrapper(moduleWorker);
+     const updateFunction = wrapper.update.bind(wrapper);

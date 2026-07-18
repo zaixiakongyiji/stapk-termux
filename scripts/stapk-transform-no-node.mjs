@@ -1,0 +1,442 @@
+#!/usr/bin/env node
+
+import { execFileSync } from 'node:child_process';
+import crypto from 'node:crypto';
+import { existsSync } from 'node:fs';
+import { cp, mkdir, readdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises';
+import path from 'node:path';
+import { parseArgs } from 'node:util';
+import { fileURLToPath } from 'node:url';
+
+import { scanWebContract } from './stapk-scan-web-contract.mjs';
+import { verifyNoNodeOutput } from './stapk-verify-no-node-transform.mjs';
+
+const DEFAULT_REPO = 'https://github.com/SillyTavern/SillyTavern.git';
+const BUILD_DIR = path.resolve('build/stapk-no-node');
+const UPSTREAM_DIR = path.join(BUILD_DIR, 'upstream');
+const PATCHED_DIR = path.join(BUILD_DIR, 'patched');
+const PATCH_QUEUE_DIR = path.resolve('patches/sillytavern-no-node');
+const WEB_SUPPORT_DIR = path.resolve('transform/no-node/web');
+const WEB_OUT_DIR_NAME = 'sillytavern-web';
+const API_CONTRACT_NAME = 'api-contract.json';
+const MANIFEST_NAME = 'stapk-web-manifest.json';
+const REPORT_NAME = 'transform-report.json';
+const CAPABILITY_RUNTIME_NAME = 'stapk-capabilities.json';
+const ANDROID_METADATA_NAMES = [API_CONTRACT_NAME, MANIFEST_NAME, REPORT_NAME];
+const TRANSPARENT_PNG_BASE64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgQIAff6XWQAAAABJRU5ErkJggg==';
+
+export async function transformNoNode({ repo = DEFAULT_REPO, ref = 'release', out, clean = false }) {
+  const absoluteOut = path.resolve(out);
+
+  if (clean) {
+    await rm(BUILD_DIR, { recursive: true, force: true });
+    await rm(absoluteOut, { recursive: true, force: true });
+  }
+
+  await mkdir(UPSTREAM_DIR, { recursive: true });
+  await mkdir(absoluteOut, { recursive: true });
+
+  await fetchUpstream({ repo, ref, upstreamDir: UPSTREAM_DIR });
+  const commit = git(['rev-parse', 'HEAD'], UPSTREAM_DIR);
+  const upstreamPackage = await readJsonIfExists(path.join(UPSTREAM_DIR, 'package.json'));
+
+  await preparePatchedTree({ upstreamDir: UPSTREAM_DIR, patchedDir: PATCHED_DIR });
+  const patchQueue = await applyPatchQueue({ patchedDir: PATCHED_DIR, patchQueueDir: PATCH_QUEUE_DIR });
+  await bundleFrontendLibraries({ patchedDir: PATCHED_DIR });
+
+  const sourceWebRoot = findSourceWebRoot(PATCHED_DIR);
+  const outWebRoot = path.join(absoluteOut, WEB_OUT_DIR_NAME);
+  await copyNoNodeWebAssets({ sourceWebRoot, outWebRoot });
+  await copyNoNodeWebSupportAssets({ outWebRoot });
+  await copyCapabilityRuntime({
+    capabilityFile: path.resolve('transform/no-node/capabilities.json'),
+    outWebRoot
+  });
+  await copyDefaultPresets({ patchedDir: PATCHED_DIR, outWebRoot });
+
+  const apiContract = await scanWebContract({
+    webRoot: outWebRoot,
+    allowlistFile: path.resolve('transform/no-node/mvp-api-allowlist.json'),
+    capabilityFile: path.resolve('transform/no-node/capabilities.json'),
+    upstream: {
+      ref,
+      commit,
+      version: upstreamPackage?.version
+    }
+  });
+  await writeJson(path.join(absoluteOut, API_CONTRACT_NAME), apiContract);
+
+  const webRootSha256 = await hashDirectory(outWebRoot);
+  const manifest = {
+    schemaVersion: 1,
+    generatedAt: new Date().toISOString(),
+    upstream: {
+      repo,
+      ref,
+      commit,
+      ...(upstreamPackage?.version ? { version: upstreamPackage.version } : {})
+    },
+    output: {
+      webRoot: WEB_OUT_DIR_NAME,
+      apiContract: API_CONTRACT_NAME
+    },
+    hashes: {
+      webRootSha256,
+      patchQueueSha256: patchQueue.sha256
+    },
+    noRuntimeNode: true
+  };
+  await writeJson(path.join(absoluteOut, MANIFEST_NAME), manifest);
+
+  const verification = await verifyNoNodeOutput({ out: absoluteOut });
+  const report = buildNoNodeTransformReport({
+    generatedAt: new Date().toISOString(),
+    output: absoluteOut,
+    upstream: manifest.upstream,
+    apiSummary: apiContract.summary,
+    verification,
+    patchNames: patchQueue.names
+  });
+  await writeJson(path.join(absoluteOut, REPORT_NAME), report);
+
+  return report;
+}
+
+export async function copyNoNodeWebAssets({ sourceWebRoot, outWebRoot }) {
+  const absoluteSource = path.resolve(sourceWebRoot);
+  const absoluteOut = path.resolve(outWebRoot);
+
+  if (!existsSync(absoluteSource)) {
+    throw new Error(`Source Web root does not exist: ${absoluteSource}`);
+  }
+
+  await rm(absoluteOut, { recursive: true, force: true });
+  await cp(absoluteSource, absoluteOut, {
+    recursive: true,
+    filter: (src) => shouldCopyWebAsset({ src, root: absoluteSource })
+  });
+}
+
+export async function copyNoNodeWebSupportAssets({
+  outWebRoot,
+  supportDir = WEB_SUPPORT_DIR
+}) {
+  const absoluteSupportDir = path.resolve(supportDir);
+  if (!existsSync(absoluteSupportDir)) {
+    throw new Error(`Web support directory does not exist: ${absoluteSupportDir}`);
+  }
+  await mkdir(path.join(path.resolve(outWebRoot), 'scripts'), { recursive: true });
+  await cp(absoluteSupportDir, path.join(path.resolve(outWebRoot), 'scripts'), {
+    recursive: true,
+    force: true
+  });
+
+  const absoluteOutWebRoot = path.resolve(outWebRoot);
+  await mkdir(path.join(absoluteOutWebRoot, 'css'), { recursive: true });
+  await mkdir(path.join(absoluteOutWebRoot, 'backgrounds'), { recursive: true });
+  await writeFile(path.join(absoluteOutWebRoot, 'css', 'user.css'), '', 'utf8');
+  await writeFile(
+    path.join(absoluteOutWebRoot, 'backgrounds', '__transparent.png'),
+    Buffer.from(TRANSPARENT_PNG_BASE64, 'base64')
+  );
+}
+
+export async function copyCapabilityRuntime({ capabilityFile, outWebRoot }) {
+  const contract = JSON.parse(await readFile(path.resolve(capabilityFile), 'utf8'));
+  const capabilities = Object.fromEntries(
+    contract.capabilities.map((capability) => [capability.id, capability.kind === 'core'])
+  );
+  await writeJson(path.join(path.resolve(outWebRoot), CAPABILITY_RUNTIME_NAME), {
+    schemaVersion: 1,
+    capabilities
+  });
+}
+
+export async function copyDefaultPresets({ patchedDir, outWebRoot }) {
+  const source = path.join(path.resolve(patchedDir), 'default', 'content', 'presets', 'openai');
+  if (!existsSync(source)) return;
+  await cp(source, path.join(path.resolve(outWebRoot), 'defaults', 'presets', 'openai'), { recursive: true });
+}
+
+export function buildNoNodeTransformReport({
+  generatedAt,
+  output,
+  upstream,
+  apiSummary,
+  verification,
+  patchNames
+}) {
+  return {
+    ok: true,
+    generatedAt,
+    output,
+    upstream,
+    patches: [...patchNames],
+    apiSummary,
+    verification
+  };
+}
+
+export async function bundleFrontendLibraries({ patchedDir }) {
+  const absolutePatchedDir = path.resolve(patchedDir);
+  runNpm(['ci', '--ignore-scripts', '--no-audit', '--no-fund'], absolutePatchedDir);
+  runExternal(process.execPath, ['docker/build-lib.js'], absolutePatchedDir);
+
+  const webpackRoot = path.join(absolutePatchedDir, 'dist', '_webpack');
+  const bundles = (await listFiles(webpackRoot)).filter((file) =>
+    path.basename(file) === 'lib.js' && path.basename(path.dirname(file)) === 'output'
+  );
+  if (bundles.length !== 1) {
+    throw new Error(`Expected one generated Webpack lib.js, found ${bundles.length}`);
+  }
+
+  await cp(bundles[0], path.join(absolutePatchedDir, 'public', 'lib.js'));
+}
+
+export async function syncNoNodeAndroidAssets({ transformOut, androidAssetsDir }) {
+  const absoluteOut = path.resolve(transformOut);
+  const absoluteAssets = path.resolve(androidAssetsDir);
+  await verifyNoNodeOutput({ out: absoluteOut });
+
+  const assetsParent = path.dirname(absoluteAssets);
+  const assetsName = path.basename(absoluteAssets);
+  const stagedAssets = path.join(assetsParent, `.${assetsName}.stapk-installing`);
+  const previousAssets = path.join(assetsParent, `.${assetsName}.stapk-previous`);
+  await mkdir(assetsParent, { recursive: true });
+  await rm(stagedAssets, { recursive: true, force: true });
+  await mkdir(stagedAssets, { recursive: true });
+  await cp(
+    path.join(absoluteOut, WEB_OUT_DIR_NAME),
+    path.join(stagedAssets, WEB_OUT_DIR_NAME),
+    { recursive: true }
+  );
+
+  for (const metadataName of ANDROID_METADATA_NAMES) {
+    await cp(path.join(absoluteOut, metadataName), path.join(stagedAssets, metadataName));
+  }
+
+  await verifyNoNodeOutput({ out: stagedAssets });
+  await rm(previousAssets, { recursive: true, force: true });
+  if (existsSync(absoluteAssets)) {
+    await rename(absoluteAssets, previousAssets);
+  }
+
+  try {
+    await rename(stagedAssets, absoluteAssets);
+    await verifyNoNodeOutput({ out: absoluteAssets });
+  } catch (error) {
+    await rm(absoluteAssets, { recursive: true, force: true });
+    if (existsSync(previousAssets)) {
+      await rename(previousAssets, absoluteAssets);
+    }
+    throw error;
+  }
+
+  await rm(previousAssets, { recursive: true, force: true });
+}
+
+export async function hashDirectory(root) {
+  const absoluteRoot = path.resolve(root);
+  const hash = crypto.createHash('sha256');
+  const files = await listFiles(absoluteRoot);
+
+  for (const file of files) {
+    const relativePath = toPosixPath(path.relative(absoluteRoot, file));
+    hash.update(relativePath);
+    hash.update('\0');
+    hash.update(await readFile(file));
+    hash.update('\0');
+  }
+
+  return hash.digest('hex');
+}
+
+export function findSourceWebRoot(patchedDir) {
+  const candidates = [
+    path.join(patchedDir, 'public'),
+    path.join(patchedDir, 'dist'),
+    path.join(patchedDir, 'web')
+  ];
+
+  for (const candidate of candidates) {
+    if (existsSync(path.join(candidate, 'index.html'))) {
+      return candidate;
+    }
+  }
+
+  throw new Error(`Cannot find built Web root under ${patchedDir}; expected public/index.html`);
+}
+
+async function fetchUpstream({ repo, ref, upstreamDir }) {
+  if (!existsSync(path.join(upstreamDir, '.git'))) {
+    git(['init'], upstreamDir);
+    git(['remote', 'add', 'origin', repo], upstreamDir);
+  } else {
+    git(['remote', 'set-url', 'origin', repo], upstreamDir);
+  }
+
+  git(['fetch', '--depth=1', 'origin', ref], upstreamDir);
+  git(['checkout', '--detach', 'FETCH_HEAD'], upstreamDir);
+}
+
+async function preparePatchedTree({ upstreamDir, patchedDir }) {
+  await rm(patchedDir, { recursive: true, force: true });
+  await cp(upstreamDir, patchedDir, {
+    recursive: true,
+    filter: (src) => !isGitMetadataPath(src, upstreamDir)
+  });
+  git(['init'], patchedDir);
+  git(['config', 'user.name', 'stapk'], patchedDir);
+  git(['config', 'user.email', 'stapk@localhost'], patchedDir);
+  git(['add', '.'], patchedDir);
+  git(['commit', '-m', 'baseline'], patchedDir);
+}
+
+export async function applyPatchQueue({ patchedDir, patchQueueDir }) {
+  const seriesPath = path.join(patchQueueDir, 'series');
+  if (!existsSync(seriesPath)) {
+    return {
+      names: [],
+      sha256: crypto.createHash('sha256').update('').digest('hex')
+    };
+  }
+
+  const series = await readFile(seriesPath, 'utf8');
+  const patchNames = series.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  const hash = crypto.createHash('sha256');
+
+  for (const patchName of patchNames) {
+    const patchPath = path.join(patchQueueDir, patchName);
+    const patchContents = await readFile(patchPath, 'utf8');
+    hash.update(patchName);
+    hash.update('\0');
+    hash.update(patchContents);
+    hash.update('\0');
+    git(['apply', '--3way', patchPath], patchedDir);
+  }
+
+  return {
+    names: patchNames,
+    sha256: hash.digest('hex')
+  };
+}
+
+async function listFiles(root) {
+  const result = [];
+  const entries = await readdir(root);
+
+  for (const entry of entries) {
+    const absolutePath = path.join(root, entry);
+    const entryStat = await stat(absolutePath);
+    if (entryStat.isDirectory()) {
+      result.push(...await listFiles(absolutePath));
+    } else if (entryStat.isFile()) {
+      result.push(absolutePath);
+    }
+  }
+
+  return result.sort();
+}
+
+function shouldCopyWebAsset({ src, root }) {
+  const relative = path.relative(root, src);
+  if (!relative) {
+    return true;
+  }
+
+  const segments = toPosixPath(relative).split('/').map((segment) => segment.toLowerCase());
+  if (segments.includes('.git') || segments.includes('node_modules')) {
+    return false;
+  }
+
+  const basename = segments.at(-1);
+  return ![
+    'server.js',
+    'payload.tgz',
+    'sillytavern.tar.gz',
+    'runtime-android-arm64-node24.zip'
+  ].includes(basename);
+}
+
+function isGitMetadataPath(src, root) {
+  const relative = path.relative(root, src);
+  return toPosixPath(relative).split('/').includes('.git');
+}
+
+async function readJsonIfExists(file) {
+  if (!existsSync(file)) {
+    return null;
+  }
+  return JSON.parse(await readFile(file, 'utf8'));
+}
+
+async function writeJson(file, value) {
+  await mkdir(path.dirname(file), { recursive: true });
+  await writeFile(file, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
+}
+
+function git(args, cwd) {
+  return execFileSync('git', args, {
+    cwd,
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe']
+  }).trim();
+}
+
+function runNpm(args, cwd) {
+  if (process.platform === 'win32') {
+    runExternal(process.env.ComSpec ?? 'cmd.exe', ['/d', '/s', '/c', 'npm', ...args], cwd);
+    return;
+  }
+  runExternal('npm', args, cwd);
+}
+
+function runExternal(command, args, cwd) {
+  execFileSync(command, args, {
+    cwd,
+    stdio: 'inherit'
+  });
+}
+
+function toPosixPath(value) {
+  return value.split(path.sep).join('/');
+}
+
+async function main() {
+  const { values } = parseArgs({
+    options: {
+      repo: { type: 'string' },
+      ref: { type: 'string' },
+      out: { type: 'string' },
+      clean: { type: 'boolean' },
+      'android-assets': { type: 'string' }
+    }
+  });
+
+  const report = await transformNoNode({
+    repo: values.repo ?? DEFAULT_REPO,
+    ref: values.ref ?? 'release',
+    out: values.out ?? 'build/no-node-payload',
+    clean: values.clean ?? false
+  });
+
+  if (values['android-assets']) {
+    await syncNoNodeAndroidAssets({
+      transformOut: report.output,
+      androidAssetsDir: values['android-assets']
+    });
+    console.log(`Synced Android assets: ${path.resolve(values['android-assets'])}`);
+  }
+
+  console.log(`Generated no-node transform output: ${report.output}`);
+  console.log(`Upstream commit: ${report.upstream.commit}`);
+  console.log(`API summary: ${JSON.stringify(report.apiSummary)}`);
+}
+
+const isMain = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (isMain) {
+  main().catch((error) => {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exitCode = 1;
+  });
+}

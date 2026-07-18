@@ -13,14 +13,10 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     env:
-      TERMUX_SPLIT_APKS_FOR_DEBUG_BUILDS: "0"
-      JITPACK_NDK_VERSION: "22.1.7171670"
       GRADLE_OPTS: -Xmx4096m
     steps:
       - name: 检出仓库
         uses: actions/checkout@v4
-        with:
-          lfs: true
 
       - name: 安装 JDK 17
         uses: actions/setup-java@v4
@@ -28,6 +24,11 @@ jobs:
           distribution: temurin
           java-version: "17"
           cache: gradle
+
+      - name: 安装 Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
 
       - name: 安装 Android SDK 命令行工具
         uses: android-actions/setup-android@v3
@@ -38,9 +39,8 @@ jobs:
           yes | sdkmanager --licenses >/dev/null || true
           sdkmanager \
             "platform-tools" \
-            "platforms;android-30" \
-            "build-tools;30.0.3" \
-            "ndk;22.1.7171670"
+            "platforms;android-34" \
+            "build-tools;34.0.0"
 
       - name: 生成 GitHub runner 用 local.properties
         shell: bash
@@ -48,41 +48,29 @@ jobs:
         run: |
           printf 'sdk.dir=%s\n' "$ANDROID_SDK_ROOT" > local.properties
 
-      - name: 生成 CI 用 Debug 签名文件
-        shell: bash
-        working-directory: mobile/app
-        run: |
-          keytool -genkeypair \
-            -alias alias \
-            -keyalg RSA \
-            -keysize 2048 \
-            -validity 10000 \
-            -storetype JKS \
-            -keystore dev_keystore.jks \
-            -storepass xrj45yWGLbsO7W0v \
-            -keypass xrj45yWGLbsO7W0v \
-            -dname "CN=stAPK Debug,O=stAPK,C=CN"
-
       - name: 授予 Gradle Wrapper 执行权限
         shell: bash
         working-directory: mobile
         run: chmod +x ./gradlew
 
-      - name: 执行关键单测
+      - name: 安装构建期依赖
         shell: bash
-        working-directory: mobile
         run: |
-          ./gradlew --no-daemon :app:testDebugUnitTest
+          echo "Node version: $(node --version)"
+          npm ci
 
-      - name: 构建 Debug APK
+      - name: 一键验证并构建 Debug APK
         shell: bash
-        working-directory: mobile
-        run: ./gradlew --no-daemon :app:assembleDebug
+        run: npm run build:no-node-apk -- --variant debug --ref release
 
-      - name: 上传 Debug APK
+      - name: 上传 Debug APK 与转换证据
         uses: actions/upload-artifact@v4
         with:
           name: stapk-debug-app
           path: |
-            mobile/app/build/outputs/apk/debug/app-debug.apk
-            mobile/app/build/outputs/apk/debug/output-metadata.json
+            output/stapk-mobile-debug.apk
+            output/stapk-mobile-debug.apk.sha256
+            output/api-contract.json
+            output/stapk-capabilities.json
+            output/stapk-web-manifest.json
+            output/transform-report.json

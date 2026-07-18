@@ -1,0 +1,86 @@
+diff --git a/public/script.js b/public/script.js
+--- a/public/script.js
++++ b/public/script.js
+@@ -11,6 +11,7 @@ import {
+     lodash,
+ } from './lib.js';
+ 
++import { requestStapkResponseExport } from './scripts/stapk-export.js';
+ import { humanizedDateTime, favsToHotswap, getMessageTimeStamp, dragElement, isMobile, initRossMods } from './scripts/RossAscends-mods.js';
+ import { userStatsHandler, statMesProcess, initStats } from './scripts/stats.js';
+ import {
+@@ -11450,9 +11451,14 @@ $(document).ready(function () {
+                 return;
+             } else {
+-                const mimeType = format == 'txt' ? 'text/plain' : 'application/octet-stream';
++                const mimeType = format == 'txt' ? 'text/plain' : 'application/x-ndjson';
+                 // success, handle response data
++                if (requestStapkResponseExport(response, body.exportfilename, mimeType)) {
++                    await delay(250);
++                    toastr.success(`Chat ready to save as ${body.exportfilename}`);
++                    return;
++                }
+                 const result = await response.blob();
+                 await delay(250);
+                 toastr.success(`Chat saved to ${body.exportfilename}`);
+                 download(result, body.exportfilename, mimeType);
+             }
+@@ -11979,6 +11984,10 @@ $(document).ready(function () {
+ 
+         if (response.ok) {
+             const filename = characters[this_chid].avatar.replace('.png', `.${format}`);
++            const mimeType = format === 'png' ? 'image/png' : 'application/json';
++            if (requestStapkResponseExport(response, filename, mimeType)) {
++                return;
++            }
+             const blob = await response.blob();
+             const a = document.createElement('a');
+             a.href = URL.createObjectURL(blob);
+diff --git a/public/scripts/utils.js b/public/scripts/utils.js
+--- a/public/scripts/utils.js
++++ b/public/scripts/utils.js
+@@ -17,6 +17,7 @@ import { getTagsList } from './tags.js';
+ import { groups, selected_group } from './group-chats.js';
+ import { getCurrentLocale, t } from './i18n.js';
+ import { importWorldInfo } from './world-info.js';
++import { requestStapkGeneratedExport } from './stapk-export.js';
+ 
+ export const shiftUpByOne = (e, i, a) => a[i] = e + 1;
+ export const shiftDownByOne = (e, i, a) => a[i] = e - 1;
+@@ -403,6 +404,9 @@ export function shuffle(array) {
+  * @param {string} contentType File content type.
+  */
+ export function download(content, fileName, contentType) {
++    if (requestStapkGeneratedExport(content, fileName, contentType)) {
++        return;
++    }
+     const a = document.createElement('a');
+     const file = new Blob([content], { type: contentType });
+     a.href = URL.createObjectURL(file);
+diff --git a/public/scripts/chats.js b/public/scripts/chats.js
+--- a/public/scripts/chats.js
++++ b/public/scripts/chats.js
+@@ -1211,9 +1211,7 @@ async function downloadAttachment(attachment) {
+     const fileText = attachment.text || (await getFileAttachment(attachment.url));
+-    const blob = new Blob([fileText], { type: 'text/plain' });
+-    const url = URL.createObjectURL(blob);
+-    const a = document.createElement('a');
+-    a.href = url;
+-    a.download = attachment.name;
+-    a.click();
+-    URL.revokeObjectURL(url);
++    const originalName = String(attachment.name || 'attachment.txt');
++    const fileName = /\.(txt|md|markdown|csv|log)$/i.test(originalName)
++        ? originalName
++        : `${originalName}.txt`;
++    download(fileText, fileName, 'text/plain');
+ }
+@@ -2147,7 +2145,7 @@ export function initChatUtilities() {
+             ...chat.filter(x => x?.extra?.type !== system_message_types.ASSISTANT_NOTE),
+         ];
+ 
+-        download(chatToSave.map((m) => JSON.stringify(m)).join('\n'), `Assistant - ${humanizedDateTime()}.jsonl`, 'application/json');
++        download(chatToSave.map((m) => JSON.stringify(m)).join('\n'), `Assistant - ${humanizedDateTime()}.jsonl`, 'application/x-ndjson');
+     });
+ 
+     $(document).on('click', '.assistant_note_import', async function () {
