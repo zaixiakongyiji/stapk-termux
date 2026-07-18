@@ -1,0 +1,21 @@
+{
+  "id": "upstream-id-must-not-be-used",
+  "name": "Fixture Group",
+  "members": ["alice.png", "missing.png", "bob.png", "alice.png"],
+  "disabled_members": ["bob.png", "missing.png"],
+  "activation_strategy": 1,
+  "allow_self_responses": true,
+  "fav": true,
+  "chat_id": "chat-main",
+  "chats": ["chat-main", "chat-old"],
+  "past_metadata": {
+    "chat-old": {
+      "world_info": "legacy"
+    }
+  },
+  "vendor_extension": {
+    "nested": {
+      "enabled": true
+    }
+  }
+}

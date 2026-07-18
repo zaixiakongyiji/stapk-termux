@@ -15,21 +15,26 @@ stAPK Mobile 的当前 0.3.0 主线是把 [SillyTavern](https://github.com/Silly
 
 When asked to change app behavior, work in `mobile/` unless explicitly told otherwise.
 
-## Build & test (the `mobile/` app)
+## Build & test
 
 ```bash
-cd mobile
-
-# Current 0.2.x assets are still LFS tracked while the no-node migration is in progress.
-# Do not add new runtime Node/npm/node_modules assets for 0.3.0 work.
-git lfs pull
-
-./gradlew :app:assembleDebug          # Debug APK → app/build/outputs/apk/debug/app-debug.apk
-./gradlew :app:assembleRelease        # Release APK (needs signing env vars, see below)
-./gradlew :app:testDebugUnitTest      # Unit tests (CI runs this; no test sources exist yet)
+npm ci
+npm run test:no-node
+npm run build:no-node-apk -- --variant debug --ref release
 ```
 
-Windows: use `.\gradlew.bat`. CI uses `--no-daemon`.
+一键构建固定执行 no-node tests、transform、产物 verifier、严格 capability verifier、Android JVM tests 和 Gradle assemble，然后向 `output/` 发布 APK、checksum、API contract、capability runtime、Web manifest 和 transform report。Release 使用 `--variant release` 并需要下述签名环境变量。
+
+截至 2026-07-17，Debug 候选已通过上述单命令、Pixel 8 / Android 15（API 35）clean install、无 Node 进程、官方单用户 UI 能力矩阵和真实外部 OpenAI-compatible provider 验收；稳定冷启动基线第 3 秒显示原生启动页而非黑屏，第 13 秒官方 UI 可用，`app_ready` 约 12.1 秒。API 24/29 延期到后续真机验收。证据和待办以 `docs/plan/2026-07-12-stapk-single-user-feature-validation-record.md` 为准。0.3.0 按全新安装处理，旧数据迁移及完整应用备份恢复不阻断主体发布。
+
+## Android Emulator MCP
+
+本仓库通过 `.codex/config.toml` 注册 `stapk-emulator` MCP，只管理本机 `Pixel_8` AVD。设备验证前先调用 `stapk_emulator_ensure_started`，等待返回 `state=ready` 和实际 `emulator-*` serial，再使用全局 `mobile-mcp` 安装、启动和操作 APK。
+
+- `stapk_emulator_status`：查询目标 AVD 状态。
+- `stapk_emulator_start` / `stapk_emulator_ensure_started`：启动可见的独立 Emulator 窗口；重复调用不会创建第二台。
+- `stapk_emulator_stop` / `stapk_emulator_restart`：只操作经 AVD 名称确认的 `Pixel_8`，不得影响其他 Emulator 或实体设备。
+- 修改 `.codex/config.toml` 后需要重新打开 Codex task，才能加载新增 MCP 工具。
 
 `local.properties` (git-ignored) must contain `sdk.dir=<android-sdk-path>`. Release signing reads these env vars: `TERMUX_RELEASE_STORE_FILE`, `TERMUX_RELEASE_STORE_PASSWORD`, `TERMUX_RELEASE_KEY_ALIAS`, `TERMUX_RELEASE_KEY_PASSWORD`.
 
@@ -37,16 +42,11 @@ Build config: `compileSdk=34`, `minSdk=24`, current `targetSdk=28`. ABI is `arm6
 
 ## Runtime architecture status (`mobile/app/src/main/java/com/stapk/mobile/`)
 
-The checked-in Android app still contains the 0.2.x Node runtime container implementation. Treat it as migration source, not as the desired 0.3.0 architecture.
-
-Four Kotlin files, no DI/ViewModel framework — plain `Activity` + a `RuntimeManager` orchestrator on a single-thread `Executor`.
-
-- **`RuntimeManager.kt`** — owns the runtime lifecycle in the current 0.2.x-style app. `extractRuntimeIfNeeded()` unzips `assets/runtime-android-arm64-node24.zip` (Node binary + `.so` libs) into `filesDir/runtime/`; `deployPayloadIfNeeded()` shells out to `tar -xzf` on `assets/payload.tgz` to unpack `filesDir/SillyTavern/`. `startSillyTavern()` spawns `node server.js` with `HOME`/`LD_LIBRARY_PATH`/`PATH`/`TMPDIR` set so Node finds its libs and modules. Also holds backup/restore (zip of `config.yaml` + `data/` + third-party extensions). Extraction is guarded by `.flag` files; runtime unzip has a zip-slip canonical-path check.
-- **`MainActivity.kt`** — single screen: control buttons + a `TextView` log + a WebView. On create it kicks off runtime/payload extraction in the background, then `pollServer()` HTTP-polls `127.0.0.1:8000` until ready before `webView.loadUrl`. Hosts `BlobDownloader` (a `@JavascriptInterface` that writes WebView blob downloads to public Downloads) and the SAF file-chooser plumbing.
-- **`KeepAliveService.kt`** — foreground service holding a `PARTIAL_WAKE_LOCK`. Started when the user taps "Open Browser" (so the Node process survives backgrounding), stopped in `MainActivity.onResume()`. It does **not** own the Node process — `MainActivity` does, and `onDestroy()` kills it.
-- **`TavernWebViewClient.kt`** — injects JS on page load to intercept `blob:` download links and route them through `AndroidDownloader`.
-
-Legacy assets in `mobile/app/src/main/assets/`: `payload.tgz` (SillyTavern source + node_modules), `runtime-android-arm64-node24.zip` (Node 24 runtime + libs), `payload-manifest.json`, `dummy-server.js`. New 0.3.0 work must replace these with no-node web assets and Android-native backend metadata instead of growing the legacy payload.
+- **`MainActivity.kt`** — 绑定原生 foreground service，加载随机 loopback 端口的官方 Web UI，并协调 SAF 导入导出。
+- **`nativeadapter/NativeHttpService.kt`** — 拥有本地 HTTP server 生命周期，不启动任何 Node 进程。
+- **`nativeadapter/NativeHttpServer.kt`** — 提供静态 Web、单用户数据、OpenAI-compatible provider、诊断和导出兼容接口。
+- **`TavernWebViewClient.kt` / `StapkFileBridge.kt`** — 限定 loopback 主文档、外部 HTTPS 跳转和带 nonce 的 SAF bridge。
+- **`mobile/app/src/main/assets/`** — 只包含 no-node Web 资产、API contract、capability runtime、manifest 和 transform report，不得重新加入 runtime archive 或 payload tar。
 
 ## Payload generation (legacy scripts in `scripts/`)
 
@@ -56,7 +56,7 @@ Legacy assets in `mobile/app/src/main/assets/`: `payload.tgz` (SillyTavern sourc
 
 - Do not introduce runtime Node.js, npm, `node_modules`, `server.js` process spawning, or runtime archive extraction for the 0.3.0 path.
 - The app may still run a loopback HTTP server inside Android, but it must be implemented by Kotlin/Java and serve static Web assets plus native API compatibility endpoints.
-- MVP scope is OpenAI-compatible chat completion only. Non-MVP upstream features should be hidden, patched out, or return explicit unsupported responses rather than silently depending on Node server behavior.
+- Provider scope is OpenAI-compatible chat completion。普通单用户本地功能按 capability contract 开放；远程模型能力显示外部服务要求，本地重型模型、任意 Node 扩展和 multiuser 保持排除。
 - `network_security_config.xml` permits cleartext only to `127.0.0.1`/`localhost`; global cleartext stays off. Don't open global cleartext to simplify WebView loading.
 - Shell scripts use `set -euo pipefail` and must be LF-only (`.gitattributes` enforces `eol=lf` on `stapk/*`). CRLF here previously broke startup.
 
@@ -64,7 +64,7 @@ Legacy assets in `mobile/app/src/main/assets/`: `payload.tgz` (SillyTavern sourc
 
 `docs/superpowers/specs/2026-07-09-stapk-no-node-native-adapter-design.md` is the authoritative design for the next major version. It supersedes the Node runtime transformer route in `docs/superpowers/specs/2026-06-25-stapk-transformer-design.md`.
 
-The implementation plan is `docs/plan/2026-07-09-stapk-no-node-native-adapter-implementation-plan.md`. Preserve these boundaries while executing it:
+The active implementation plan is `docs/plan/2026-07-12-stapk-single-user-feature-completion-plan.md`. Preserve these boundaries while executing it:
 
 - Android APK runtime has no Node.js, npm, `node_modules`, `server.js`, runtime zip, or payload tar extraction.
 - Build-time tools may use Node.js to scan and transform upstream SillyTavern Web assets.

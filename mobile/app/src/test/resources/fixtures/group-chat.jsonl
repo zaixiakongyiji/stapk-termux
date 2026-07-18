@@ -1,0 +1,3 @@
+{"chat_metadata":{"world_info":"fixture-lore","vendor_flag":true},"user_name":"unused","character_name":"unused"}
+{"name":"User","is_user":true,"mes":"Hello group","send_date":"2026-07-13T10:00:00Z"}
+{"name":"Alice","is_user":false,"mes":"Hello User","send_date":"2026-07-13T10:01:00Z","vendor_message":{"score":7}}

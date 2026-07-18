@@ -1,0 +1,42 @@
+diff --git a/public/css/stapk-mobile.css b/public/css/stapk-mobile.css
+index 7f607f2..0c8f0af 100644
+--- a/public/css/stapk-mobile.css
++++ b/public/css/stapk-mobile.css
+@@ -12,12 +12,6 @@ label[for="extensions_notify_updates"],
+ #main-API-selector-block,
+ #external_import_button,
+ .external_import_button,
+-#WI-SP-button,
+-#world_button,
+-.chat_lorebook_button,
+-#set_character_world,
+-#import_character_info,
+-#character_world_template,
+ #sd_container,
+ #sd_wand_container,
+ #sd_gen,
+diff --git a/public/index.html b/public/index.html
+index b25ffb6..275375d 100644
+--- a/public/index.html
++++ b/public/index.html
+@@ -6043,6 +6043,12 @@
+                                             <label class="flex1 height100p" for="char-management-dropdown">
+                                                 <select id="char-management-dropdown" class="text_pole">
+                                                     <option value="default" disabled selected data-i18n="More...">More...</option>
++                                                    <option id="set_character_world" data-i18n="Link to World Info">
++                                                        Link to World Info
++                                                    </option>
++                                                    <option id="import_character_info" data-i18n="Import Card Lore">
++                                                        Import Card Lore
++                                                    </option>
+                                                     <option id="set_chat_character_settings" data-i18n="Character Settings Overrides">
+                                                         Character Settings Overrides
+                                                     </option>
+@@ -6179,6 +6185,7 @@
+                                     <label class="flex1 height100p" for="group-chat-lorebook-dropdown">
+                                         <select id="group-chat-lorebook-dropdown" class="text_pole">
+                                             <option value="default" disabled selected data-i18n="More...">More...</option>
++                                            <option id="group_chat_lorebook_link" data-i18n="Link to Chat Lorebook">Link to Chat Lorebook</option>
+                                         </select>
+                                     </label>
+                                     <div id="group_tags_div" class="wide100p">

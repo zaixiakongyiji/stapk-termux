@@ -12,10 +12,9 @@ jobs:
   build-and-release:
     runs-on: ubuntu-latest
     env:
-      TERMUX_SPLIT_APKS_FOR_RELEASE_BUILDS: "1"
-      JITPACK_NDK_VERSION: "22.1.7171670"
       GRADLE_OPTS: -Xmx4096m
       RELEASE_TAG: ${{ github.ref_name }}
+      SILLYTAVERN_REF: ${{ vars.SILLYTAVERN_REF || 'release' }}
       TERMUX_RELEASE_KEYSTORE_BASE64: ${{ secrets.TERMUX_RELEASE_KEYSTORE_BASE64 }}
       TERMUX_RELEASE_STORE_PASSWORD: ${{ secrets.TERMUX_RELEASE_STORE_PASSWORD }}
       TERMUX_RELEASE_KEY_ALIAS: ${{ secrets.TERMUX_RELEASE_KEY_ALIAS }}
@@ -25,7 +24,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          lfs: true
 
       - name: 安装 JDK 17
         uses: actions/setup-java@v4
@@ -49,8 +47,7 @@ jobs:
           sdkmanager \
             "platform-tools" \
             "platforms;android-34" \
-            "build-tools;34.0.0" \
-            "ndk;22.1.7171670"
+            "build-tools;34.0.0"
 
       - name: 生成 GitHub runner 用 local.properties
         shell: bash
@@ -58,43 +55,16 @@ jobs:
         run: |
           printf 'sdk.dir=%s\n' "$ANDROID_SDK_ROOT" > local.properties
 
-      - name: 生成 CI 用 Debug 签名文件
-        shell: bash
-        working-directory: mobile/app
-        run: |
-          keytool -genkeypair \
-            -alias alias \
-            -keyalg RSA \
-            -keysize 2048 \
-            -validity 10000 \
-            -storetype JKS \
-            -keystore dev_keystore.jks \
-            -storepass xrj45yWGLbsO7W0v \
-            -keypass xrj45yWGLbsO7W0v \
-            -dname "CN=stAPK Debug,O=stAPK,C=CN"
-
       - name: 授予 Gradle Wrapper 执行权限
         shell: bash
         working-directory: mobile
         run: chmod +x ./gradlew
 
-      - name: 生成 no-node SillyTavern Web 产物
+      - name: 安装构建期依赖
         shell: bash
         run: |
           echo "Node version: $(node --version)"
-          echo "YAML dependency version:"
           npm ci
-          npm ls yaml || true
-          npm run test:no-node
-          npm run transform:no-node
-          npm run transform:no-node:verify
-
-      - name: 上传 Transform 报告与产物
-        uses: actions/upload-artifact@v4
-        with:
-          name: transform-artifacts-release
-          path: |
-            build/no-node-payload/
 
       - name: 配置 Release 签名 Secrets
         shell: bash
@@ -112,8 +82,27 @@ jobs:
       - name: 注入版本标签
         shell: bash
         run: |
-          echo "TERMUX_APP_VERSION_NAME=${RELEASE_TAG#v}" >> "$GITHUB_ENV"
-          echo "TERMUX_APK_VERSION_TAG=${RELEASE_TAG}" >> "$GITHUB_ENV"
+          VERSION_NAME="${RELEASE_TAG#v}"
+          if [[ ! "$VERSION_NAME" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)(-([A-Za-z0-9]+)\.([0-9]+))?$ ]]; then
+            echo "版本标签格式非法：${RELEASE_TAG}，应使用 vMAJOR.MINOR.PATCH 或 vMAJOR.MINOR.PATCH-beta.N" >&2
+            exit 1
+          fi
+          MAJOR=$((10#${BASH_REMATCH[1]}))
+          MINOR=$((10#${BASH_REMATCH[2]}))
+          PATCH=$((10#${BASH_REMATCH[3]}))
+          PRERELEASE_SEQUENCE="${BASH_REMATCH[6]}"
+          if [ -n "$PRERELEASE_SEQUENCE" ]; then
+            if [ "$PRERELEASE_SEQUENCE" -lt 1 ] || [ "$PRERELEASE_SEQUENCE" -gt 98 ]; then
+              echo "预发布序号必须在 1-98 之间：${RELEASE_TAG}" >&2
+              exit 1
+            fi
+            CHANNEL_CODE=$((10#$PRERELEASE_SEQUENCE))
+          else
+            CHANNEL_CODE=99
+          fi
+          VERSION_CODE=$((MAJOR * 1000000 + MINOR * 10000 + PATCH * 100 + CHANNEL_CODE))
+          echo "STAPK_VERSION_NAME=${VERSION_NAME}" >> "$GITHUB_ENV"
+          echo "STAPK_VERSION_CODE=${VERSION_CODE}" >> "$GITHUB_ENV"
 
       - name: 从 CHANGELOG 生成 Release 正文
         shell: bash
@@ -143,22 +132,31 @@ jobs:
           print(f"已生成 {notes_path}")
           PY
 
-      - name: 构建 Release APK
+      - name: 一键验证并构建 Release APK
         shell: bash
-        working-directory: mobile
-        run: ./gradlew --no-daemon :app:assembleRelease
+        run: npm run build:no-node-apk -- --variant release --ref "$SILLYTAVERN_REF"
 
-      - name: 整理发布资产
+      - name: 整理带版本号的发布资产
         shell: bash
         run: |
-          mkdir -p release-assets
-          APK_SOURCE="mobile/app/build/outputs/apk/release/app-release.apk"
-          APK_TARGET="release-assets/stapk-mobile_${RELEASE_TAG}_arm64-v8a.apk"
-          cp "$APK_SOURCE" "$APK_TARGET"
+          APK_NAME="stapk-mobile_${RELEASE_TAG}.apk"
+          cp output/stapk-mobile-release.apk "release-assets/${APK_NAME}"
           (
             cd release-assets
-            sha256sum "stapk-mobile_${RELEASE_TAG}_arm64-v8a.apk" > "stapk-mobile_${RELEASE_TAG}_arm64-v8a.apk.sha256"
+            sha256sum "${APK_NAME}" > "${APK_NAME}.sha256"
           )
+
+      - name: 上传 Release APK 与转换证据
+        uses: actions/upload-artifact@v4
+        with:
+          name: stapk-release-${{ github.ref_name }}
+          path: |
+            release-assets/stapk-mobile_${{ github.ref_name }}.apk
+            release-assets/stapk-mobile_${{ github.ref_name }}.apk.sha256
+            output/api-contract.json
+            output/stapk-capabilities.json
+            output/stapk-web-manifest.json
+            output/transform-report.json
 
       - name: 上传 release 资产到 GitHub Release
         uses: softprops/action-gh-release@v2
@@ -166,8 +164,13 @@ jobs:
           tag_name: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
           body_path: release-assets/release-notes.md
+          prerelease: ${{ contains(github.ref_name, '-') }}
           overwrite_files: true
           fail_on_unmatched_files: true
           files: |
-            release-assets/stapk-mobile_${{ github.ref_name }}_arm64-v8a.apk
-            release-assets/stapk-mobile_${{ github.ref_name }}_arm64-v8a.apk.sha256
+            release-assets/stapk-mobile_${{ github.ref_name }}.apk
+            release-assets/stapk-mobile_${{ github.ref_name }}.apk.sha256
+            output/api-contract.json
+            output/stapk-capabilities.json
+            output/stapk-web-manifest.json
+            output/transform-report.json

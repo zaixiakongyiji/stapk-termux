@@ -1,0 +1,36 @@
+{
+  "spec": "chara_card_v2",
+  "spec_version": "2.0",
+  "name": "V2 Character",
+  "vendor_top": {
+    "marker": "v2-top"
+  },
+  "data": {
+    "name": "V2 Character",
+    "description": "V2 description",
+    "first_mes": "Hello from V2",
+    "vendor_data": {
+      "marker": "v2-data"
+    },
+    "extensions": {
+      "vendor_extension": {
+        "marker": "v2-extension",
+        "nested": {
+          "enabled": true
+        }
+      }
+    },
+    "character_book": {
+      "name": "V2 Book",
+      "entries": [
+        {
+          "keys": ["alpha"],
+          "content": "V2 lore",
+          "extensions": {
+            "vendor": 2
+          }
+        }
+      ]
+    }
+  }
+}

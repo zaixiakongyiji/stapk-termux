@@ -1,0 +1,60 @@
+diff --git a/public/index.html b/public/index.html
+index 275375d..4fdacb4 100644
+--- a/public/index.html
++++ b/public/index.html
+@@ -4478,26 +4478,8 @@
+                                         <span class="fa-solid fa-circle-question note-link-span"></span>
+                                     </a>
+                                 </h4>
+-                                <select id="tokenizer">
+-                                    <option value="99">Best match (recommended)</option>
+-                                    <option value="0">None / Estimated</option>
+-                                    <option value="1">GPT-2</option>
+-                                    <!-- Option #2 was a legacy GPT-2/3 tokenizer -->
+-                                    <option value="3">Llama 1/2</option>
+-                                    <option value="12">Llama 3</option>
+-                                    <option value="13">Gemma / Gemini</option>
+-                                    <option value="14">Jamba</option>
+-                                    <option value="15">Qwen2</option>
+-                                    <option value="16">Command-R</option>
+-                                    <option value="19">Command-A</option>
+-                                    <option value="4">NerdStash (NovelAI Clio)</option>
+-                                    <option value="5">NerdStash v2 (NovelAI Kayra)</option>
+-                                    <option value="7">Mistral V1</option>
+-                                    <option value="17">Mistral Nemo</option>
+-                                    <option value="8">Yi</option>
+-                                    <option value="11">Claude 1/2</option>
+-                                    <option value="18">DeepSeek V3</option>
+-                                    <option value="6">API (WebUI / koboldcpp)</option>
++                                <select id="tokenizer" disabled>
++                                    <option value="99" selected>OpenAI-compatible (automatic)</option>
+                                 </select>
+                             </div>
+                             <div class="range-block flex-container flexnowrap" name="tokenPaddingBlock">
+diff --git a/public/scripts/power-user.js b/public/scripts/power-user.js
+index ae66259..216d397 100644
+--- a/public/scripts/power-user.js
++++ b/public/scripts/power-user.js
+@@ -1630,6 +1630,9 @@ export async function loadPowerUserSettings(settings, data) {
+         power_user.tokenizer = tokenizers.GPT2;
+     }
+ 
++    // stAPK mobile 只提供 OpenAI-compatible 自动 tokenizer。
++    power_user.tokenizer = tokenizers.BEST_MATCH;
++
+     // Clean up old/legacy settings
+     if (power_user.import_card_tags !== undefined) {
+         power_user.tag_import_setting = power_user.import_card_tags ? tag_import_setting.ASK : tag_import_setting.NONE;
+diff --git a/public/scripts/tokenizers.js b/public/scripts/tokenizers.js
+index ce722b7..2270982 100644
+--- a/public/scripts/tokenizers.js
++++ b/public/scripts/tokenizers.js
+@@ -71,7 +71,7 @@ const TOKENIZER_URLS = {
+     [tokenizers.OPENAI]: {
+         encode: '/api/tokenizers/openai/encode',
+         decode: '/api/tokenizers/openai/decode',
+-        count: '/api/tokenizers/openai/encode',
++        count: '/api/tokenizers/openai/count',
+     },
+     [tokenizers.LLAMA]: {
+         encode: '/api/tokenizers/llama/encode',

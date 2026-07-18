@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://stapk.local/schemas/no-node-web-manifest.schema.json",
+  "title": "stAPK no-node Web manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "upstream",
+    "output",
+    "hashes",
+    "noRuntimeNode"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "integer",
+      "const": 1
+    },
+    "generatedAt": {
+      "type": "string"
+    },
+    "upstream": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repo",
+        "ref",
+        "commit"
+      ],
+      "properties": {
+        "repo": {
+          "type": "string"
+        },
+        "ref": {
+          "type": "string"
+        },
+        "commit": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "webRoot",
+        "apiContract"
+      ],
+      "properties": {
+        "webRoot": {
+          "type": "string"
+        },
+        "apiContract": {
+          "type": "string"
+        }
+      }
+    },
+    "hashes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "webRootSha256",
+        "patchQueueSha256"
+      ],
+      "properties": {
+        "webRootSha256": {
+          "type": "string"
+        },
+        "patchQueueSha256": {
+          "type": "string"
+        }
+      }
+    },
+    "noRuntimeNode": {
+      "type": "boolean",
+      "const": true
+    }
+  }
+}

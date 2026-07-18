@@ -1,0 +1,27 @@
+diff --git a/public/script.js b/public/script.js
+--- a/public/script.js
++++ b/public/script.js
+@@ -42,6 +42,7 @@ import {
+     getWorldInfoSettings,
+     setWorldInfoSettings,
+     world_names,
++    updateWorldInfoList,
+     importEmbeddedWorldInfo,
+     checkEmbeddedWorld,
+     setWorldInfoButtonClass,
+@@ -10502,6 +10503,15 @@ async function importCharacter(file, { preserveFileName = '', importTags = fals
+             throw new Error(`Server returned an error: ${data.error}`);
+         }
+ 
++        if (data.embedded_world) {
++            await updateWorldInfoList();
++            const status = data.embedded_world.created ? t`Imported` : t`Reused`;
++            toastr.success(
++                `${status}: ${data.embedded_world.name} (${data.embedded_world.entry_count} ${t`entries`})`,
++                t`Character World Info`,
++            );
++        }
++
+         if (data.file_name !== undefined) {
+             let avatarFileName = `${data.file_name}.png`;
+ 

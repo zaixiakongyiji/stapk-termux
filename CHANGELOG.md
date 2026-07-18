@@ -1,5 +1,23 @@
 # 更新日志
 
+## v0.3.0-beta.1 - 无 Node 原生适配测试版 (2026-07-18)
+
+这是 stAPK 0.3.0 的首个公开测试版本。应用不再在 Android 设备中携带或启动 Node.js，而是在构建期把 SillyTavern Web 资源转换为由 Kotlin 原生适配层承载的 APK。
+
+### 核心变化
+
+- 新增一键 no-node 转换与 APK 构建链路，固定执行转换测试、能力合同校验、Android 单测和 Release 构建。
+- 原生实现 OpenAI-compatible 主 API、聊天、角色卡、World Info、预设、Regex、Summarize 和 SAF 数据导入导出桥。
+- 支持第三方扩展安装、启用、禁用、版本检查、删除和重新安装，并保留第三方代码风险提示。
+- 修复中文 World Info 与 Regex 内容乱码、World Info 删除、角色卡内嵌 World Info 自动导入和条目正文显示。
+- APK 内置转换后的 SillyTavern Web 资源，启动后不需要解压或拉起 Node.js 服务。
+
+### 测试版说明
+
+- 这是 beta 版本，建议先备份重要数据；旧版本数据自动迁移仍作为正式版完成后的可选开发项。
+- 第三方扩展兼容性取决于其使用的 SillyTavern API，依赖未实现服务端能力的扩展可能无法完整运行。
+- 正式发布资产为不含 native runtime 的通用 Android APK。
+
 ## v0.2.0 - Android 原生外壳重构版 (2026-06-25)
 
 这是 stAPK Mobile 的一次重大里程碑重构！我们彻底抛弃了原本依赖的 Termux 底层，重新编写了纯原生的 Android 客户端外壳，使得应用更加轻量、专一且符合直觉。

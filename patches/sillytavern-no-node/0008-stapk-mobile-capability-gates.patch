@@ -1,0 +1,33 @@
+diff --git a/public/index.html b/public/index.html
+--- a/public/index.html
++++ b/public/index.html
+@@ -4,6 +4,7 @@
+ <head>
+     <title>SillyTavern</title>
+     <base href="/">
++    <script src="scripts/stapk-capabilities.js"></script>
+     <meta charset="utf-8">
+     <meta name="viewport" content="width=device-width, viewport-fit=cover, initial-scale=1, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
+     <meta name="apple-mobile-web-app-capable" content="yes">
+@@ -5704,5 +5705,8 @@
+                         </div>
+                     </div>
++                    <div id="stapk-external-capabilities-note" class="wide100p textAlignCenter">
++                        stAPK 原生模式不内置图像、语音、向量、字幕和翻译模型；相关能力需要配置外部服务后启用。
++                    </div>
+                     <div id="extensions_settings" class="flex1 wide50p">
+                         <div id="assets_container" class="extension_container"></div>
+                         <div id="typing_indicator_container" class="extension_container"></div>
+diff --git a/public/scripts/extensions/quick-reply/src/QuickReplySet.js b/public/scripts/extensions/quick-reply/src/QuickReplySet.js
+--- a/public/scripts/extensions/quick-reply/src/QuickReplySet.js
++++ b/public/scripts/extensions/quick-reply/src/QuickReplySet.js
+@@ -374,6 +374,9 @@ export class QuickReplySet {
+     }
+ 
+     async performSave() {
++        if (!this.name) {
++            return;
++        }
+         const response = await fetch('/api/quick-replies/save', {
+             method: 'POST',
+             headers: getRequestHeaders(),

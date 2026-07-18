@@ -1,0 +1,39 @@
+diff --git a/public/script.js b/public/script.js
+index 68a5461..2f0bd26 100644
+--- a/public/script.js
++++ b/public/script.js
+@@ -7929,15 +7929,8 @@ export async function getSettings(initLoaderHandle = null) {
+         $('#amount_gen').val(amount_gen);
+         $('#amount_gen_counter').val(amount_gen);
+ 
+-        //Load which API we are using
+-        if (settings.main_api == undefined) {
+-            settings.main_api = 'kobold';
+-        }
+-
+-        if (settings.main_api == 'poe') {
+-            settings.main_api = 'openai';
+-        }
+-
++        // stAPK mobile no-node 版本仅支持 Chat Completion API。
++        settings.main_api = 'openai';
+         main_api = settings.main_api;
+         $('#main_api').val(main_api);
+         $(`#main_api option[value=${main_api}]`).attr('selected', 'true');
+diff --git a/public/scripts/openai.js b/public/scripts/openai.js
+index 97b9665..c2aa66d 100644
+--- a/public/scripts/openai.js
++++ b/public/scripts/openai.js
+@@ -4236,6 +4236,12 @@ function loadOpenAISettings(data, settings) {
+ 
+     migrateChatCompletionSettings(settings);
+ 
++    // stAPK mobile 仅暴露 OpenAI 和通用 OpenAI-compatible 非流式请求。
++    settings.chat_completion_source = ['openai', 'custom'].includes(settings.chat_completion_source)
++        ? settings.chat_completion_source
++        : 'openai';
++    settings.stream_openai = false;
++
+     for (const key of Object.keys(default_settings)) {
+         oai_settings[key] = settings[key] ?? default_settings[key];
+         const settingToUpdate = Object.values(settingsToUpdate).find(([_, k]) => k === key);

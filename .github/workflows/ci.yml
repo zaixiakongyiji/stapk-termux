@@ -13,14 +13,10 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     env:
-      TERMUX_SPLIT_APKS_FOR_DEBUG_BUILDS: "0"
-      JITPACK_NDK_VERSION: "22.1.7171670"
       GRADLE_OPTS: -Xmx4096m
     steps:
       - name: 检出仓库
         uses: actions/checkout@v4
-        with:
-          lfs: true
 
       - name: 安装 JDK 17
         uses: actions/setup-java@v4
@@ -44,8 +40,7 @@ jobs:
           sdkmanager \
             "platform-tools" \
             "platforms;android-34" \
-            "build-tools;34.0.0" \
-            "ndk;22.1.7171670"
+            "build-tools;34.0.0"
 
       - name: 生成 GitHub runner 用 local.properties
         shell: bash
@@ -53,62 +48,29 @@ jobs:
         run: |
           printf 'sdk.dir=%s\n' "$ANDROID_SDK_ROOT" > local.properties
 
-      - name: 生成 CI 用 Debug 签名文件
-        shell: bash
-        working-directory: mobile/app
-        run: |
-          keytool -genkeypair \
-            -alias alias \
-            -keyalg RSA \
-            -keysize 2048 \
-            -validity 10000 \
-            -storetype JKS \
-            -keystore dev_keystore.jks \
-            -storepass xrj45yWGLbsO7W0v \
-            -keypass xrj45yWGLbsO7W0v \
-            -dname "CN=stAPK Debug,O=stAPK,C=CN"
-
       - name: 授予 Gradle Wrapper 执行权限
         shell: bash
         working-directory: mobile
         run: chmod +x ./gradlew
 
-      - name: 验证 no-node SillyTavern 转换
+      - name: 安装构建期依赖
         shell: bash
         run: |
-          START_TIME=$(date +%s)
           echo "Node version: $(node --version)"
-          echo "YAML dependency version:"
           npm ci
-          npm ls yaml || true
-          npm run test:no-node
-          npm run transform:no-node
-          npm run transform:no-node:verify
-          END_TIME=$(date +%s)
-          echo "no_node_transform_seconds=$((END_TIME - START_TIME))" >> "$GITHUB_STEP_SUMMARY"
 
-      - name: 上传 Transform 报告
-        uses: actions/upload-artifact@v4
-        with:
-          name: transform-reports-ci
-          path: |
-            build/no-node-payload/
-
-      - name: 执行关键单测
+      - name: 一键验证并构建 Debug APK
         shell: bash
-        working-directory: mobile
-        run: |
-          ./gradlew --no-daemon :app:testDebugUnitTest
+        run: npm run build:no-node-apk -- --variant debug --ref release
 
-      - name: 构建 Debug APK
-        shell: bash
-        working-directory: mobile
-        run: ./gradlew --no-daemon :app:assembleDebug
-
-      - name: 上传 Debug APK
+      - name: 上传 Debug APK 与转换证据
         uses: actions/upload-artifact@v4
         with:
           name: stapk-debug-app
           path: |
-            mobile/app/build/outputs/apk/debug/app-debug.apk
-            mobile/app/build/outputs/apk/debug/output-metadata.json
+            output/stapk-mobile-debug.apk
+            output/stapk-mobile-debug.apk.sha256
+            output/api-contract.json
+            output/stapk-capabilities.json
+            output/stapk-web-manifest.json
+            output/transform-report.json

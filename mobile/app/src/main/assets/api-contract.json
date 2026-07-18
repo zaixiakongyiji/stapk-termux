@@ -1,0 +1,6807 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-07-18T11:02:09.624Z",
+  "upstream": {
+    "ref": "release",
+    "commit": "8172dcd0ee672d3cd9a5e5f7af134f91a45cd2b8",
+    "version": "1.18.0"
+  },
+  "webRoot": "C:\\Users\\31029\\Documents\\GitHub\\stapk-termux\\build\\no-node-payload\\sillytavern-web",
+  "endpoints": [
+    {
+      "method": "POST",
+      "path": "/api/anthropic/caption-image",
+      "status": "external_optional",
+      "capability": "remote.caption",
+      "exposure": "visible_when_configured",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/shared.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/shared.js",
+          "line": 139,
+          "expression": "/api/anthropic/caption-image"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/assets/delete",
+      "status": "unsupported_hidden",
+      "capability": "excluded.extensions",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/assets/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/assets/index.js",
+          "line": 433,
+          "expression": "/api/assets/delete"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/assets/download",
+      "status": "unsupported_hidden",
+      "capability": "excluded.extensions",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/assets/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/assets/index.js",
+          "line": 390,
+          "expression": "/api/assets/download"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/assets/get",
+      "status": "unsupported_hidden",
+      "capability": "excluded.extensions",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/assets/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/assets/index.js",
+          "line": 515,
+          "expression": "/api/assets/get"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/avatars/delete",
+      "status": "implemented",
+      "capability": "core.personas",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/personas.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/personas.js",
+          "line": 1170,
+          "expression": "/api/avatars/delete"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/avatars/get",
+      "status": "implemented",
+      "capability": "core.personas",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/personas.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/personas.js",
+          "line": 276,
+          "expression": "/api/avatars/get"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/avatars/upload",
+      "status": "implemented",
+      "capability": "core.personas",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/personas.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/personas.js",
+          "line": 370,
+          "expression": "/api/avatars/upload"
+        },
+        {
+          "file": "scripts/personas.js",
+          "line": 403,
+          "expression": "/api/avatars/upload"
+        },
+        {
+          "file": "scripts/personas.js",
+          "line": 2040,
+          "expression": "/api/avatars/upload"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/azure/generate",
+      "status": "external_optional",
+      "capability": "remote.tts",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/tts/azure.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/tts/azure.js",
+          "line": 191,
+          "expression": "/api/azure/generate"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/azure/list",
+      "status": "external_optional",
+      "capability": "remote.tts",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/tts/azure.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/tts/azure.js",
+          "line": 143,
+          "expression": "/api/azure/list"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/backends/chat-completions/bias",
+      "status": "implemented",
+      "capability": "core.chats",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": true,
+      "sourceFiles": [
+        "scripts/openai.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/openai.js",
+          "line": 3311,
+          "expression": "/api/backends/chat-completions/bias?model=${getTokenizerModel()}"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/backends/chat-completions/generate",
+      "status": "implemented",
+      "capability": "core.chats",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/custom-request.js",
+        "scripts/openai.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/custom-request.js",
+          "line": 463,
+          "expression": "/api/backends/chat-completions/generate"
+        },
+        {
+          "file": "scripts/openai.js",
+          "line": 3054,
+          "expression": "/api/backends/chat-completions/generate"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/backends/chat-completions/multimodal-models/aimlapi",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/caption/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/caption/index.js",
+          "line": 620,
+          "expression": "/api/backends/chat-completions/multimodal-models/aimlapi"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/backends/chat-completions/multimodal-models/chutes",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/caption/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/caption/index.js",
+          "line": 623,
+          "expression": "/api/backends/chat-completions/multimodal-models/chutes"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/backends/chat-completions/multimodal-models/electronhub",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/caption/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/caption/index.js",
+          "line": 624,
+          "expression": "/api/backends/chat-completions/multimodal-models/electronhub"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/backends/chat-completions/multimodal-models/mistral",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/caption/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/caption/index.js",
+          "line": 625,
+          "expression": "/api/backends/chat-completions/multimodal-models/mistral"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/backends/chat-completions/multimodal-models/moonshot",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/caption/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/caption/index.js",
+          "line": 627,
+          "expression": "/api/backends/chat-completions/multimodal-models/moonshot"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/backends/chat-completions/multimodal-models/nanogpt",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/caption/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/caption/index.js",
+          "line": 622,
+          "expression": "/api/backends/chat-completions/multimodal-models/nanogpt"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/backends/chat-completions/multimodal-models/pollinations",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/caption/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/caption/index.js",
+          "line": 621,
+          "expression": "/api/backends/chat-completions/multimodal-models/pollinations"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/backends/chat-completions/multimodal-models/workers_ai",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/caption/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/caption/index.js",
+          "line": 628,
+          "expression": "/api/backends/chat-completions/multimodal-models/workers_ai"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/backends/chat-completions/multimodal-models/xai",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/caption/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/caption/index.js",
+          "line": 626,
+          "expression": "/api/backends/chat-completions/multimodal-models/xai"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/backends/chat-completions/status",
+      "status": "implemented",
+      "capability": "core.chats",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/openai.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/openai.js",
+          "line": 4443,
+          "expression": "/api/backends/chat-completions/status"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/backends/kobold/embed",
+      "status": "unsupported_hidden",
+      "capability": "excluded.local_models",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/vectors/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/vectors/index.js",
+          "line": 1455,
+          "expression": "/api/backends/kobold/embed"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/backends/kobold/generate",
+      "status": "unsupported_hidden",
+      "capability": "excluded.local_models",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "script.js",
+        "scripts/kai-settings.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "script.js",
+          "line": 6118,
+          "expression": "/api/backends/kobold/generate"
+        },
+        {
+          "file": "scripts/kai-settings.js",
+          "line": 230,
+          "expression": "/api/backends/kobold/generate"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/backends/kobold/status",
+      "status": "unsupported_hidden",
+      "capability": "excluded.local_models",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/kai-settings.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/kai-settings.js",
+          "line": 416,
+          "expression": "/api/backends/kobold/status"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/backends/koboldhorde/generate",
+      "status": "unsupported_hidden",
+      "capability": "excluded.local_models",
+      "exposure": "hidden",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "script.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "script.js",
+          "line": 6120,
+          "expression": "/api/backends/koboldhorde/generate"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/backends/text-completions/generate",
+      "status": "unsupported_hidden",
+      "capability": "excluded.local_models",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "script.js",
+        "scripts/custom-request.js",
+        "scripts/textgen-settings.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "script.js",
+          "line": 6122,
+          "expression": "/api/backends/text-completions/generate"
+        },
+        {
+          "file": "scripts/custom-request.js",
+          "line": 147,
+          "expression": "/api/backends/text-completions/generate"
+        },
+        {
+          "file": "scripts/textgen-settings.js",
+          "line": 1292,
+          "expression": "/api/backends/text-completions/generate"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/backends/text-completions/ollama/caption-image",
+      "status": "unsupported_hidden",
+      "capability": "excluded.local_models",
+      "exposure": "hidden",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/shared.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/shared.js",
+          "line": 141,
+          "expression": "/api/backends/text-completions/ollama/caption-image"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/backends/text-completions/ollama/download",
+      "status": "unsupported_hidden",
+      "capability": "excluded.local_models",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/textgen-models.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/textgen-models.js",
+          "line": 1182,
+          "expression": "/api/backends/text-completions/ollama/download"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/backends/text-completions/props",
+      "status": "unsupported_hidden",
+      "capability": "excluded.local_models",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/textgen-settings.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/textgen-settings.js",
+          "line": 753,
+          "expression": "/api/backends/text-completions/props"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/backends/text-completions/status",
+      "status": "unsupported_hidden",
+      "capability": "excluded.local_models",
+      "exposure": "hidden",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/textgen-settings.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/textgen-settings.js",
+          "line": 660,
+          "expression": "/api/backends/text-completions/status"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/backends/text-completions/tabby/download",
+      "status": "unsupported_hidden",
+      "capability": "excluded.local_models",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/textgen-models.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/textgen-models.js",
+          "line": 1252,
+          "expression": "/api/backends/text-completions/tabby/download"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/backgrounds/all",
+      "status": "implemented",
+      "capability": "core.backgrounds",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/backgrounds.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/backgrounds.js",
+          "line": 715,
+          "expression": "/api/backgrounds/all"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/backgrounds/delete",
+      "status": "implemented",
+      "capability": "core.backgrounds",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/backgrounds.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/backgrounds.js",
+          "line": 1501,
+          "expression": "/api/backgrounds/delete"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/backgrounds/folders",
+      "status": "implemented",
+      "capability": "core.backgrounds",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/backgrounds.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/backgrounds.js",
+          "line": 772,
+          "expression": "/api/backgrounds/folders"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/backgrounds/rename",
+      "status": "implemented",
+      "capability": "core.backgrounds",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/backgrounds.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/backgrounds.js",
+          "line": 518,
+          "expression": "/api/backgrounds/rename"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/backgrounds/upload",
+      "status": "implemented",
+      "capability": "core.backgrounds",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/backgrounds.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/backgrounds.js",
+          "line": 1565,
+          "expression": "/api/backgrounds/upload"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/backups/chat/delete",
+      "status": "implemented",
+      "capability": "core.data_management",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/chat-backups.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/chat-backups.js",
+          "line": 128,
+          "expression": "/api/backups/chat/delete"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/backups/chat/download",
+      "status": "implemented",
+      "capability": "core.data_management",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/chat-backups.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/chat-backups.js",
+          "line": 29,
+          "expression": "/api/backups/chat/download"
+        },
+        {
+          "file": "scripts/chat-backups.js",
+          "line": 74,
+          "expression": "/api/backups/chat/download"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/backups/chat/get",
+      "status": "implemented",
+      "capability": "core.data_management",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/chat-backups.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/chat-backups.js",
+          "line": 156,
+          "expression": "/api/backups/chat/get"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/caption",
+      "status": "external_optional",
+      "capability": "remote.caption",
+      "exposure": "visible_when_configured",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/caption/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/caption/index.js",
+          "line": 249,
+          "expression": "/api/caption"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/characters/all",
+      "status": "implemented",
+      "capability": "core.characters",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "script.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "script.js",
+          "line": 1295,
+          "expression": "/api/characters/all"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/characters/chats",
+      "status": "implemented",
+      "capability": "core.characters",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "script.js",
+        "scripts/bookmarks.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "script.js",
+          "line": 1390,
+          "expression": "/api/characters/chats"
+        },
+        {
+          "file": "script.js",
+          "line": 1407,
+          "expression": "/api/characters/chats"
+        },
+        {
+          "file": "script.js",
+          "line": 8445,
+          "expression": "/api/characters/chats"
+        },
+        {
+          "file": "scripts/bookmarks.js",
+          "line": 71,
+          "expression": "/api/characters/chats"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/characters/create",
+      "status": "implemented",
+      "capability": "core.characters",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "script.js",
+        "scripts/slash-commands.js",
+        "scripts/welcome-screen.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "script.js",
+          "line": 9713,
+          "expression": "/api/characters/create"
+        },
+        {
+          "file": "scripts/slash-commands.js",
+          "line": 5236,
+          "expression": "/api/characters/create"
+        },
+        {
+          "file": "scripts/welcome-screen.js",
+          "line": 869,
+          "expression": "/api/characters/create"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/characters/delete",
+      "status": "implemented",
+      "capability": "core.characters",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "script.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "script.js",
+          "line": 10807,
+          "expression": "/api/characters/delete"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/characters/duplicate",
+      "status": "implemented",
+      "capability": "core.characters",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "script.js",
+        "scripts/BulkEditOverlay.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "script.js",
+          "line": 6007,
+          "expression": "/api/characters/duplicate"
+        },
+        {
+          "file": "scripts/BulkEditOverlay.js",
+          "line": 48,
+          "expression": "/api/characters/duplicate"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/characters/edit",
+      "status": "implemented",
+      "capability": "core.characters",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "script.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "script.js",
+          "line": 9804,
+          "expression": "/api/characters/edit"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/characters/edit-avatar",
+      "status": "implemented",
+      "capability": "core.characters",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/slash-commands.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/slash-commands.js",
+          "line": 5157,
+          "expression": "/api/characters/edit-avatar"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/characters/export",
+      "status": "implemented",
+      "capability": "core.characters",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "script.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "script.js",
+          "line": 12000,
+          "expression": "/api/characters/export"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/characters/get",
+      "status": "implemented",
+      "capability": "core.characters",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "script.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "script.js",
+          "line": 1224,
+          "expression": "/api/characters/get"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/characters/import",
+      "status": "implemented",
+      "capability": "core.characters",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "script.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "script.js",
+          "line": 10487,
+          "expression": "/api/characters/import"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/characters/merge-attributes",
+      "status": "implemented",
+      "capability": "core.characters",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "script.js",
+        "scripts/BulkEditOverlay.js",
+        "scripts/extensions.js",
+        "scripts/slash-commands.js",
+        "scripts/world-info.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "script.js",
+          "line": 10729,
+          "expression": "/api/characters/merge-attributes"
+        },
+        {
+          "file": "scripts/BulkEditOverlay.js",
+          "line": 84,
+          "expression": "/api/characters/merge-attributes"
+        },
+        {
+          "file": "scripts/extensions.js",
+          "line": 2102,
+          "expression": "/api/characters/merge-attributes"
+        },
+        {
+          "file": "scripts/extensions.js",
+          "line": 2166,
+          "expression": "/api/characters/merge-attributes"
+        },
+        {
+          "file": "scripts/slash-commands.js",
+          "line": 5412,
+          "expression": "/api/characters/merge-attributes"
+        },
+        {
+          "file": "scripts/world-info.js",
+          "line": 4187,
+          "expression": "/api/characters/merge-attributes"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/characters/rename",
+      "status": "implemented",
+      "capability": "core.characters",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "script.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "script.js",
+          "line": 7151,
+          "expression": "/api/characters/rename"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/chats/delete",
+      "status": "implemented",
+      "capability": "core.chats",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "script.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "script.js",
+          "line": 1339,
+          "expression": "/api/chats/delete"
+        },
+        {
+          "file": "script.js",
+          "line": 1375,
+          "expression": "/api/chats/delete"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/chats/export",
+      "status": "implemented",
+      "capability": "core.chats",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "script.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "script.js",
+          "line": 11460,
+          "expression": "/api/chats/export"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/chats/get",
+      "status": "implemented",
+      "capability": "core.chats",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "script.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "script.js",
+          "line": 7254,
+          "expression": "/api/chats/get"
+        },
+        {
+          "file": "script.js",
+          "line": 7581,
+          "expression": "/api/chats/get"
+        },
+        {
+          "file": "script.js",
+          "line": 8390,
+          "expression": "/api/chats/get"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/chats/group/delete",
+      "status": "implemented",
+      "capability": "core.groups",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/group-chats.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/group-chats.js",
+          "line": 2249,
+          "expression": "/api/chats/group/delete"
+        },
+        {
+          "file": "scripts/group-chats.js",
+          "line": 2292,
+          "expression": "/api/chats/group/delete"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/chats/group/get",
+      "status": "implemented",
+      "capability": "core.groups",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "script.js",
+        "scripts/group-chats.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "script.js",
+          "line": 8390,
+          "expression": "/api/chats/group/get"
+        },
+        {
+          "file": "scripts/group-chats.js",
+          "line": 196,
+          "expression": "/api/chats/group/get"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/chats/group/import",
+      "status": "implemented",
+      "capability": "core.groups",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/group-chats.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/group-chats.js",
+          "line": 2319,
+          "expression": "/api/chats/group/import"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/chats/group/info",
+      "status": "implemented",
+      "capability": "core.groups",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/group-chats.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/group-chats.js",
+          "line": 2172,
+          "expression": "/api/chats/group/info"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/chats/group/save",
+      "status": "implemented",
+      "capability": "core.groups",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/bookmarks.js",
+        "scripts/group-chats.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/bookmarks.js",
+          "line": 428,
+          "expression": "/api/chats/group/save"
+        },
+        {
+          "file": "scripts/group-chats.js",
+          "line": 642,
+          "expression": "/api/chats/group/save"
+        },
+        {
+          "file": "scripts/group-chats.js",
+          "line": 738,
+          "expression": "/api/chats/group/save"
+        },
+        {
+          "file": "scripts/group-chats.js",
+          "line": 2388,
+          "expression": "/api/chats/group/save"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/chats/import",
+      "status": "implemented",
+      "capability": "core.chats",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "script.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "script.js",
+          "line": 9384,
+          "expression": "/api/chats/import"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/chats/recent",
+      "status": "implemented",
+      "capability": "core.chats",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/welcome-screen.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/welcome-screen.js",
+          "line": 765,
+          "expression": "/api/chats/recent"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/chats/rename",
+      "status": "implemented",
+      "capability": "core.chats",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "script.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "script.js",
+          "line": 10628,
+          "expression": "/api/chats/rename"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/chats/save",
+      "status": "implemented",
+      "capability": "core.chats",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "script.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "script.js",
+          "line": 7291,
+          "expression": "/api/chats/save"
+        },
+        {
+          "file": "script.js",
+          "line": 7390,
+          "expression": "/api/chats/save"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/chats/search",
+      "status": "implemented",
+      "capability": "core.chats",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "script.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "script.js",
+          "line": 8518,
+          "expression": "/api/chats/search"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/classify",
+      "status": "unsupported_hidden",
+      "capability": "excluded.extensions",
+      "exposure": "hidden",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/expressions/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/expressions/index.js",
+          "line": 1121,
+          "expression": "/api/classify"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/classify/labels",
+      "status": "unsupported_hidden",
+      "capability": "excluded.extensions",
+      "exposure": "hidden",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/expressions/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/expressions/index.js",
+          "line": 1429,
+          "expression": "/api/classify/labels"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/content/importURL",
+      "status": "unsupported_hidden",
+      "capability": "excluded.extensions",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/utils.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/utils.js",
+          "line": 2986,
+          "expression": "/api/content/importURL"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/content/importUUID",
+      "status": "unsupported_hidden",
+      "capability": "excluded.extensions",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/utils.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/utils.js",
+          "line": 2993,
+          "expression": "/api/content/importUUID"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/data-maid/delete",
+      "status": "unsupported_hidden",
+      "capability": "excluded.extensions",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/data-maid.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/data-maid.js",
+          "line": 332,
+          "expression": "/api/data-maid/delete"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/data-maid/finalize",
+      "status": "unsupported_hidden",
+      "capability": "excluded.extensions",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/data-maid.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/data-maid.js",
+          "line": 87,
+          "expression": "/api/data-maid/finalize"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/data-maid/report",
+      "status": "unsupported_hidden",
+      "capability": "excluded.extensions",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/data-maid.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/data-maid.js",
+          "line": 69,
+          "expression": "/api/data-maid/report"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/data-maid/view",
+      "status": "unsupported_hidden",
+      "capability": "excluded.extensions",
+      "exposure": "hidden",
+      "inferredMethod": true,
+      "dynamic": true,
+      "sourceFiles": [
+        "scripts/data-maid.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/data-maid.js",
+          "line": 285,
+          "expression": "/api/data-maid/view?hash=${encodeURIComponent(hash)}&token=${encodeURIComponent(this.token)}"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/edge-tts/generate",
+      "status": "external_optional",
+      "capability": "remote.tts",
+      "exposure": "visible_when_configured",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/tts/edge.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/tts/edge.js",
+          "line": 215,
+          "expression": "/api/edge-tts/generate"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/edge-tts/list",
+      "status": "external_optional",
+      "capability": "remote.tts",
+      "exposure": "visible_when_configured",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/tts/edge.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/tts/edge.js",
+          "line": 233,
+          "expression": "/api/edge-tts/list"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/extensions/branches",
+      "status": "unsupported_hidden",
+      "capability": "excluded.extensions",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions.js",
+          "line": 1634,
+          "expression": "/api/extensions/branches"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/extensions/delete",
+      "status": "implemented",
+      "capability": "native.extensions",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions.js",
+          "line": 1571,
+          "expression": "/api/extensions/delete"
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/extensions/discover",
+      "status": "implemented",
+      "capability": "native.extensions",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions.js",
+          "line": 300,
+          "expression": "/api/extensions/discover"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/extensions/install",
+      "status": "implemented",
+      "capability": "native.extensions",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions.js",
+          "line": 1746,
+          "expression": "/api/extensions/install"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/extensions/move",
+      "status": "unsupported_hidden",
+      "capability": "excluded.extensions",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions.js",
+          "line": 1531,
+          "expression": "/api/extensions/move"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/extensions/switch",
+      "status": "unsupported_hidden",
+      "capability": "excluded.extensions",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions.js",
+          "line": 1666,
+          "expression": "/api/extensions/switch"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/extensions/update",
+      "status": "implemented",
+      "capability": "native.extensions",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions.js",
+          "line": 1360,
+          "expression": "/api/extensions/update"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/extensions/version",
+      "status": "implemented",
+      "capability": "native.extensions",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions.js",
+          "line": 1601,
+          "expression": "/api/extensions/version"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/extra/caption",
+      "status": "external_optional",
+      "capability": "remote.caption",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/caption/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/caption/index.js",
+          "line": 274,
+          "expression": "/api/extra/caption"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/extra/classify",
+      "status": "unsupported_hidden",
+      "capability": "excluded.extensions",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/expressions/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/expressions/index.js",
+          "line": 1062,
+          "expression": "/api/extra/classify"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/extra/classify/labels",
+      "status": "unsupported_hidden",
+      "capability": "excluded.extensions",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/expressions/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/expressions/index.js",
+          "line": 1445,
+          "expression": "/api/extra/classify/labels"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/files/delete",
+      "status": "implemented",
+      "capability": "core.files",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/chats.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/chats.js",
+          "line": 1130,
+          "expression": "/api/files/delete"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/files/sanitize-filename",
+      "status": "implemented",
+      "capability": "core.files",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/utils.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/utils.js",
+          "line": 1623,
+          "expression": "/api/files/sanitize-filename"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/files/upload",
+      "status": "implemented",
+      "capability": "core.files",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/chats.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/chats.js",
+          "line": 276,
+          "expression": "/api/files/upload"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/files/verify",
+      "status": "implemented",
+      "capability": "core.files",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/chats.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/chats.js",
+          "line": 1830,
+          "expression": "/api/files/verify"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/google/caption-image",
+      "status": "external_optional",
+      "capability": "remote.caption",
+      "exposure": "visible_when_configured",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/shared.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/shared.js",
+          "line": 137,
+          "expression": "/api/google/caption-image"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/google/generate-image",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 4603,
+          "expression": "/api/google/generate-image"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/google/generate-native-tts",
+      "status": "external_optional",
+      "capability": "remote.tts",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/tts/google-native.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/tts/google-native.js",
+          "line": 164,
+          "expression": "/api/google/generate-native-tts"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/google/generate-video",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 4576,
+          "expression": "/api/google/generate-video"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/google/generate-voice",
+      "status": "external_optional",
+      "capability": "remote.tts",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/tts/google-translate.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/tts/google-translate.js",
+          "line": 124,
+          "expression": "/api/google/generate-voice"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/google/list-native-voices",
+      "status": "external_optional",
+      "capability": "remote.tts",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/tts/google-native.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/tts/google-native.js",
+          "line": 96,
+          "expression": "/api/google/list-native-voices"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/google/list-voices",
+      "status": "external_optional",
+      "capability": "remote.tts",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/tts/google-translate.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/tts/google-translate.js",
+          "line": 86,
+          "expression": "/api/google/list-voices"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/groups/all",
+      "status": "implemented",
+      "capability": "core.groups",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/group-chats.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/group-chats.js",
+          "line": 759,
+          "expression": "/api/groups/all"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/groups/create",
+      "status": "implemented",
+      "capability": "core.groups",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/bookmarks.js",
+        "scripts/group-chats.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/bookmarks.js",
+          "line": 378,
+          "expression": "/api/groups/create"
+        },
+        {
+          "file": "scripts/group-chats.js",
+          "line": 2119,
+          "expression": "/api/groups/create"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/groups/delete",
+      "status": "implemented",
+      "capability": "core.groups",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/group-chats.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/group-chats.js",
+          "line": 1326,
+          "expression": "/api/groups/delete"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/groups/edit",
+      "status": "implemented",
+      "capability": "core.groups",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/group-chats.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/group-chats.js",
+          "line": 156,
+          "expression": "/api/groups/edit"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/horde/cancel-task",
+      "status": "unsupported_hidden",
+      "capability": "excluded.local_models",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/horde.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/horde.js",
+          "line": 91,
+          "expression": "/api/horde/cancel-task"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/horde/caption-image",
+      "status": "external_optional",
+      "capability": "remote.caption",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/caption/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/caption/index.js",
+          "line": 294,
+          "expression": "/api/horde/caption-image"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/horde/generate-image",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 3758,
+          "expression": "/api/horde/generate-image"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/horde/generate-text",
+      "status": "unsupported_hidden",
+      "capability": "excluded.local_models",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/horde.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/horde.js",
+          "line": 221,
+          "expression": "/api/horde/generate-text"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/horde/sd-models",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 2262,
+          "expression": "/api/horde/sd-models"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/horde/sd-samplers",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 1766,
+          "expression": "/api/horde/sd-samplers"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/horde/status",
+      "status": "unsupported_hidden",
+      "capability": "excluded.local_models",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/horde.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/horde.js",
+          "line": 108,
+          "expression": "/api/horde/status"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/horde/task-status",
+      "status": "unsupported_hidden",
+      "capability": "excluded.local_models",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/horde.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/horde.js",
+          "line": 73,
+          "expression": "/api/horde/task-status"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/horde/text-models",
+      "status": "unsupported_hidden",
+      "capability": "excluded.local_models",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/horde.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/horde.js",
+          "line": 56,
+          "expression": "/api/horde/text-models"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/horde/text-workers",
+      "status": "unsupported_hidden",
+      "capability": "excluded.local_models",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/horde.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/horde.js",
+          "line": 42,
+          "expression": "/api/horde/text-workers"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/horde/user-info",
+      "status": "unsupported_hidden",
+      "capability": "excluded.local_models",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/horde.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/horde.js",
+          "line": 328,
+          "expression": "/api/horde/user-info"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/image",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 3526,
+          "expression": "/api/image"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/image-metadata/all",
+      "status": "implemented",
+      "capability": "core.files",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/backgrounds.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/backgrounds.js",
+          "line": 748,
+          "expression": "/api/image-metadata/all"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/image-metadata/folders/assign",
+      "status": "implemented",
+      "capability": "core.files",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/backgrounds.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/backgrounds.js",
+          "line": 1050,
+          "expression": "/api/image-metadata/folders/assign"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/image-metadata/folders/create",
+      "status": "implemented",
+      "capability": "core.files",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/backgrounds.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/backgrounds.js",
+          "line": 1174,
+          "expression": "/api/image-metadata/folders/create"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/image-metadata/folders/delete",
+      "status": "implemented",
+      "capability": "core.files",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/backgrounds.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/backgrounds.js",
+          "line": 1231,
+          "expression": "/api/image-metadata/folders/delete"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/image-metadata/folders/set-thumbnails",
+      "status": "implemented",
+      "capability": "core.files",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/backgrounds.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/backgrounds.js",
+          "line": 799,
+          "expression": "/api/image-metadata/folders/set-thumbnails"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/image-metadata/folders/unassign",
+      "status": "implemented",
+      "capability": "core.files",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/backgrounds.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/backgrounds.js",
+          "line": 1050,
+          "expression": "/api/image-metadata/folders/unassign"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/image-metadata/folders/update",
+      "status": "implemented",
+      "capability": "core.files",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/backgrounds.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/backgrounds.js",
+          "line": 1203,
+          "expression": "/api/image-metadata/folders/update"
+        },
+        {
+          "file": "scripts/backgrounds.js",
+          "line": 1339,
+          "expression": "/api/image-metadata/folders/update"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/image/model",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 1661,
+          "expression": "/api/image/model"
+        },
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 2286,
+          "expression": "/api/image/model"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/image/models",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 2294,
+          "expression": "/api/image/models"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/image/samplers",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 1784,
+          "expression": "/api/image/samplers"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/images/delete",
+      "status": "implemented",
+      "capability": "core.files",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/chats.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/chats.js",
+          "line": 1099,
+          "expression": "/api/images/delete"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/images/folders",
+      "status": "implemented",
+      "capability": "core.files",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/gallery/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/gallery/index.js",
+          "line": 160,
+          "expression": "/api/images/folders"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/images/list",
+      "status": "implemented",
+      "capability": "core.files",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/gallery/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/gallery/index.js",
+          "line": 115,
+          "expression": "/api/images/list"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/images/upload",
+      "status": "implemented",
+      "capability": "core.files",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/utils.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/utils.js",
+          "line": 1666,
+          "expression": "/api/images/upload"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/minimax/generate-voice",
+      "status": "external_optional",
+      "capability": "remote.tts",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/tts/minimax.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/tts/minimax.js",
+          "line": 806,
+          "expression": "/api/minimax/generate-voice"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/modules",
+      "status": "unsupported_hidden",
+      "capability": "excluded.extensions",
+      "exposure": "hidden",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions.js",
+          "line": 745,
+          "expression": "/api/modules"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/moving-ui/save",
+      "status": "implemented",
+      "capability": "core.settings",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/power-user.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/power-user.js",
+          "line": 2613,
+          "expression": "/api/moving-ui/save"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/nanogpt/credits",
+      "status": "unsupported_hidden",
+      "capability": "excluded.local_models",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/secrets.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/secrets.js",
+          "line": 1242,
+          "expression": "/api/nanogpt/credits"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/nanogpt/models/providers",
+      "status": "unsupported_hidden",
+      "capability": "excluded.local_models",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/textgen-models.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/textgen-models.js",
+          "line": 413,
+          "expression": "/api/nanogpt/models/providers"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/novelai/generate",
+      "status": "unsupported_hidden",
+      "capability": "excluded.local_models",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "script.js",
+        "scripts/nai-settings.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "script.js",
+          "line": 6124,
+          "expression": "/api/novelai/generate"
+        },
+        {
+          "file": "scripts/nai-settings.js",
+          "line": 744,
+          "expression": "/api/novelai/generate"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/novelai/generate-image",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 3966,
+          "expression": "/api/novelai/generate-image"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/novelai/generate-voice",
+      "status": "external_optional",
+      "capability": "remote.tts",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/tts/novel.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/tts/novel.js",
+          "line": 198,
+          "expression": "/api/novelai/generate-voice"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/novelai/status",
+      "status": "unsupported_hidden",
+      "capability": "excluded.local_models",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/nai-settings.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/nai-settings.js",
+          "line": 163,
+          "expression": "/api/novelai/status"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/openai/caption-image",
+      "status": "external_optional",
+      "capability": "remote.caption",
+      "exposure": "visible_when_configured",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/shared.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/shared.js",
+          "line": 143,
+          "expression": "/api/openai/caption-image"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/openai/chutes/generate-voice",
+      "status": "external_optional",
+      "capability": "remote.tts",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/tts/chutes.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/tts/chutes.js",
+          "line": 201,
+          "expression": "/api/openai/chutes/generate-voice"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/openai/chutes/models/embedding",
+      "status": "external_optional",
+      "capability": "remote.embeddings",
+      "exposure": "visible_when_configured",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/vectors/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/vectors/index.js",
+          "line": 155,
+          "expression": "/api/openai/chutes/models/embedding"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/openai/custom/generate-voice",
+      "status": "external_optional",
+      "capability": "remote.tts",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/tts/openai-compatible.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/tts/openai-compatible.js",
+          "line": 161,
+          "expression": "/api/openai/custom/generate-voice"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/openai/electronhub/generate-voice",
+      "status": "external_optional",
+      "capability": "remote.tts",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/tts/electronhub.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/tts/electronhub.js",
+          "line": 443,
+          "expression": "/api/openai/electronhub/generate-voice"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/openai/electronhub/models",
+      "status": "external_optional",
+      "capability": "remote.tts",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/tts/electronhub.js",
+        "scripts/extensions/vectors/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/tts/electronhub.js",
+          "line": 188,
+          "expression": "/api/openai/electronhub/models"
+        },
+        {
+          "file": "scripts/extensions/vectors/index.js",
+          "line": 168,
+          "expression": "/api/openai/electronhub/models"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/openai/generate-image",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 4144,
+          "expression": "/api/openai/generate-image"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/openai/generate-video",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 4124,
+          "expression": "/api/openai/generate-video"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/openai/generate-voice",
+      "status": "external_optional",
+      "capability": "remote.tts",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/tts/openai.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/tts/openai.js",
+          "line": 239,
+          "expression": "/api/openai/generate-voice"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/openai/nanogpt/models/embedding",
+      "status": "external_optional",
+      "capability": "remote.embeddings",
+      "exposure": "visible_when_configured",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/vectors/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/vectors/index.js",
+          "line": 162,
+          "expression": "/api/openai/nanogpt/models/embedding"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/openai/siliconflow/models/embedding",
+      "status": "external_optional",
+      "capability": "remote.embeddings",
+      "exposure": "visible_when_configured",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/vectors/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/vectors/index.js",
+          "line": 181,
+          "expression": "/api/openai/siliconflow/models/embedding"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/openai/workers-ai/models/embedding",
+      "status": "external_optional",
+      "capability": "remote.embeddings",
+      "exposure": "visible_when_configured",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/vectors/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/vectors/index.js",
+          "line": 187,
+          "expression": "/api/openai/workers-ai/models/embedding"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/openrouter/credits",
+      "status": "unsupported_hidden",
+      "capability": "excluded.local_models",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/secrets.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/secrets.js",
+          "line": 1176,
+          "expression": "/api/openrouter/credits"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/openrouter/image/generate",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 4717,
+          "expression": "/api/openrouter/image/generate"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/openrouter/models/embedding",
+      "status": "external_optional",
+      "capability": "remote.embeddings",
+      "exposure": "visible_when_configured",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/vectors/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/vectors/index.js",
+          "line": 175,
+          "expression": "/api/openrouter/models/embedding"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/openrouter/models/image",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 2525,
+          "expression": "/api/openrouter/models/image"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/openrouter/models/multimodal",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/caption/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/caption/index.js",
+          "line": 619,
+          "expression": "/api/openrouter/models/multimodal"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/openrouter/models/providers",
+      "status": "unsupported_hidden",
+      "capability": "excluded.local_models",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/textgen-models.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/textgen-models.js",
+          "line": 365,
+          "expression": "/api/openrouter/models/providers"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/ping",
+      "status": "unsupported_hidden",
+      "capability": "excluded.multiuser",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/user.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/user.js",
+          "line": 906,
+          "expression": "/api/ping?extend=1"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/plugins/edge-tts/generate",
+      "status": "external_optional",
+      "capability": "remote.tts",
+      "exposure": "visible_when_configured",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/tts/edge.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/tts/edge.js",
+          "line": 220,
+          "expression": "/api/plugins/edge-tts/generate"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/plugins/edge-tts/list",
+      "status": "external_optional",
+      "capability": "remote.tts",
+      "exposure": "visible_when_configured",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/tts/edge.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/tts/edge.js",
+          "line": 238,
+          "expression": "/api/plugins/edge-tts/list"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/plugins/edge-tts/probe",
+      "status": "external_optional",
+      "capability": "remote.tts",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/tts/edge.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/tts/edge.js",
+          "line": 260,
+          "expression": "/api/plugins/edge-tts/probe"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/plugins/fandom/probe",
+      "status": "unsupported_hidden",
+      "capability": "excluded.extensions",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/scrapers.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/scrapers.js",
+          "line": 353,
+          "expression": "/api/plugins/fandom/probe"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/plugins/fandom/probe-mediawiki",
+      "status": "unsupported_hidden",
+      "capability": "excluded.extensions",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/scrapers.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/scrapers.js",
+          "line": 260,
+          "expression": "/api/plugins/fandom/probe-mediawiki"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/plugins/fandom/scrape",
+      "status": "unsupported_hidden",
+      "capability": "excluded.extensions",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/scrapers.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/scrapers.js",
+          "line": 408,
+          "expression": "/api/plugins/fandom/scrape"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/plugins/fandom/scrape-mediawiki",
+      "status": "unsupported_hidden",
+      "capability": "excluded.extensions",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/scrapers.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/scrapers.js",
+          "line": 301,
+          "expression": "/api/plugins/fandom/scrape-mediawiki"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/plugins/office/parse",
+      "status": "unsupported_hidden",
+      "capability": "excluded.extensions",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/utils.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/utils.js",
+          "line": 2129,
+          "expression": "/api/plugins/office/parse"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/plugins/office/probe",
+      "status": "unsupported_hidden",
+      "capability": "excluded.extensions",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/utils.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/utils.js",
+          "line": 2110,
+          "expression": "/api/plugins/office/probe"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/presets/delete",
+      "status": "implemented",
+      "capability": "core.settings",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/openai.js",
+        "scripts/preset-manager.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/openai.js",
+          "line": 4866,
+          "expression": "/api/presets/delete"
+        },
+        {
+          "file": "scripts/preset-manager.js",
+          "line": 809,
+          "expression": "/api/presets/delete"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/presets/restore",
+      "status": "implemented",
+      "capability": "core.settings",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/preset-manager.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/preset-manager.js",
+          "line": 824,
+          "expression": "/api/presets/restore"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/presets/save",
+      "status": "implemented",
+      "capability": "core.settings",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/openai.js",
+        "scripts/preset-manager.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/openai.js",
+          "line": 4501,
+          "expression": "/api/presets/save"
+        },
+        {
+          "file": "scripts/openai.js",
+          "line": 4716,
+          "expression": "/api/presets/save"
+        },
+        {
+          "file": "scripts/preset-manager.js",
+          "line": 477,
+          "expression": "/api/presets/save"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/quick-replies/delete",
+      "status": "implemented",
+      "capability": "core.settings",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/quick-reply/src/QuickReplySet.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/quick-reply/src/QuickReplySet.js",
+          "line": 395,
+          "expression": "/api/quick-replies/delete"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/quick-replies/save",
+      "status": "implemented",
+      "capability": "core.settings",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/quick-reply/src/QuickReplySet.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/quick-reply/src/QuickReplySet.js",
+          "line": 380,
+          "expression": "/api/quick-replies/save"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sd/aimlapi/generate-image",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 4198,
+          "expression": "/api/sd/aimlapi/generate-image"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sd/aimlapi/models",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 2401,
+          "expression": "/api/sd/aimlapi/models"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sd/bfl/generate",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 4466,
+          "expression": "/api/sd/bfl/generate"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sd/chutes/generate",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 4370,
+          "expression": "/api/sd/chutes/generate"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sd/chutes/models",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 2195,
+          "expression": "/api/sd/chutes/models"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sd/comfy",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 4314,
+          "expression": "/api/sd/comfy"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sd/comfy/delete-workflow",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 4889,
+          "expression": "/api/sd/comfy/delete-workflow"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sd/comfy/models",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 2553,
+          "expression": "/api/sd/comfy/models"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sd/comfy/ping",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 1445,
+          "expression": "/api/sd/comfy/ping"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sd/comfy/rename-workflow",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 4936,
+          "expression": "/api/sd/comfy/rename-workflow"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sd/comfy/samplers",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 1909,
+          "expression": "/api/sd/comfy/samplers"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sd/comfy/save-workflow",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 4842,
+          "expression": "/api/sd/comfy/save-workflow"
+        },
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 4866,
+          "expression": "/api/sd/comfy/save-workflow"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sd/comfy/schedulers",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 2671,
+          "expression": "/api/sd/comfy/schedulers"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sd/comfy/vaes",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 2818,
+          "expression": "/api/sd/comfy/vaes"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sd/comfy/workflow",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 4222,
+          "expression": "/api/sd/comfy/workflow"
+        },
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 4765,
+          "expression": "/api/sd/comfy/workflow"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sd/comfy/workflows",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 2837,
+          "expression": "/api/sd/comfy/workflows"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sd/comfyrunpod",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 4333,
+          "expression": "/api/sd/comfyrunpod"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sd/comfyrunpod/ping",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 1469,
+          "expression": "/api/sd/comfyrunpod/ping"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sd/drawthings/generate",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 3923,
+          "expression": "/api/sd/drawthings/generate"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sd/drawthings/get-model",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 1541,
+          "expression": "/api/sd/drawthings/get-model"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sd/drawthings/get-upscaler",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 1621,
+          "expression": "/api/sd/drawthings/get-upscaler"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sd/drawthings/ping",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 1399,
+          "expression": "/api/sd/drawthings/ping"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sd/electronhub/generate",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 4403,
+          "expression": "/api/sd/electronhub/generate"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sd/electronhub/models",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 2216,
+          "expression": "/api/sd/electronhub/models"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sd/electronhub/sizes",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 3650,
+          "expression": "/api/sd/electronhub/sizes"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sd/falai/generate",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 4538,
+          "expression": "/api/sd/falai/generate"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sd/falai/models",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 2110,
+          "expression": "/api/sd/falai/models"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sd/generate",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 3848,
+          "expression": "/api/sd/generate"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sd/get-model",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 1522,
+          "expression": "/api/sd/get-model"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sd/huggingface/generate",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 4343,
+          "expression": "/api/sd/huggingface/generate"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sd/models",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 2317,
+          "expression": "/api/sd/models"
+        },
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 2427,
+          "expression": "/api/sd/models"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sd/nanogpt/generate",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 4432,
+          "expression": "/api/sd/nanogpt/generate"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sd/nanogpt/models",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 2249,
+          "expression": "/api/sd/nanogpt/models"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sd/ping",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 1353,
+          "expression": "/api/sd/ping"
+        },
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 1422,
+          "expression": "/api/sd/ping"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sd/pollinations/generate",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 3492,
+          "expression": "/api/sd/pollinations/generate"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sd/pollinations/models",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 2159,
+          "expression": "/api/sd/pollinations/models"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sd/samplers",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 1801,
+          "expression": "/api/sd/samplers"
+        },
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 1872,
+          "expression": "/api/sd/samplers"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sd/schedulers",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 1583,
+          "expression": "/api/sd/schedulers"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sd/sd-next/upscalers",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 1602,
+          "expression": "/api/sd/sd-next/upscalers"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sd/sdcpp/generate",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 3898,
+          "expression": "/api/sd/sdcpp/generate"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sd/sdcpp/models",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 1823,
+          "expression": "/api/sd/sdcpp/models"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sd/sdcpp/ping",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 1376,
+          "expression": "/api/sd/sdcpp/ping"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sd/set-model",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 1642,
+          "expression": "/api/sd/set-model"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sd/stability/generate",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 3716,
+          "expression": "/api/sd/stability/generate"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sd/together/generate",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 3461,
+          "expression": "/api/sd/together/generate"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sd/together/models",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 2177,
+          "expression": "/api/sd/together/models"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sd/upscalers",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 1564,
+          "expression": "/api/sd/upscalers"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sd/vaes",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 2791,
+          "expression": "/api/sd/vaes"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sd/workersai/generate",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 4738,
+          "expression": "/api/sd/workersai/generate"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sd/workersai/models",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 2141,
+          "expression": "/api/sd/workersai/models"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sd/xai/generate",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 4509,
+          "expression": "/api/sd/xai/generate"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sd/zai/generate",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 4688,
+          "expression": "/api/sd/zai/generate"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sd/zai/generate-video",
+      "status": "external_optional",
+      "capability": "remote.image",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/stable-diffusion/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/stable-diffusion/index.js",
+          "line": 4649,
+          "expression": "/api/sd/zai/generate-video"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/search/transcript",
+      "status": "unsupported_hidden",
+      "capability": "excluded.extensions",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/scrapers.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/scrapers.js",
+          "line": 558,
+          "expression": "/api/search/transcript"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/search/visit",
+      "status": "unsupported_hidden",
+      "capability": "excluded.extensions",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/scrapers.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/scrapers.js",
+          "line": 193,
+          "expression": "/api/search/visit"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/secrets/delete",
+      "status": "implemented",
+      "capability": "core.settings",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/secrets.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/secrets.js",
+          "line": 390,
+          "expression": "/api/secrets/delete"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/secrets/find",
+      "status": "unsupported_hidden",
+      "capability": "excluded.extensions",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/secrets.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/secrets.js",
+          "line": 436,
+          "expression": "/api/secrets/find"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/secrets/read",
+      "status": "implemented",
+      "capability": "core.settings",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/secrets.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/secrets.js",
+          "line": 413,
+          "expression": "/api/secrets/read"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/secrets/rename",
+      "status": "unsupported_hidden",
+      "capability": "excluded.extensions",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/secrets.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/secrets.js",
+          "line": 486,
+          "expression": "/api/secrets/rename"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/secrets/rotate",
+      "status": "unsupported_hidden",
+      "capability": "excluded.extensions",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/secrets.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/secrets.js",
+          "line": 461,
+          "expression": "/api/secrets/rotate"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/secrets/settings",
+      "status": "unsupported_hidden",
+      "capability": "excluded.extensions",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/secrets.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/secrets.js",
+          "line": 291,
+          "expression": "/api/secrets/settings"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/secrets/view",
+      "status": "unsupported_hidden",
+      "capability": "excluded.extensions",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/secrets.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/secrets.js",
+          "line": 309,
+          "expression": "/api/secrets/view"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/secrets/write",
+      "status": "implemented",
+      "capability": "core.settings",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/secrets.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/secrets.js",
+          "line": 361,
+          "expression": "/api/secrets/write"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/settings/get",
+      "status": "implemented",
+      "capability": "core.settings",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "script.js",
+        "scripts/extensions/quick-reply/index.js",
+        "scripts/world-info.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "script.js",
+          "line": 7857,
+          "expression": "/api/settings/get"
+        },
+        {
+          "file": "scripts/extensions/quick-reply/index.js",
+          "line": 56,
+          "expression": "/api/settings/get"
+        },
+        {
+          "file": "scripts/world-info.js",
+          "line": 2062,
+          "expression": "/api/settings/get"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/settings/get-snapshots",
+      "status": "implemented",
+      "capability": "core.settings",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/user.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/user.js",
+          "line": 539,
+          "expression": "/api/settings/get-snapshots"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/settings/load-snapshot",
+      "status": "implemented",
+      "capability": "core.settings",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/user.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/user.js",
+          "line": 511,
+          "expression": "/api/settings/load-snapshot"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/settings/make-snapshot",
+      "status": "implemented",
+      "capability": "core.settings",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/user.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/user.js",
+          "line": 565,
+          "expression": "/api/settings/make-snapshot"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/settings/restore-snapshot",
+      "status": "implemented",
+      "capability": "core.settings",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/user.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/user.js",
+          "line": 486,
+          "expression": "/api/settings/restore-snapshot"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/settings/save",
+      "status": "implemented",
+      "capability": "core.settings",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "script.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "script.js",
+          "line": 8039,
+          "expression": "/api/settings/save"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/speech/elevenlabs/history",
+      "status": "external_optional",
+      "capability": "remote.tts",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/tts/elevenlabs.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/tts/elevenlabs.js",
+          "line": 388,
+          "expression": "/api/speech/elevenlabs/history"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/speech/elevenlabs/history-audio",
+      "status": "external_optional",
+      "capability": "remote.tts",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/tts/elevenlabs.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/tts/elevenlabs.js",
+          "line": 370,
+          "expression": "/api/speech/elevenlabs/history-audio"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/speech/elevenlabs/synthesize",
+      "status": "external_optional",
+      "capability": "remote.tts",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/tts/elevenlabs.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/tts/elevenlabs.js",
+          "line": 348,
+          "expression": "/api/speech/elevenlabs/synthesize"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/speech/elevenlabs/voice-settings",
+      "status": "external_optional",
+      "capability": "remote.tts",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/tts/elevenlabs.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/tts/elevenlabs.js",
+          "line": 316,
+          "expression": "/api/speech/elevenlabs/voice-settings"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/speech/elevenlabs/voices",
+      "status": "external_optional",
+      "capability": "remote.tts",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/tts/elevenlabs.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/tts/elevenlabs.js",
+          "line": 304,
+          "expression": "/api/speech/elevenlabs/voices"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/speech/elevenlabs/voices/add",
+      "status": "external_optional",
+      "capability": "remote.tts",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/tts/elevenlabs.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/tts/elevenlabs.js",
+          "line": 424,
+          "expression": "/api/speech/elevenlabs/voices/add"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/speech/pollinations/generate",
+      "status": "external_optional",
+      "capability": "remote.tts",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/tts/pollinations.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/tts/pollinations.js",
+          "line": 133,
+          "expression": "/api/speech/pollinations/generate"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/speech/pollinations/voices",
+      "status": "external_optional",
+      "capability": "remote.tts",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/tts/pollinations.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/tts/pollinations.js",
+          "line": 91,
+          "expression": "/api/speech/pollinations/voices"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/speech/synthesize",
+      "status": "external_optional",
+      "capability": "remote.tts",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/tts/speecht5.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/tts/speecht5.js",
+          "line": 176,
+          "expression": "/api/speech/synthesize"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sprites/delete",
+      "status": "implemented",
+      "capability": "core.personas",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/expressions/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/expressions/index.js",
+          "line": 2072,
+          "expression": "/api/sprites/delete"
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/sprites/get",
+      "status": "implemented",
+      "capability": "core.personas",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": true,
+      "sourceFiles": [
+        "scripts/extensions/expressions/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/expressions/index.js",
+          "line": 1295,
+          "expression": "/api/sprites/get?name=${encodeURIComponent(name)}"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sprites/upload",
+      "status": "implemented",
+      "capability": "core.personas",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/expressions/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/expressions/index.js",
+          "line": 901,
+          "expression": "/api/sprites/upload"
+        },
+        {
+          "file": "scripts/extensions/expressions/index.js",
+          "line": 1921,
+          "expression": "/api/sprites/upload"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/sprites/upload-zip",
+      "status": "implemented",
+      "capability": "core.personas",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/expressions/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/expressions/index.js",
+          "line": 2032,
+          "expression": "/api/sprites/upload-zip"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/stapk/exports/create",
+      "status": "implemented",
+      "capability": "core.files",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/stapk-export.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/stapk-export.js",
+          "line": 28,
+          "expression": "/api/stapk/exports/create"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/stats/get",
+      "status": "implemented",
+      "capability": "core.chats",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/stats.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/stats.js",
+          "line": 180,
+          "expression": "/api/stats/get"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/stats/recreate",
+      "status": "implemented",
+      "capability": "core.chats",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/stats.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/stats.js",
+          "line": 203,
+          "expression": "/api/stats/recreate"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/stats/update",
+      "status": "implemented",
+      "capability": "core.chats",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/stats.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/stats.js",
+          "line": 239,
+          "expression": "/api/stats/update"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/summarize",
+      "status": "unsupported_hidden",
+      "capability": "excluded.extensions",
+      "exposure": "hidden",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/memory/index.js",
+        "scripts/extensions/vectors/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/memory/index.js",
+          "line": 900,
+          "expression": "/api/summarize"
+        },
+        {
+          "file": "scripts/extensions/vectors/index.js",
+          "line": 324,
+          "expression": "/api/summarize"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/text-to-speech/coqui/coqui-api/check-model-state",
+      "status": "external_optional",
+      "capability": "remote.tts",
+      "exposure": "visible_when_configured",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/tts/coqui.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/tts/coqui.js",
+          "line": 595,
+          "expression": "/api/text-to-speech/coqui/coqui-api/check-model-state"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/text-to-speech/coqui/coqui-api/install-model",
+      "status": "external_optional",
+      "capability": "remote.tts",
+      "exposure": "visible_when_configured",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/tts/coqui.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/tts/coqui.js",
+          "line": 619,
+          "expression": "/api/text-to-speech/coqui/coqui-api/install-model"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/text-to-speech/coqui/generate-tts",
+      "status": "external_optional",
+      "capability": "remote.tts",
+      "exposure": "visible_when_configured",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/tts/coqui.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/tts/coqui.js",
+          "line": 679,
+          "expression": "/api/text-to-speech/coqui/generate-tts"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/text-to-speech/coqui/local/get-models",
+      "status": "external_optional",
+      "capability": "remote.tts",
+      "exposure": "visible_when_configured",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/tts/coqui.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/tts/coqui.js",
+          "line": 647,
+          "expression": "/api/text-to-speech/coqui/local/get-models"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/themes/delete",
+      "status": "implemented",
+      "capability": "core.settings",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/power-user.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/power-user.js",
+          "line": 2407,
+          "expression": "/api/themes/delete"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/themes/save",
+      "status": "implemented",
+      "capability": "core.settings",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/power-user.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/power-user.js",
+          "line": 2502,
+          "expression": "/api/themes/save"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/tokenizers/claude/decode",
+      "status": "unsupported_hidden",
+      "capability": "excluded.local_models",
+      "exposure": "hidden",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/tokenizers.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/tokenizers.js",
+          "line": 107,
+          "expression": "/api/tokenizers/claude/decode"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/tokenizers/claude/encode",
+      "status": "unsupported_hidden",
+      "capability": "excluded.local_models",
+      "exposure": "hidden",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/tokenizers.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/tokenizers.js",
+          "line": 106,
+          "expression": "/api/tokenizers/claude/encode"
+        },
+        {
+          "file": "scripts/tokenizers.js",
+          "line": 108,
+          "expression": "/api/tokenizers/claude/encode"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/tokenizers/command-a/decode",
+      "status": "unsupported_hidden",
+      "capability": "excluded.local_models",
+      "exposure": "hidden",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/tokenizers.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/tokenizers.js",
+          "line": 137,
+          "expression": "/api/tokenizers/command-a/decode"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/tokenizers/command-a/encode",
+      "status": "unsupported_hidden",
+      "capability": "excluded.local_models",
+      "exposure": "hidden",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/tokenizers.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/tokenizers.js",
+          "line": 136,
+          "expression": "/api/tokenizers/command-a/encode"
+        },
+        {
+          "file": "scripts/tokenizers.js",
+          "line": 138,
+          "expression": "/api/tokenizers/command-a/encode"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/tokenizers/command-r/decode",
+      "status": "unsupported_hidden",
+      "capability": "excluded.local_models",
+      "exposure": "hidden",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/tokenizers.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/tokenizers.js",
+          "line": 132,
+          "expression": "/api/tokenizers/command-r/decode"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/tokenizers/command-r/encode",
+      "status": "unsupported_hidden",
+      "capability": "excluded.local_models",
+      "exposure": "hidden",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/tokenizers.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/tokenizers.js",
+          "line": 131,
+          "expression": "/api/tokenizers/command-r/encode"
+        },
+        {
+          "file": "scripts/tokenizers.js",
+          "line": 133,
+          "expression": "/api/tokenizers/command-r/encode"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/tokenizers/deepseek/decode",
+      "status": "unsupported_hidden",
+      "capability": "excluded.local_models",
+      "exposure": "hidden",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/tokenizers.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/tokenizers.js",
+          "line": 147,
+          "expression": "/api/tokenizers/deepseek/decode"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/tokenizers/deepseek/encode",
+      "status": "unsupported_hidden",
+      "capability": "excluded.local_models",
+      "exposure": "hidden",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/tokenizers.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/tokenizers.js",
+          "line": 146,
+          "expression": "/api/tokenizers/deepseek/encode"
+        },
+        {
+          "file": "scripts/tokenizers.js",
+          "line": 148,
+          "expression": "/api/tokenizers/deepseek/encode"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/tokenizers/gemma/decode",
+      "status": "unsupported_hidden",
+      "capability": "excluded.local_models",
+      "exposure": "hidden",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/tokenizers.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/tokenizers.js",
+          "line": 117,
+          "expression": "/api/tokenizers/gemma/decode"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/tokenizers/gemma/encode",
+      "status": "unsupported_hidden",
+      "capability": "excluded.local_models",
+      "exposure": "hidden",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/tokenizers.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/tokenizers.js",
+          "line": 116,
+          "expression": "/api/tokenizers/gemma/encode"
+        },
+        {
+          "file": "scripts/tokenizers.js",
+          "line": 118,
+          "expression": "/api/tokenizers/gemma/encode"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/tokenizers/gpt2/decode",
+      "status": "unsupported_hidden",
+      "capability": "excluded.local_models",
+      "exposure": "hidden",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/tokenizers.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/tokenizers.js",
+          "line": 68,
+          "expression": "/api/tokenizers/gpt2/decode"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/tokenizers/gpt2/encode",
+      "status": "unsupported_hidden",
+      "capability": "excluded.local_models",
+      "exposure": "hidden",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/tokenizers.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/tokenizers.js",
+          "line": 67,
+          "expression": "/api/tokenizers/gpt2/encode"
+        },
+        {
+          "file": "scripts/tokenizers.js",
+          "line": 69,
+          "expression": "/api/tokenizers/gpt2/encode"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/tokenizers/jamba/decode",
+      "status": "unsupported_hidden",
+      "capability": "excluded.local_models",
+      "exposure": "hidden",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/tokenizers.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/tokenizers.js",
+          "line": 122,
+          "expression": "/api/tokenizers/jamba/decode"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/tokenizers/jamba/encode",
+      "status": "unsupported_hidden",
+      "capability": "excluded.local_models",
+      "exposure": "hidden",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/tokenizers.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/tokenizers.js",
+          "line": 121,
+          "expression": "/api/tokenizers/jamba/encode"
+        },
+        {
+          "file": "scripts/tokenizers.js",
+          "line": 123,
+          "expression": "/api/tokenizers/jamba/encode"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/tokenizers/llama/decode",
+      "status": "unsupported_hidden",
+      "capability": "excluded.local_models",
+      "exposure": "hidden",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/tokenizers.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/tokenizers.js",
+          "line": 78,
+          "expression": "/api/tokenizers/llama/decode"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/tokenizers/llama/encode",
+      "status": "unsupported_hidden",
+      "capability": "excluded.local_models",
+      "exposure": "hidden",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/tokenizers.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/tokenizers.js",
+          "line": 77,
+          "expression": "/api/tokenizers/llama/encode"
+        },
+        {
+          "file": "scripts/tokenizers.js",
+          "line": 79,
+          "expression": "/api/tokenizers/llama/encode"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/tokenizers/llama3/decode",
+      "status": "unsupported_hidden",
+      "capability": "excluded.local_models",
+      "exposure": "hidden",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/tokenizers.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/tokenizers.js",
+          "line": 112,
+          "expression": "/api/tokenizers/llama3/decode"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/tokenizers/llama3/encode",
+      "status": "unsupported_hidden",
+      "capability": "excluded.local_models",
+      "exposure": "hidden",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/tokenizers.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/tokenizers.js",
+          "line": 111,
+          "expression": "/api/tokenizers/llama3/encode"
+        },
+        {
+          "file": "scripts/tokenizers.js",
+          "line": 113,
+          "expression": "/api/tokenizers/llama3/encode"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/tokenizers/mistral/decode",
+      "status": "unsupported_hidden",
+      "capability": "excluded.local_models",
+      "exposure": "hidden",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/tokenizers.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/tokenizers.js",
+          "line": 97,
+          "expression": "/api/tokenizers/mistral/decode"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/tokenizers/mistral/encode",
+      "status": "unsupported_hidden",
+      "capability": "excluded.local_models",
+      "exposure": "hidden",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/tokenizers.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/tokenizers.js",
+          "line": 96,
+          "expression": "/api/tokenizers/mistral/encode"
+        },
+        {
+          "file": "scripts/tokenizers.js",
+          "line": 98,
+          "expression": "/api/tokenizers/mistral/encode"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/tokenizers/nemo/decode",
+      "status": "unsupported_hidden",
+      "capability": "excluded.local_models",
+      "exposure": "hidden",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/tokenizers.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/tokenizers.js",
+          "line": 142,
+          "expression": "/api/tokenizers/nemo/decode"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/tokenizers/nemo/encode",
+      "status": "unsupported_hidden",
+      "capability": "excluded.local_models",
+      "exposure": "hidden",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/tokenizers.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/tokenizers.js",
+          "line": 141,
+          "expression": "/api/tokenizers/nemo/encode"
+        },
+        {
+          "file": "scripts/tokenizers.js",
+          "line": 143,
+          "expression": "/api/tokenizers/nemo/encode"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/tokenizers/nerdstash_v2/decode",
+      "status": "unsupported_hidden",
+      "capability": "excluded.local_models",
+      "exposure": "hidden",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/tokenizers.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/tokenizers.js",
+          "line": 88,
+          "expression": "/api/tokenizers/nerdstash_v2/decode"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/tokenizers/nerdstash_v2/encode",
+      "status": "unsupported_hidden",
+      "capability": "excluded.local_models",
+      "exposure": "hidden",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/tokenizers.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/tokenizers.js",
+          "line": 87,
+          "expression": "/api/tokenizers/nerdstash_v2/encode"
+        },
+        {
+          "file": "scripts/tokenizers.js",
+          "line": 89,
+          "expression": "/api/tokenizers/nerdstash_v2/encode"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/tokenizers/nerdstash/decode",
+      "status": "unsupported_hidden",
+      "capability": "excluded.local_models",
+      "exposure": "hidden",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/tokenizers.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/tokenizers.js",
+          "line": 83,
+          "expression": "/api/tokenizers/nerdstash/decode"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/tokenizers/nerdstash/encode",
+      "status": "unsupported_hidden",
+      "capability": "excluded.local_models",
+      "exposure": "hidden",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/tokenizers.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/tokenizers.js",
+          "line": 82,
+          "expression": "/api/tokenizers/nerdstash/encode"
+        },
+        {
+          "file": "scripts/tokenizers.js",
+          "line": 84,
+          "expression": "/api/tokenizers/nerdstash/encode"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/tokenizers/openai/count",
+      "status": "implemented",
+      "capability": "core.tokenizers",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": true,
+      "dynamic": true,
+      "sourceFiles": [
+        "scripts/tokenizers.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/tokenizers.js",
+          "line": 74,
+          "expression": "/api/tokenizers/openai/count"
+        },
+        {
+          "file": "scripts/tokenizers.js",
+          "line": 797,
+          "expression": "/api/tokenizers/openai/count?model=${getTokenizerModel()}"
+        },
+        {
+          "file": "scripts/tokenizers.js",
+          "line": 847,
+          "expression": "/api/tokenizers/openai/count?model=${getTokenizerModel()}"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/tokenizers/openai/decode",
+      "status": "implemented",
+      "capability": "core.tokenizers",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/tokenizers.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/tokenizers.js",
+          "line": 73,
+          "expression": "/api/tokenizers/openai/decode"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/tokenizers/openai/encode",
+      "status": "implemented",
+      "capability": "core.tokenizers",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/tokenizers.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/tokenizers.js",
+          "line": 72,
+          "expression": "/api/tokenizers/openai/encode"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/tokenizers/qwen2/decode",
+      "status": "unsupported_hidden",
+      "capability": "excluded.local_models",
+      "exposure": "hidden",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/tokenizers.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/tokenizers.js",
+          "line": 127,
+          "expression": "/api/tokenizers/qwen2/decode"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/tokenizers/qwen2/encode",
+      "status": "unsupported_hidden",
+      "capability": "excluded.local_models",
+      "exposure": "hidden",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/tokenizers.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/tokenizers.js",
+          "line": 126,
+          "expression": "/api/tokenizers/qwen2/encode"
+        },
+        {
+          "file": "scripts/tokenizers.js",
+          "line": 128,
+          "expression": "/api/tokenizers/qwen2/encode"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/tokenizers/remote/kobold/count",
+      "status": "unsupported_hidden",
+      "capability": "excluded.local_models",
+      "exposure": "hidden",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/tokenizers.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/tokenizers.js",
+          "line": 92,
+          "expression": "/api/tokenizers/remote/kobold/count"
+        },
+        {
+          "file": "scripts/tokenizers.js",
+          "line": 93,
+          "expression": "/api/tokenizers/remote/kobold/count"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/tokenizers/remote/textgenerationwebui/encode",
+      "status": "unsupported_hidden",
+      "capability": "excluded.local_models",
+      "exposure": "hidden",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/tokenizers.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/tokenizers.js",
+          "line": 151,
+          "expression": "/api/tokenizers/remote/textgenerationwebui/encode"
+        },
+        {
+          "file": "scripts/tokenizers.js",
+          "line": 152,
+          "expression": "/api/tokenizers/remote/textgenerationwebui/encode"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/tokenizers/yi/decode",
+      "status": "unsupported_hidden",
+      "capability": "excluded.local_models",
+      "exposure": "hidden",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/tokenizers.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/tokenizers.js",
+          "line": 102,
+          "expression": "/api/tokenizers/yi/decode"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/tokenizers/yi/encode",
+      "status": "unsupported_hidden",
+      "capability": "excluded.local_models",
+      "exposure": "hidden",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/tokenizers.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/tokenizers.js",
+          "line": 101,
+          "expression": "/api/tokenizers/yi/encode"
+        },
+        {
+          "file": "scripts/tokenizers.js",
+          "line": 103,
+          "expression": "/api/tokenizers/yi/encode"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/translate/bing",
+      "status": "external_optional",
+      "capability": "remote.translation",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/translate/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/translate/index.js",
+          "line": 385,
+          "expression": "/api/translate/bing"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/translate/deepl",
+      "status": "external_optional",
+      "capability": "remote.translation",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/translate/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/translate/index.js",
+          "line": 343,
+          "expression": "/api/translate/deepl"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/translate/deeplx",
+      "status": "external_optional",
+      "capability": "remote.translation",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/translate/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/translate/index.js",
+          "line": 364,
+          "expression": "/api/translate/deeplx"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/translate/google",
+      "status": "external_optional",
+      "capability": "remote.translation",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/translate/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/translate/index.js",
+          "line": 296,
+          "expression": "/api/translate/google"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/translate/libre",
+      "status": "external_optional",
+      "capability": "remote.translation",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/translate/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/translate/index.js",
+          "line": 275,
+          "expression": "/api/translate/libre"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/translate/lingva",
+      "status": "external_optional",
+      "capability": "remote.translation",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/translate/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/translate/index.js",
+          "line": 317,
+          "expression": "/api/translate/lingva"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/translate/onering",
+      "status": "external_optional",
+      "capability": "remote.translation",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/translate/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/translate/index.js",
+          "line": 254,
+          "expression": "/api/translate/onering"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/translate/yandex",
+      "status": "external_optional",
+      "capability": "remote.translation",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/translate/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/translate/index.js",
+          "line": 413,
+          "expression": "/api/translate/yandex"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/tts",
+      "status": "external_optional",
+      "capability": "remote.tts",
+      "exposure": "visible_when_configured",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/tts/silerotts.js",
+        "scripts/extensions/tts/xtts.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/tts/silerotts.js",
+          "line": 59,
+          "expression": "/api/tts"
+        },
+        {
+          "file": "scripts/extensions/tts/xtts.js",
+          "line": 170,
+          "expression": "/api/tts"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/users/backup",
+      "status": "unsupported_hidden",
+      "capability": "excluded.multiuser",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/user.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/user.js",
+          "line": 258,
+          "expression": "/api/users/backup"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/users/change-avatar",
+      "status": "implemented",
+      "capability": "core.personas",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/user.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/user.js",
+          "line": 764,
+          "expression": "/api/users/change-avatar"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/users/change-name",
+      "status": "unsupported_hidden",
+      "capability": "excluded.multiuser",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/user.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/user.js",
+          "line": 449,
+          "expression": "/api/users/change-name"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/users/change-password",
+      "status": "unsupported_hidden",
+      "capability": "excluded.multiuser",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/user.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/user.js",
+          "line": 322,
+          "expression": "/api/users/change-password"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/users/create",
+      "status": "unsupported_hidden",
+      "capability": "excluded.multiuser",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/user.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/user.js",
+          "line": 230,
+          "expression": "/api/users/create"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/users/delete",
+      "status": "unsupported_hidden",
+      "capability": "excluded.multiuser",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/user.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/user.js",
+          "line": 376,
+          "expression": "/api/users/delete"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/users/demote",
+      "status": "unsupported_hidden",
+      "capability": "excluded.multiuser",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/user.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/user.js",
+          "line": 179,
+          "expression": "/api/users/demote"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/users/disable",
+      "status": "unsupported_hidden",
+      "capability": "excluded.multiuser",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/user.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/user.js",
+          "line": 128,
+          "expression": "/api/users/disable"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/users/enable",
+      "status": "unsupported_hidden",
+      "capability": "excluded.multiuser",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/user.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/user.js",
+          "line": 108,
+          "expression": "/api/users/enable"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/users/get",
+      "status": "unsupported_hidden",
+      "capability": "excluded.multiuser",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/user.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/user.js",
+          "line": 85,
+          "expression": "/api/users/get"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/users/list",
+      "status": "unsupported_hidden",
+      "capability": "excluded.multiuser",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/login.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/login.js",
+          "line": 24,
+          "expression": "/api/users/list"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/users/login",
+      "status": "unsupported_hidden",
+      "capability": "excluded.multiuser",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/login.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/login.js",
+          "line": 115,
+          "expression": "/api/users/login"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/users/logout",
+      "status": "unsupported_hidden",
+      "capability": "excluded.multiuser",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/user.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/user.js",
+          "line": 862,
+          "expression": "/api/users/logout"
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/users/me",
+      "status": "implemented",
+      "capability": "core.settings",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/user.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/user.js",
+          "line": 64,
+          "expression": "/api/users/me"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/users/promote",
+      "status": "unsupported_hidden",
+      "capability": "excluded.multiuser",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/user.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/user.js",
+          "line": 154,
+          "expression": "/api/users/promote"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/users/recover-step1",
+      "status": "unsupported_hidden",
+      "capability": "excluded.multiuser",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/login.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/login.js",
+          "line": 53,
+          "expression": "/api/users/recover-step1"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/users/recover-step2",
+      "status": "unsupported_hidden",
+      "capability": "excluded.multiuser",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/login.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/login.js",
+          "line": 84,
+          "expression": "/api/users/recover-step2"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/users/reset-settings",
+      "status": "implemented",
+      "capability": "core.settings",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/user.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/user.js",
+          "line": 413,
+          "expression": "/api/users/reset-settings"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/users/reset-step1",
+      "status": "unsupported_hidden",
+      "capability": "excluded.multiuser",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/user.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/user.js",
+          "line": 623,
+          "expression": "/api/users/reset-step1"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/users/reset-step2",
+      "status": "unsupported_hidden",
+      "capability": "excluded.multiuser",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/user.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/user.js",
+          "line": 655,
+          "expression": "/api/users/reset-step2"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/users/slugify",
+      "status": "unsupported_hidden",
+      "capability": "excluded.multiuser",
+      "exposure": "hidden",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/user.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/user.js",
+          "line": 884,
+          "expression": "/api/users/slugify"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/vector/delete",
+      "status": "external_optional",
+      "capability": "remote.embeddings",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/vectors/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/vectors/index.js",
+          "line": 1129,
+          "expression": "/api/vector/delete"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/vector/insert",
+      "status": "external_optional",
+      "capability": "remote.embeddings",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/vectors/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/vectors/index.js",
+          "line": 1055,
+          "expression": "/api/vector/insert"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/vector/list",
+      "status": "external_optional",
+      "capability": "remote.embeddings",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/vectors/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/vectors/index.js",
+          "line": 1027,
+          "expression": "/api/vector/list"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/vector/purge",
+      "status": "external_optional",
+      "capability": "remote.embeddings",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/vectors/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/vectors/index.js",
+          "line": 1216,
+          "expression": "/api/vector/purge"
+        },
+        {
+          "file": "scripts/extensions/vectors/index.js",
+          "line": 1246,
+          "expression": "/api/vector/purge"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/vector/purge-all",
+      "status": "external_optional",
+      "capability": "remote.embeddings",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/vectors/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/vectors/index.js",
+          "line": 1272,
+          "expression": "/api/vector/purge-all"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/vector/query",
+      "status": "external_optional",
+      "capability": "remote.embeddings",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/vectors/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/vectors/index.js",
+          "line": 1153,
+          "expression": "/api/vector/query"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/vector/query-multi",
+      "status": "external_optional",
+      "capability": "remote.embeddings",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/vectors/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/vectors/index.js",
+          "line": 1183,
+          "expression": "/api/vector/query-multi"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/volcengine/generate-voice",
+      "status": "external_optional",
+      "capability": "remote.tts",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/tts/volcengine.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/tts/volcengine.js",
+          "line": 297,
+          "expression": "/api/volcengine/generate-voice"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/worldinfo/delete",
+      "status": "implemented",
+      "capability": "core.world_info",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/world-info.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/world-info.js",
+          "line": 4239,
+          "expression": "/api/worldinfo/delete"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/worldinfo/edit",
+      "status": "implemented",
+      "capability": "core.world_info",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/world-info.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/world-info.js",
+          "line": 4075,
+          "expression": "/api/worldinfo/edit"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/worldinfo/get",
+      "status": "implemented",
+      "capability": "core.world_info",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/world-info.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/world-info.js",
+          "line": 2045,
+          "expression": "/api/worldinfo/get"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/worldinfo/import",
+      "status": "implemented",
+      "capability": "core.world_info",
+      "exposure": "visible_when_implemented",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/world-info.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/world-info.js",
+          "line": 5785,
+          "expression": "/api/worldinfo/import"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "implemented": 98,
+    "external_optional": 136,
+    "unsupported_hidden": 105,
+    "needs_review": 0
+  }
+}

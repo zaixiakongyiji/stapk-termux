@@ -7,7 +7,7 @@ stAPK Mobile 现在支持由 GitHub Actions 接管构建和发版。
 当前自动化分成两条流水线：
 
 - `CI`：在 `master` 上的 `push / pull_request` 自动执行转换验证、关键单测和 `assembleDebug`
-- `Release`：在推送 `v*` 标签时自动执行转换验证、构建 `arm64-v8a release APK`，并自动创建/更新 GitHub Release
+- `Release`：在推送 `v*` 标签时自动执行转换验证、构建通用 release APK，并自动创建/更新 GitHub Release
 
 > `v0.1.x` 是旧 Termux fork 阶段，`v0.2.0` 起主线是 `mobile/` 原生 Android 工程。后续推荐全部改为 tag 驱动的自动发版。
 
@@ -44,18 +44,23 @@ on:
 GitHub 就会自动：
 
 1. 检出当前 tag 对应代码
-2. 安装 JDK / Android SDK / NDK / Node.js 20
+2. 安装 JDK / Android SDK / Node.js 20
 3. 重写 CI 环境的 `local.properties`
-4. 运行 `scripts/stapk-transform.mjs`，生成转换报告与 `build/ci-payload`
-5. 构建 `arm64-v8a release APK`
-6. 生成 SHA-256 校验文件
-7. 从 `CHANGELOG.md` 中提取当前 tag 对应版本段落作为 Release 正文
-8. 创建或更新对应的 GitHub Release
-9. 上传以下发布资产：
-   - `stapk-mobile_<tag>_arm64-v8a.apk`
-   - `stapk-mobile_<tag>_arm64-v8a.apk.sha256`
+4. 运行统一的 `build:no-node-apk` 严格门禁，将 SillyTavern 转换产物写入 Android assets
+5. 执行 Android 单测并构建签名的通用 release APK
+6. 注入 tag 对应的 Android `versionName` 和单调递增 `versionCode`
+7. 生成带 tag 的 APK 与 SHA-256 校验文件
+8. 从 `CHANGELOG.md` 中提取当前 tag 对应版本段落作为 Release 正文
+9. 创建或更新对应的 GitHub Release；带 `-` 的 tag 自动标记为 prerelease
+10. 上传以下发布资产：
+   - `stapk-mobile_<tag>.apk`
+   - `stapk-mobile_<tag>.apk.sha256`
+   - `api-contract.json`
+   - `stapk-capabilities.json`
+   - `stapk-web-manifest.json`
+   - `transform-report.json`
 
-当前 `build/ci-payload` 会作为 GitHub Actions artifact 上传，用于核查转换结果；正式 release APK 仍来自 `mobile/app/src/main/assets/` 中的仓库资产。后续 Phase 4 需要把 transform 输出真正接入 APK 输入。
+GitHub Actions artifact 同时保留 APK 与转换证据，Release APK 直接来自本次工作流生成的 assets，不使用历史 payload。
 
 ---
 
@@ -63,12 +68,7 @@ GitHub 就会自动：
 
 旧 `upstream/termux-app/` 阶段使用的自定义 bootstrap 仍保留在历史目录中，但当前 `mobile/` 主线不再依赖它作为 Android App 工程入口。
 
-当前主线需要通过 Git LFS 拉取这些 APK 内资产：
-
-- `mobile/app/src/main/assets/payload.tgz`
-- `mobile/app/src/main/assets/runtime-android-arm64-node24.zip`
-
-因此 `ci.yml` 和 `release.yml` 的 `actions/checkout` 都必须保持 `lfs: true`。否则 GitHub Actions 检出的只是 LFS pointer，APK 会缺少真正的 payload 或 runtime，安装后无法部署运行环境。
+当前 `mobile/` 主线不再打包 Node.js runtime 或 SillyTavern payload。Web assets 由 no-node 转换器在构建期生成，CI/Release 不再下载历史 Termux LFS 资产。
 
 ---
 
@@ -79,9 +79,9 @@ GitHub 就会自动：
 1. 把 Git tag 去掉前缀 `v` 后写入 Android `versionName`
    - 例如 `v0.1.1` 会变成 APK 内部版本号 `0.1.1`
 2. 用完整 tag 参与 APK 文件命名
-   - 例如 `stapk-mobile_v0.3.0_arm64-v8a.apk`
+   - 例如 `stapk-mobile_v0.3.0.apk`
 
-当前 `release.yml` 已导出 `TERMUX_APP_VERSION_NAME=${RELEASE_TAG#v}`，但 `mobile/app/build.gradle.kts` 仍需要确认是否读取该环境变量；如果 Gradle 仍写死 `versionName = "1.0"`，该项不能视为完成。
+`release.yml` 会导出 `STAPK_VERSION_NAME` 与 `STAPK_VERSION_CODE`，`mobile/app/build.gradle.kts` 直接读取这两个环境变量。`v0.3.0-beta.1` 的 APK 版本名为 `0.3.0-beta.1`，正式版使用更高的同版本 `versionCode`。
 
 ---
 
@@ -92,8 +92,8 @@ GitHub Release 的正文不再依赖自动生成说明，而是直接读取 `CHA
 例如当你推送：
 
 ```bash
-git tag v0.1.1
-git push origin v0.1.1
+git tag v0.3.0-beta.1
+git push origin v0.3.0-beta.1
 ```
 
 工作流会从 `CHANGELOG.md` 中提取：
@@ -119,7 +119,7 @@ git push origin v0.1.1
 
 ### 当前默认行为
 
-CI 会在运行时临时生成 `debug` 构建所需的 `dev_keystore.jks`，因此 `master` 上的自动测试和 `assembleDebug` 不依赖仓库内现成 keystore。
+CI 使用 Android Gradle Plugin 默认的 debug 签名，因此 `master` 上的自动测试和 `assembleDebug` 不依赖仓库内现成 keystore。
 
 但 `release` 构建不会使用仓库里的本地签名文件，因为这些文件没有纳入版本控制，GitHub Actions 运行环境也拿不到它们。
 
@@ -167,8 +167,8 @@ git push origin v0.1.1
 
 确认 Release 下是否已经自动出现：
 
-- `stapk-mobile_v0.1.1_arm64-v8a.apk`
-- `stapk-mobile_v0.1.1_arm64-v8a.apk.sha256`
+- `stapk-mobile_v0.3.0-beta.1.apk`
+- `stapk-mobile_v0.3.0-beta.1.apk.sha256`
 
 ---
 
@@ -176,10 +176,11 @@ git push origin v0.1.1
 
 `ci.yml` 在 `master` 的提交和 PR 上会自动执行：
 
-- `node scripts/stapk-transform.mjs --ref release --runtime mobile/app/src/main/assets/runtime-android-arm64-node24.zip --out build/ci-payload`
-- 上传 `build/stapk-transform/reports/` 与 `build/ci-payload/payload-manifest.json`
+- `npm run build:no-node-apk -- --variant debug --ref release`
+- no-node 转换测试与能力合同校验
 - `:app:testDebugUnitTest`
 - `:app:assembleDebug`
+- 上传 Debug APK、SHA-256 与四个转换证据文件
 
 同时会上传一个调试用 artifact：
 
@@ -195,10 +196,10 @@ git push origin v0.1.1
 
 仓库里当前的 `local.properties` 指向本地 Windows SDK 路径。GitHub Actions 运行在 Linux 上，必须在工作流里重写 `sdk.dir`，否则构建会失败。
 
-### 2. 自动发版当前只发布 `arm64-v8a`
+### 2. 自动发版发布通用 APK
 
-这是刻意设计。stAPK 的目标用户主要是手机设备，正式发版没有必要默认附带 `universal` 或 `x86_64` 包。
+0.3.0 no-node 主线不包含 ABI 相关的 native runtime，APK 没有 `native-code` 限制，因此不再使用 `arm64-v8a` 后缀误导用户。
 
 ### 3. 旧 Termux fork 发版说明只作历史参考
 
-`upstream/termux-app/`、bootstrap 和 `stapk-termux_...apk` 命名属于旧阶段。当前主线发版应围绕 `mobile/`、`stapk-mobile_...apk`、`payload.tgz`、`runtime-android-arm64-node24.zip` 和转换报告展开。
+`upstream/termux-app/`、bootstrap、Node.js runtime 和 `stapk-termux_...apk` 命名属于旧阶段。当前主线发版围绕 `mobile/`、`stapk-mobile_...apk`、no-node Web assets 和转换报告展开。

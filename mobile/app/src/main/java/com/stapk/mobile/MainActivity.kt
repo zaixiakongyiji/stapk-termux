@@ -12,10 +12,13 @@ import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.core.content.ContextCompat
 import com.stapk.mobile.nativeadapter.NativeAdapterState
 import com.stapk.mobile.nativeadapter.NativeAdapterStatus
 import com.stapk.mobile.nativeadapter.NativeHttpService
+import com.stapk.mobile.nativeadapter.ExportTicket
+import java.util.concurrent.Executors
 
 internal enum class MainScreen {
     LOADING,
@@ -28,6 +31,18 @@ internal data class MainUiModel(
     val url: String? = null,
     val message: String? = null
 )
+
+internal fun expandedFileChooserMimeTypes(acceptTypes: Array<String>): Array<String>? {
+    val acceptsJsonl = acceptTypes
+        .flatMap { it.split(',') }
+        .map { it.trim().lowercase() }
+        .any { it == ".jsonl" || it == "application/x-ndjson" }
+    return if (acceptsJsonl) {
+        arrayOf("application/json", "application/x-ndjson", "application/octet-stream")
+    } else {
+        null
+    }
+}
 
 internal fun toMainUiModel(state: NativeAdapterState): MainUiModel = when (state.status) {
     NativeAdapterStatus.RUNNING -> state.port?.let { port ->
@@ -43,11 +58,26 @@ internal fun toMainUiModel(state: NativeAdapterState): MainUiModel = when (state
     else -> MainUiModel(MainScreen.LOADING)
 }
 
+internal fun matchesExportTicket(request: PendingSafExport, ticket: ExportTicket): Boolean =
+    request.token == ticket.token &&
+        request.fileName == ticket.fileName &&
+        request.mimeType == ticket.mimeType
+
+private data class PendingSafWrite(
+    val request: PendingSafExport,
+    val destination: Uri
+)
+
 class MainActivity : Activity() {
     companion object {
         private const val FILE_CHOOSER_REQUEST_CODE = 1001
+        private const val SAF_EXPORT_REQUEST_CODE = 1002
         private const val NOTIFICATION_PERMISSION_REQUEST_CODE = 1004
         private const val STATE_POLL_INTERVAL_MS = 250L
+        private const val STATE_EXPORT_TOKEN = "stapk.export.token"
+        private const val STATE_EXPORT_FILE_NAME = "stapk.export.fileName"
+        private const val STATE_EXPORT_MIME_TYPE = "stapk.export.mimeType"
+        private const val STATE_EXPORT_DESTINATION = "stapk.export.destination"
     }
 
     private lateinit var webView: WebView
@@ -57,6 +87,12 @@ class MainActivity : Activity() {
     private var nativeService: NativeHttpService? = null
     private var isBound = false
     private var fileUploadCallback: ValueCallback<Array<Uri>>? = null
+    private val bridgeSessionNonce = createBridgeSessionNonce()
+    private val safExportCoordinator = SafExportCoordinator()
+    private val exportExecutor = Executors.newSingleThreadExecutor()
+    private var pendingSafExport: PendingSafExport? = null
+    private val pendingSafWrites = PendingSafWriteQueue<PendingSafWrite>()
+    private var trustedLoopbackPort: Int? = null
 
     private val statePoll = Runnable { renderServiceState() }
 
@@ -68,11 +104,14 @@ class MainActivity : Activity() {
                 showError(getString(R.string.service_bind_failed))
                 return
             }
+            nativeService?.setExportBridgeNonce(bridgeSessionNonce)
+            resumePendingSafWrite()
             renderServiceState()
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
             nativeService = null
+            trustedLoopbackPort = null
             showError(getString(R.string.service_disconnected))
         }
     }
@@ -85,6 +124,17 @@ class MainActivity : Activity() {
         webView = findViewById(R.id.webView)
         errorView = findViewById(R.id.errorView)
         errorText = findViewById(R.id.errorText)
+        val restoredExport = savedInstanceState?.getString(STATE_EXPORT_TOKEN)?.let { token ->
+            val fileName = savedInstanceState.getString(STATE_EXPORT_FILE_NAME) ?: return@let null
+            val mimeType = savedInstanceState.getString(STATE_EXPORT_MIME_TYPE) ?: return@let null
+            PendingSafExport(token, fileName, mimeType)
+        }
+        val restoredDestination = savedInstanceState?.getString(STATE_EXPORT_DESTINATION)
+        if (restoredExport != null && restoredDestination != null) {
+            pendingSafWrites.enqueue(PendingSafWrite(restoredExport, Uri.parse(restoredDestination)))
+        } else {
+            pendingSafExport = restoredExport
+        }
 
         requestNotificationPermissionIfNeeded()
         configureWebView()
@@ -111,7 +161,19 @@ class MainActivity : Activity() {
         webView.settings.databaseEnabled = true
         webView.settings.mediaPlaybackRequiresUserGesture = false
         webView.settings.allowFileAccess = false
-        webView.webViewClient = TavernWebViewClient(this)
+        webView.addJavascriptInterface(
+            StapkFileBridge(bridgeSessionNonce) { token, fileName, mimeType ->
+                runOnUiThread { beginSafExport(PendingSafExport(token, fileName, mimeType)) }
+            },
+            "StapkFiles"
+        )
+        webView.webViewClient = TavernWebViewClient(
+            context = this,
+            trustedLoopbackPort = { trustedLoopbackPort },
+            onLoopbackPageFinished = { loadedView ->
+                loadedView.evaluateJavascript(bridgeNonceScript(bridgeSessionNonce), null)
+            }
+        )
         webView.webChromeClient = object : WebChromeClient() {
             override fun onShowFileChooser(
                 webView: WebView?,
@@ -127,6 +189,10 @@ class MainActivity : Activity() {
                     fileUploadCallback = null
                     return false
                 }
+                expandedFileChooserMimeTypes(fileChooserParams.acceptTypes)?.let { mimeTypes ->
+                    intent.type = "*/*"
+                    intent.putExtra(Intent.EXTRA_MIME_TYPES, mimeTypes)
+                }
                 return runCatching {
                     startActivityForResult(intent, FILE_CHOOSER_REQUEST_CODE)
                     true
@@ -136,6 +202,22 @@ class MainActivity : Activity() {
                     false
                 }
             }
+        }
+    }
+
+    private fun beginSafExport(request: PendingSafExport) {
+        if (pendingSafExport != null) return
+        val ticket = nativeService?.findExport(request.token) ?: return
+        if (!matchesExportTicket(request, ticket)) return
+        pendingSafExport = request
+        runCatching {
+            startActivityForResult(
+                safExportCoordinator.createDocumentIntent(ticket.fileName, ticket.mimeType),
+                SAF_EXPORT_REQUEST_CODE
+            )
+        }.onFailure {
+            pendingSafExport = null
+            Toast.makeText(this, R.string.export_failed, Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -165,7 +247,8 @@ class MainActivity : Activity() {
 
     private fun renderServiceState() {
         webView.removeCallbacks(statePoll)
-        val model = nativeService?.currentState()?.let(::toMainUiModel)
+        val adapterState = nativeService?.currentState()
+        val model = adapterState?.let(::toMainUiModel)
             ?: MainUiModel(MainScreen.LOADING)
 
         when (model.screen) {
@@ -175,6 +258,7 @@ class MainActivity : Activity() {
             }
 
             MainScreen.WEB -> {
+                trustedLoopbackPort = adapterState?.port
                 loadingView.visibility = View.GONE
                 errorView.visibility = View.GONE
                 webView.visibility = View.VISIBLE
@@ -183,7 +267,10 @@ class MainActivity : Activity() {
                 }
             }
 
-            MainScreen.ERROR -> showError(model.message ?: getString(R.string.start_failed))
+            MainScreen.ERROR -> {
+                trustedLoopbackPort = null
+                showError(model.message ?: getString(R.string.start_failed))
+            }
         }
     }
 
@@ -212,7 +299,63 @@ class MainActivity : Activity() {
             fileUploadCallback = null
             return
         }
+        if (requestCode == SAF_EXPORT_REQUEST_CODE) {
+            val pending = pendingSafExport
+            pendingSafExport = null
+            val destination = data?.data
+            if (resultCode == RESULT_OK && pending != null && destination != null) {
+                pendingSafWrites.enqueue(PendingSafWrite(pending, destination))
+                resumePendingSafWrite()
+            }
+            return
+        }
         super.onActivityResult(requestCode, resultCode, data)
+    }
+
+    private fun resumePendingSafWrite() {
+        val service = nativeService ?: return
+        val pending = pendingSafWrites.takeIfReady(serviceAvailable = true) ?: return
+        writeSafExport(service, pending.request, pending.destination)
+    }
+
+    private fun writeSafExport(
+        service: NativeHttpService,
+        request: PendingSafExport,
+        destination: Uri
+    ) {
+        val ticket = service.consumeExport(request.token)
+        if (ticket == null || !matchesExportTicket(request, ticket)) {
+            ticket?.let { service.releaseExport(it.token) }
+            Toast.makeText(this, R.string.export_failed, Toast.LENGTH_SHORT).show()
+            return
+        }
+        exportExecutor.execute {
+            val succeeded = runCatching {
+                val output = checkNotNull(contentResolver.openOutputStream(destination, "w"))
+                output.use { safExportCoordinator.copy(ticket, it) }
+            }.isSuccess
+            service.releaseExport(ticket.token)
+            runOnUiThread {
+                Toast.makeText(
+                    this,
+                    if (succeeded) R.string.export_saved else R.string.export_failed,
+                    Toast.LENGTH_SHORT
+                ).show()
+                webView.evaluateJavascript(exportResultScript(ticket.token, succeeded), null)
+            }
+        }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        val pendingWrite = pendingSafWrites.peek()
+        val pending = pendingWrite?.request ?: pendingSafExport
+        pending?.let {
+            outState.putString(STATE_EXPORT_TOKEN, it.token)
+            outState.putString(STATE_EXPORT_FILE_NAME, it.fileName)
+            outState.putString(STATE_EXPORT_MIME_TYPE, it.mimeType)
+        }
+        pendingWrite?.let { outState.putString(STATE_EXPORT_DESTINATION, it.destination.toString()) }
+        super.onSaveInstanceState(outState)
     }
 
     override fun onBackPressed() {
@@ -232,6 +375,13 @@ class MainActivity : Activity() {
             isBound = false
         }
         nativeService = null
+        exportExecutor.shutdown()
         super.onDestroy()
     }
+}
+
+internal fun exportResultScript(token: String, succeeded: Boolean): String {
+    require(com.stapk.mobile.nativeadapter.ExportMetadata.isToken(token)) { "Invalid export token" }
+    return "window.dispatchEvent(new CustomEvent('stapk-export-result', {" +
+        "detail: {token: '$token', success: $succeeded}}));"
 }
