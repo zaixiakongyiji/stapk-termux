@@ -3,7 +3,7 @@
 import { spawn } from 'node:child_process';
 import crypto from 'node:crypto';
 import { existsSync } from 'node:fs';
-import { copyFile, mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
+import { copyFile, mkdir, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
 import { fileURLToPath } from 'node:url';
@@ -30,10 +30,11 @@ export async function buildNoNodeApk({
   const mobileRoot = path.join(root, 'mobile');
   const gradleCommand = path.join(mobileRoot, platform === 'win32' ? 'gradlew.bat' : 'gradlew');
   const commandRunner = runCommand ?? ((command) => runExternal({ ...command, platform }));
+  const noNodeTestFiles = await listNoNodeTestFiles(root);
 
   await commandRunner({
     command: process.execPath,
-    args: ['--test', '--test-concurrency=1', 'test/no-node/*.test.mjs'],
+    args: ['--test', '--test-concurrency=1', ...noNodeTestFiles],
     cwd: root
   });
   await commandRunner({
@@ -100,6 +101,16 @@ export async function buildNoNodeApk({
   } finally {
     await rm(stagingRoot, { recursive: true, force: true });
   }
+}
+
+async function listNoNodeTestFiles(root) {
+  const entries = await readdir(path.join(root, 'test', 'no-node'), { withFileTypes: true });
+  const files = entries
+    .filter((entry) => entry.isFile() && entry.name.endsWith('.test.mjs'))
+    .map((entry) => path.posix.join('test', 'no-node', entry.name))
+    .sort();
+  if (files.length === 0) throw new Error('未找到 no-node 测试文件');
+  return files;
 }
 
 function validateOptions({ variant, ref }) {

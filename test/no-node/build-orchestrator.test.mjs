@@ -12,6 +12,13 @@ const PROJECT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), 
 async function withTempProject(fn) {
   const root = await mkdtemp(path.join(os.tmpdir(), 'stapk-build-orchestrator-'));
   try {
+    const testRoot = path.join(root, 'test', 'no-node');
+    await mkdir(testRoot, { recursive: true });
+    await Promise.all([
+      writeFile(path.join(testRoot, 'alpha.test.mjs'), ''),
+      writeFile(path.join(testRoot, 'zeta.test.mjs'), ''),
+      writeFile(path.join(testRoot, 'helper.mjs'), '')
+    ]);
     await fn(root);
   } finally {
     await rm(root, { recursive: true, force: true });
@@ -54,7 +61,7 @@ test('build orchestrator runs strict gates in order and publishes six debug arti
     });
 
     assert.deepEqual(calls, [
-      'node.exe --test --test-concurrency=1 test/no-node/*.test.mjs',
+      'node.exe --test --test-concurrency=1 test/no-node/alpha.test.mjs test/no-node/zeta.test.mjs',
       `node.exe scripts/stapk-transform-no-node.mjs --ref release --out ${path.join(root, 'build', 'no-node-payload')} --android-assets ${path.join(root, 'mobile', 'app', 'src', 'main', 'assets')} --clean`,
       `node.exe scripts/stapk-verify-no-node-transform.mjs --out ${path.join(root, 'build', 'no-node-payload')} --capabilities ${path.join(root, 'transform', 'no-node', 'capabilities.json')}`,
       `node.exe scripts/stapk-verify-capability-contract.mjs --contract ${path.join(root, 'build', 'no-node-payload', 'api-contract.json')} --capabilities ${path.join(root, 'transform', 'no-node', 'capabilities.json')}`,

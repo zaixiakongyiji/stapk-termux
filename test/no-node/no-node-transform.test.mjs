@@ -165,7 +165,14 @@ test('Android no-node patch series lists all auditable MVP patches', async () =>
     '0009-stapk-mobile-extension-and-import-compatibility.patch',
     '0010-stapk-mobile-unicode-and-embedded-lorebook.patch'
   ]);
-  await Promise.all(series.map((patchName) => access(path.join(PATCH_QUEUE_DIR, patchName))));
+  const patches = await Promise.all(series.map(async (patchName) => {
+    const patchPath = path.join(PATCH_QUEUE_DIR, patchName);
+    await access(patchPath);
+    return [patchName, await readFile(patchPath, 'utf8')];
+  }));
+  for (const [patchName, contents] of patches) {
+    assert.ok(!contents.includes('\r'), `${patchName} must use LF line endings`);
+  }
 });
 
 test('Android no-node Web assets expose only MVP API providers', async () => {
