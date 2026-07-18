@@ -39,6 +39,7 @@ async function createTransformArtifacts(root) {
 test('build orchestrator runs strict gates in order and publishes six debug artifacts', async () => {
   await withTempProject(async (root) => {
     const calls = [];
+    const nodeExecutable = path.basename(process.execPath);
     const runCommand = async ({ command, args, cwd }) => {
       calls.push([path.basename(command), ...args].join(' '));
       if (args.includes('scripts/stapk-transform-no-node.mjs')) {
@@ -61,10 +62,10 @@ test('build orchestrator runs strict gates in order and publishes six debug arti
     });
 
     assert.deepEqual(calls, [
-      'node.exe --test --test-concurrency=1 test/no-node/alpha.test.mjs test/no-node/zeta.test.mjs',
-      `node.exe scripts/stapk-transform-no-node.mjs --ref release --out ${path.join(root, 'build', 'no-node-payload')} --android-assets ${path.join(root, 'mobile', 'app', 'src', 'main', 'assets')} --clean`,
-      `node.exe scripts/stapk-verify-no-node-transform.mjs --out ${path.join(root, 'build', 'no-node-payload')} --capabilities ${path.join(root, 'transform', 'no-node', 'capabilities.json')}`,
-      `node.exe scripts/stapk-verify-capability-contract.mjs --contract ${path.join(root, 'build', 'no-node-payload', 'api-contract.json')} --capabilities ${path.join(root, 'transform', 'no-node', 'capabilities.json')}`,
+      `${nodeExecutable} --test --test-concurrency=1 test/no-node/alpha.test.mjs test/no-node/zeta.test.mjs`,
+      `${nodeExecutable} scripts/stapk-transform-no-node.mjs --ref release --out ${path.join(root, 'build', 'no-node-payload')} --android-assets ${path.join(root, 'mobile', 'app', 'src', 'main', 'assets')} --clean`,
+      `${nodeExecutable} scripts/stapk-verify-no-node-transform.mjs --out ${path.join(root, 'build', 'no-node-payload')} --capabilities ${path.join(root, 'transform', 'no-node', 'capabilities.json')}`,
+      `${nodeExecutable} scripts/stapk-verify-capability-contract.mjs --contract ${path.join(root, 'build', 'no-node-payload', 'api-contract.json')} --capabilities ${path.join(root, 'transform', 'no-node', 'capabilities.json')}`,
       'gradlew.bat --no-daemon :app:testDebugUnitTest',
       'gradlew.bat --no-daemon :app:assembleDebug'
     ]);
