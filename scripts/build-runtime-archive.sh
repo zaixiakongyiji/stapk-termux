@@ -65,21 +65,21 @@ for lib in $NEEDED_LIBS; do
     if echo "$lib" | grep -qE "^($SYS_LIBS)$"; then
         continue
     fi
-    
+
     echo " - Missing check for $lib..."
-    
+
     # Find the library in the zip file
     LIB_PATH=$(echo "$ZIP_FILE_LIST" | grep -E "/$lib$" | head -n 1)
     if [ -z "$LIB_PATH" ]; then
         echo "ERROR: Could not find required library $lib in bootstrap zip!"
         exit 1
     fi
-    
+
     echo "   Extracting $LIB_PATH"
     unzip -q -j "$BOOTSTRAP_ZIP" "$LIB_PATH" -d "$TEMP_DIR/runtime/lib/"
-    
+
     LIB_SHA256=$(sha256sum "$TEMP_DIR/runtime/lib/$lib" | awk '{print $1}')
-    
+
     if [ "$FIRST_LIB" = true ]; then
         FIRST_LIB=false
     else

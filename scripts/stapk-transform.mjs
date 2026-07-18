@@ -113,14 +113,14 @@ async function main() {
     console.error(`Error: Ref ${values.ref} not found in repo ${values.repo}`);
     process.exit(1);
   }
-  
+
   runCmd('git checkout --detach FETCH_HEAD', UPSTREAM_DIR);
   const resolvedCommit = runCmd('git rev-parse HEAD', UPSTREAM_DIR);
 
   // Read package.json & package-lock.json
   const pkgPath = path.join(UPSTREAM_DIR, 'package.json');
   const lockPath = path.join(UPSTREAM_DIR, 'package-lock.json');
-  
+
   if (!existsSync(lockPath)) {
     console.error("Error: package-lock.json not found in upstream.");
     process.exit(1);
@@ -147,7 +147,7 @@ async function main() {
   console.log('--- Phase 2: Engine Check & Patch ---');
   let runtimeManifestStr;
   try {
-    // If --runtime is a directory or points to the manifest directly, read it. 
+    // If --runtime is a directory or points to the manifest directly, read it.
     // If it is an archive, extract runtime-manifest.json to a temp location.
     if (values.runtime.endsWith('.json')) {
       runtimeManifestStr = await fs.readFile(values.runtime, 'utf-8');
@@ -192,7 +192,7 @@ async function main() {
 
   const engineCheckPassed = buildNodeValid && runtimeNodeValid;
   let engineCheckOverride = false;
-  
+
   if (!engineCheckPassed) {
     if (values['allow-engine-mismatch']) {
       console.warn("Warning: Engine mismatch allowed via override.");
@@ -221,7 +221,7 @@ async function main() {
   if (existsSync(patchesSeries)) {
     const series = await fs.readFile(patchesSeries, 'utf-8');
     const patches = series.split('\n').map(p => p.trim()).filter(p => p);
-    
+
     let combinedPatches = '';
     for (const patch of patches) {
       const patchPath = path.resolve('patches/sillytavern', patch);
@@ -281,10 +281,10 @@ async function main() {
 
   // Native Addon Scan
   const nativeAddons = [];
-  const findNativeCmd = process.platform === 'win32' 
-    ? 'Get-ChildItem -Recurse -Filter *.node | Select-Object -ExpandProperty FullName' 
+  const findNativeCmd = process.platform === 'win32'
+    ? 'Get-ChildItem -Recurse -Filter *.node | Select-Object -ExpandProperty FullName'
     : 'find node_modules -name "*.node"';
-  
+
   try {
     let output = '';
     if (process.platform === 'win32') {
@@ -379,7 +379,7 @@ async function main() {
   // Android Config Review
   const defaultConfPath = path.join(UPSTREAM_DIR, 'default/config.yaml');
   const androidConfPath = path.resolve('transform/config/config.android.yaml');
-  
+
   if (existsSync(defaultConfPath) && existsSync(androidConfPath)) {
     const defaultConfStr = await fs.readFile(defaultConfPath, 'utf-8');
     const androidConfStr = await fs.readFile(androidConfPath, 'utf-8');
@@ -417,7 +417,7 @@ async function main() {
   // Package
   console.log(`Packaging to ${values.out}...`);
   await ensureDir(path.resolve(values.out));
-  
+
   const payloadPath = path.join(values.out, 'payload.tgz');
   // Pack with the stable top-level path name "SillyTavern/" (plan Step 10).
   // Rename the build's package dir to SillyTavern, then tar once.
@@ -425,7 +425,7 @@ async function main() {
   if (existsSync(sillyTavernDir)) await fs.rm(sillyTavernDir, { recursive: true, force: true });
   await fs.rename(PACKAGE_DIR, sillyTavernDir);
   runCmd(`tar -czf ${payloadPath} -C ${BUILD_DIR} --exclude=".git" SillyTavern`, process.cwd());
-  
+
   const payloadStat = await fs.stat(payloadPath);
   const payloadArchiveSize = payloadStat.size;
   // Estimate unpacked size (tar -xzf and du or just sum file sizes)
