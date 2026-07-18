@@ -194,13 +194,14 @@ class OpenAiCompatibleControllerTest {
         server.enqueue(MockResponse().setResponseCode(429).setBody("provider rejected sk-secret prompt-text"))
         server.start()
         try {
+            val providerUrl = server.url("/v1")
             val paths = NativeAdapterPaths(Files.createTempDirectory("stapk-provider-diagnostic").toFile())
             val logger = DiagnosticLogger(paths.logsDir, clock = { 1234L })
             val controller = OpenAiCompatibleController(paths, OkHttpClient(), logger, nanoTime = { 5_000_000L })
             controller.writeSecret("""{"key":"api_key_openai","value":"sk-secret","label":"OpenAI"}""")
 
             val response = controller.generate(
-                """{"chat_completion_source":"openai","reverse_proxy":"${server.url("/v1")}","messages":[{"role":"user","content":"prompt-text"}]}"""
+                """{"chat_completion_source":"openai","reverse_proxy":"$providerUrl","messages":[{"role":"user","content":"prompt-text"}]}"""
             )
 
             assertEquals(429, response.statusCode)
@@ -209,7 +210,7 @@ class OpenAiCompatibleControllerTest {
             assertEquals("PROVIDER", event.get("area").asString)
             assertEquals("provider_http_error", event.get("code").asString)
             assertEquals("429", event.getAsJsonObject("fields").get("status").asString)
-            assertEquals("127.0.0.1", event.getAsJsonObject("fields").get("host").asString)
+            assertEquals(providerUrl.host, event.getAsJsonObject("fields").get("host").asString)
             assertTrue(event.getAsJsonObject("fields").has("durationMs"))
             assertFalse(diagnostic.contains("sk-secret"))
             assertFalse(diagnostic.contains("prompt-text"))
