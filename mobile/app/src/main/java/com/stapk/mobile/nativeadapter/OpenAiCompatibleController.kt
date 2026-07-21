@@ -8,9 +8,14 @@ import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.ResponseBody
 import okhttp3.RequestBody.Companion.toRequestBody
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.util.concurrent.TimeUnit
+
+internal const val MAX_STREAM_JSON_FALLBACK_BYTES = 1024 * 1024
 
 class OpenAiCompatibleController(
     paths: NativeAdapterPaths,
@@ -66,6 +71,12 @@ class OpenAiCompatibleController(
 
     fun generate(body: String): HttpResponse {
         val input = parseObject(body) ?: return invalidRequest()
+        val stream = when {
+            !input.has("stream") -> false
+            input.get("stream").isJsonPrimitive && input.getAsJsonPrimitive("stream").isBoolean ->
+                input.get("stream").asBoolean
+            else -> return invalidRequest()
+        }
         val provider = when (val resolution = resolveProvider(input)) {
             is ProviderResolution.Ready -> resolution.provider
             is ProviderResolution.Rejected -> return resolution.response
@@ -76,10 +87,108 @@ class OpenAiCompatibleController(
             .forEach { (key, value) -> payload.add(key, value.deepCopy()) }
         if (!payload.has("model")) payload.addProperty("model", DEFAULT_MODEL)
         if (!payload.has("messages")) payload.add("messages", JsonArray())
-        payload.addProperty("stream", false)
+        payload.addProperty("stream", stream)
 
-        return execute(provider, "chat/completions", payload.toString(), generationClient) { responseText ->
-            HttpResponse.json(200, responseText)
+        return if (stream) {
+            executeStreaming(provider, payload.toString())
+        } else {
+            execute(provider, "chat/completions", payload.toString(), generationClient) { responseText ->
+                HttpResponse.json(200, responseText)
+            }
+        }
+    }
+
+    private fun executeStreaming(provider: Provider, body: String): HttpResponse {
+        val request = Request.Builder()
+            .url("${provider.baseUrl}/chat/completions")
+            .header("Accept", "text/event-stream")
+            .apply { provider.apiKey?.let { header("Authorization", "Bearer $it") } }
+            .post(body.toRequestBody(JSON_MEDIA_TYPE))
+            .build()
+        val startedAt = nanoTime()
+        val call = generationClient.newCall(request)
+        return try {
+            val response = call.execute()
+            when {
+                !response.isSuccessful -> response.use {
+                    val responseText = readBounded(response.body, MAX_PROVIDER_ERROR_RESPONSE_BYTES)
+                        ?.toString(Charsets.UTF_8)
+                        .orEmpty()
+                    recordProviderDiagnostic(
+                        "provider_http_error",
+                        streamingFields(request, response.code, startedAt)
+                    )
+                    HttpResponse.json(
+                        response.code,
+                        errorJson(
+                            "provider 请求失败 (${response.code})：${providerMessage(responseText, response.message)}",
+                            provider.apiKey
+                        )
+                    )
+                }
+                isJsonResponse(response.body) -> response.use {
+                    val responseBytes = readBounded(response.body, MAX_STREAM_JSON_FALLBACK_BYTES)
+                    if (responseBytes == null) {
+                        recordProviderDiagnostic(
+                            "provider_stream_json_too_large",
+                            streamingFields(request, response.code, startedAt)
+                        )
+                        return@use HttpResponse.json(
+                            502,
+                            """{"error":true,"message":"provider 流式 JSON 响应过大"}"""
+                        )
+                    }
+                    val responseJson = runCatching {
+                        JsonParser.parseString(responseBytes.toString(Charsets.UTF_8))
+                    }.getOrNull()
+                    if (responseJson == null || (!responseJson.isJsonObject && !responseJson.isJsonArray)) {
+                        recordProviderDiagnostic(
+                            "provider_stream_invalid_json",
+                            streamingFields(request, response.code, startedAt)
+                        )
+                        return@use HttpResponse.json(
+                            502,
+                            """{"error":true,"message":"provider 返回了无效的流式 JSON 响应"}"""
+                        )
+                    }
+                    recordProviderDiagnostic(
+                        "provider_stream_json_fallback",
+                        streamingFields(request, response.code, startedAt)
+                    )
+                    val fallback = "data: $responseJson\n\ndata: [DONE]\n\n"
+                    HttpResponse.stream(
+                        response.code,
+                        "text/event-stream; charset=utf-8",
+                        ByteArrayInputStream(fallback.toByteArray(Charsets.UTF_8))
+                    )
+                }
+                else -> {
+                    val mimeType = response.header("Content-Type")
+                        ?.takeIf { it.substringBefore(';').trim().equals("text/event-stream", ignoreCase = true) }
+                        ?: "text/event-stream"
+                    HttpResponse.stream(
+                        response.code,
+                        mimeType,
+                        ProviderResponseStream(call, response) { terminal, error ->
+                            val fields = streamingFields(request, response.code, startedAt).toMutableMap()
+                            fields["terminal"] = terminal.diagnosticValue
+                            error?.let { fields["errorClass"] = it.javaClass.name }
+                            recordProviderDiagnostic("provider_stream_terminal", fields)
+                        }
+                    )
+                }
+            }
+        } catch (exception: IOException) {
+            recordProviderDiagnostic(
+                "provider_network_error",
+                mapOf(
+                    "host" to request.url.host,
+                    "durationMs" to elapsedMs(startedAt).toString(),
+                    "stream" to "true",
+                    "errorClass" to exception.javaClass.name
+                )
+            )
+            HttpResponse.json(502, """{"error":true,"message":"无法连接 OpenAI-compatible provider"}""")
         }
     }
 
@@ -178,6 +287,37 @@ class OpenAiCompatibleController(
     private fun elapsedMs(startedAt: Long): Long =
         ((nanoTime() - startedAt) / 1_000_000L).coerceAtLeast(0L)
 
+    private fun streamingFields(request: Request, status: Int, startedAt: Long): Map<String, String> =
+        mapOf(
+            "host" to request.url.host,
+            "status" to status.toString(),
+            "durationMs" to elapsedMs(startedAt).toString(),
+            "stream" to "true"
+        )
+
+    private fun isJsonResponse(body: ResponseBody?): Boolean {
+        val mediaType = body?.contentType() ?: return false
+        return mediaType.type.equals("application", ignoreCase = true) &&
+            (mediaType.subtype.equals("json", ignoreCase = true) || mediaType.subtype.endsWith("+json", ignoreCase = true))
+    }
+
+    private fun readBounded(body: ResponseBody?, maxBytes: Int): ByteArray? {
+        body ?: return ByteArray(0)
+        if (body.contentLength() > maxBytes.toLong()) return null
+        val output = ByteArrayOutputStream()
+        val buffer = ByteArray(8192)
+        var total = 0
+        val input = body.byteStream()
+        while (true) {
+            val count = input.read(buffer, 0, minOf(buffer.size, maxBytes - total + 1))
+            if (count < 0) break
+            total += count
+            if (total > maxBytes) return null
+            output.write(buffer, 0, count)
+        }
+        return output.toByteArray()
+    }
+
     private fun recordProviderDiagnostic(code: String, fields: Map<String, String>) {
         runCatching { diagnosticLogger?.event(DiagnosticArea.PROVIDER, code, fields) }
     }
@@ -229,6 +369,7 @@ class OpenAiCompatibleController(
         const val DEFAULT_BASE_URL = "https://api.openai.com/v1"
         const val DEFAULT_MODEL = "gpt-4o-mini"
         const val MAX_PROVIDER_ERROR_LENGTH = 512
+        const val MAX_PROVIDER_ERROR_RESPONSE_BYTES = 16 * 1024
         const val GENERATION_READ_TIMEOUT_SECONDS = 120L
         val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
         val CHAT_COMPLETION_FIELDS = setOf(

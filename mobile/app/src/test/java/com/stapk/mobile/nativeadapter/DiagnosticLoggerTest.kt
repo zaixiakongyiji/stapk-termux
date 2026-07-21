@@ -9,6 +9,41 @@ import org.junit.Test
 
 class DiagnosticLoggerTest {
     @Test
+    fun `logger keeps only strict provider terminal metadata`() {
+        val logsDir = Files.createTempDirectory("stapk-diagnostics-terminal").toFile()
+        val logger = DiagnosticLogger(logsDir)
+
+        listOf("completed", "canceled", "read_error", "arbitrary").forEach { terminal ->
+            logger.event(DiagnosticArea.PROVIDER, "terminal_$terminal", mapOf("terminal" to terminal))
+        }
+
+        val terminalFields = logsDir.resolve("diagnostics.jsonl").readLines().map {
+            JsonParser.parseString(it).asJsonObject.getAsJsonObject("fields")
+        }
+        assertEquals("completed", terminalFields[0].get("terminal").asString)
+        assertEquals("canceled", terminalFields[1].get("terminal").asString)
+        assertEquals("read_error", terminalFields[2].get("terminal").asString)
+        assertFalse(terminalFields[3].has("terminal"))
+    }
+
+    @Test
+    fun `logger keeps only strict boolean stream metadata`() {
+        val logsDir = Files.createTempDirectory("stapk-diagnostics-stream").toFile()
+        val logger = DiagnosticLogger(logsDir)
+
+        logger.event(DiagnosticArea.PROVIDER, "stream_true", mapOf("stream" to "true"))
+        logger.event(DiagnosticArea.PROVIDER, "stream_false", mapOf("stream" to "false"))
+        logger.event(DiagnosticArea.PROVIDER, "stream_invalid", mapOf("stream" to "yes"))
+
+        val events = logsDir.resolve("diagnostics.jsonl").readLines().map {
+            JsonParser.parseString(it).asJsonObject
+        }
+        assertEquals("true", events[0].getAsJsonObject("fields").get("stream").asString)
+        assertEquals("false", events[1].getAsJsonObject("fields").get("stream").asString)
+        assertFalse(events[2].getAsJsonObject("fields").has("stream"))
+    }
+
+    @Test
     fun `logger keeps only validated allowlisted fields and never writes secrets or content`() {
         val logsDir = Files.createTempDirectory("stapk-diagnostics").toFile()
         val logger = DiagnosticLogger(logsDir, clock = { 1_234L })

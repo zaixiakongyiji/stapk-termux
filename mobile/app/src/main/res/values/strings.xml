@@ -8,4 +8,5 @@
     <string name="retry">重试</string>
     <string name="export_saved">文件已保存</string>
     <string name="export_failed">文件保存失败</string>
+    <string name="file_import_unreadable">无法读取所选文件，请重新选择或检查文件访问权限</string>
 </resources>

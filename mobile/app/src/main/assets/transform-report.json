@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "generatedAt": "2026-07-18T11:02:10.176Z",
+  "generatedAt": "2026-07-21T08:59:45.739Z",
   "output": "C:\\Users\\31029\\Documents\\GitHub\\stapk-termux\\build\\no-node-payload",
   "upstream": {
     "repo": "https://github.com/SillyTavern/SillyTavern.git",
@@ -18,7 +18,8 @@
     "0007-stapk-mobile-saf-export.patch",
     "0008-stapk-mobile-capability-gates.patch",
     "0009-stapk-mobile-extension-and-import-compatibility.patch",
-    "0010-stapk-mobile-unicode-and-embedded-lorebook.patch"
+    "0010-stapk-mobile-unicode-and-embedded-lorebook.patch",
+    "0011-stapk-mobile-world-info-global-selector.patch"
   ],
   "apiSummary": {
     "implemented": 98,

@@ -1,7 +1,7 @@
 # stAPK 无 Node 原生适配转换器设计
 
 日期：2026-07-09
-状态：实施中，官方单用户功能与 API 35 验收已完成，API 24/29 设备矩阵延期到后续真机收口
+状态：实施中，官方单用户功能与 API 35 基础验收已完成；OpenAI-compatible 流式实现已通过构建验证及 2026-07-21 模拟器设备验收
 范围：保留 SillyTavern 官方 Web UI，APK 运行时不包含、不解压、不启动 Node.js，通过 Android 原生兼容层承接官方单用户核心能力；本地重型模型和任意 Node 扩展不属于主体完成范围
 
 ## 结论
@@ -77,22 +77,22 @@ APK 可以通过 Kotlin/Java/Android 库访问文件、网络、加密、图片�
 - `public/script.js` 和相关前端脚本通过 `fetch('/api/...')` 调用后端。
 - OpenAI-compatible 真实生成路径主要涉及 `/api/backends/chat-completions/generate`、`/api/backends/chat-completions/status`、settings、secrets 和模型配置。
 
-## 实施进度（更新至 2026-07-17）
+## 实施进度（更新至 2026-07-21）
 
 - 当前执行入口已切换到 `docs/plan/2026-07-12-stapk-single-user-feature-completion-plan.md`；2026-07-09 计划的 Task 0-9 仅保留为基础 MVP 历史记录，旧 `docs/plan/2026-07-06-stapk-0.3-completion-plan.md` 不再存在。
 - 已落地构建期 API 契约扫描器：`scripts/stapk-scan-web-contract.mjs`。
 - 已落地 no-node transform 和 verifier：`scripts/stapk-transform-no-node.mjs`、`scripts/stapk-verify-no-node-transform.mjs`。转换器会执行 upstream Webpack 构建并把 `public/lib.js` 替换为浏览器 bundle，verifier 会阻断裸模块 import。
 - 真实 transform 已从 SillyTavern `release` 生成 `build/no-node-payload/`，resolved commit 为 `8172dcd0ee672d3cd9a5e5f7af134f91a45cd2b8`。
 - 当前输出包含 `sillytavern-web/`、`sillytavern-web/stapk-capabilities.json`、`api-contract.json`、`stapk-web-manifest.json`、`transform-report.json`，并通过 no-node verifier。
-- Task 11 已完成 capability runtime、fail-closed Web helper、核心入口可见性测试和严格 contract 收敛。当前正式 Web 资源扫描为 `implemented=92`、`external_optional=136`、`unsupported_hidden=110`、`needs_review=0`；不带豁免的 `verify:no-node-capabilities` 已通过，`visibleNeedsReview=[]`、`unassignedEndpoints=[]`。
-- Task 12 已建立 `npm run build:no-node-apk -- --variant <debug|release> --ref <ref>` 单命令链路，并让 CI/Release 统一上传 APK、checksum、API contract、capability runtime、Web manifest 和 transform report。2026-07-17 本地 Debug 链路 68/68 no-node tests、strict capability、Android JVM tests（231 tests，0 failures、0 errors、2 skipped）和 assemble 全部通过，最新 output APK SHA-256 为 `f359a9b1c09f1abf1fb516fa55d8709e9f7015d280fa46b9bc003d0c54ac4eb6`。
+- Task 11 已完成 capability runtime、fail-closed Web helper、核心入口可见性测试和严格 contract 收敛。2026-07-21 正式 Web 资源扫描为 `implemented=98`、`external_optional=136`、`unsupported_hidden=105`、`needs_review=0`；不带豁免的 `verify:no-node-capabilities` 已通过，`visibleNeedsReview=[]`、`unassignedEndpoints=[]`。
+- Task 12 已建立 `npm run build:no-node-apk -- --variant <debug|release> --ref <ref>` 单命令链路，并让 CI/Release 统一上传 APK、checksum、API contract、capability runtime、Web manifest 和 transform report。2026-07-21 streaming 最终修复后的本地 Debug 链路 79/79 no-node tests、strict capability（`ok=true`、`visibleNeedsReview=[]`、`unassignedEndpoints=[]`）、Android JVM tests（303 tests，0 failures、0 errors、2 skipped）和 assemble 全部通过，最新 output APK SHA-256 为 `4322b4a8e47b93bddf03fec13956915e296d76065149a0c58a7332838f4e1077`。
 - Android 侧已落地 `NativeAdapterPaths`、`NativeAdapterStatus` 和 `NativeAdapterState`，并用 JVM 单元测试固定 no-node 私有目录、派生文件路径和状态默认值。
 - Android 侧已落地 loopback-only `NativeHttpServer`、静态资源服务和 foreground `NativeHttpService` 骨架；JVM 测试覆盖真实 `/version`、首页、MIME、目录边界和启动错误收敛。
 - Task 5 已把正式 transform assets 接入 APK，运行时在后台线程按 `stapk-web-manifest.json` 首次安装或升级刷新 `filesDir/web`；MainActivity 启动并绑定原生服务后加载 `http://127.0.0.1:<port>/`。2026-07-10 已在 Pixel 8 / Android 15 模拟器验证前台 Service、Web assets 安装升级、`/version`、首页、Webpack bundle、Back 后服务存活和无 Node 进程；当时发现的 `/csrf-token` 边界已由 Task 6 解决。SAF 文件选择、外部 HTTPS 跳转以及下载/导出 SAF 均已接入。
-- Task 6 已实现 `/version`、`/csrf-token`、`/api/ping`、`/api/settings/get` 和 `/api/settings/save`。settings 响应采用 upstream 实际要求的 envelope，持久化后强制 OpenAI-compatible 且关闭 streaming。2026-07-11 设备日志确认 `settings_loaded_before`、`settings_loaded_after` 和 `settings_loaded` 均已触发，重启后设置仍存在；当前第一条失败请求是 Task 7 的 `POST /api/characters/all` 404。
+- Task 6 已实现 `/version`、`/csrf-token`、`/api/ping`、`/api/settings/get` 和 `/api/settings/save`。settings 响应采用 upstream 实际要求的 envelope，持久化后仍强制 OpenAI-compatible provider，但不再覆盖 preset 的 `stream_openai`；新安装默认关闭 streaming，用户和 preset 可独立保存 `true` 或 `false`。2026-07-11 的 settings 持久化设备验收继续有效；2026-07-21 Pixel 8 / Android 15 模拟器已用匿名 preset A/B 分别确认 `stream=true` 与 `stream=false` 在切换和应用重启后独立恢复，证据只记录 selected/stream boolean 与 restart 方式。
 - Task 7 已实现角色 get/all/create/edit/delete/chats、聊天 get/save/delete/search、默认 avatar/thumbnail 路由和真实 multipart 表单适配。角色内部存 JSON、对外保持 `.png` identity，聊天保持 JSONL。2026-07-11 先卸载旧 app 后在 Pixel 8 / Android 15 模拟器干净安装，官方首页到达 `app_ready`；设备上创建的 `Device Alice`、默认头像和 `device-chat.jsonl` 在 app 重启后仍可读取，Character Management 与角色编辑页均可显示，Node 进程数为 0。welcome recent chats 和 tokenizer/token count 仍是后续兼容范围。
-- Task 8 已实现 upstream secrets read/write/delete、OpenAI/custom source、`/models` status 和非 streaming `/chat/completions` 转发。settings 会清理 secret 字段，secret 状态只返回 masked value，provider 401/422/429 状态可透传。2026-07-11 在 Pixel 8 / Android 15 模拟器先卸载旧 app 后干净安装，通过 `adb reverse` 连接本机 OpenAI-compatible 测试 provider，确认 provider 收到 `stream=false` 并返回 `Device non-stream reply`；重启后无需重写 settings/key 仍可生成，logcat 和 settings 无 key，Node 进程数为 0。2026-07-17 又使用真实外部 custom provider `catiecli.sukaka.top` 和模型 `gcli-gemini-3.1-flash-lite` 完成 models、chat completions、官方 UI 回复、重启持久化与 secret 脱敏验收，HTTP 均返回 200。
-- 基础 MVP 的 Task 9 已落地固定 Android patch queue，Task 11 已扩展为 8 个可审计 patch。Patch 只应用于构建工作树，不修改 upstream checkout；Persona、World Info、群组、recent chats、背景、附件、导入导出、主题和 preset 等已实现核心入口保持可见，Extensions marketplace、本地模型和 multiuser 继续隐藏，远程图片、语音、向量、字幕和翻译按 capability 显示外部服务说明。2026-07-16 API 35 冷启动复核中，第 3 秒仍显示原生启动页而非黑色 WebView，第 13 秒官方 UI 可用，`app_ready` 约 12.1 秒；黑色 surface 验收通过，冷启动总耗时保留为性能优化项。
+- Task 8 已实现 upstream secrets read/write/delete、OpenAI/custom source、`/models` status，以及 streaming/non-streaming `/chat/completions` 转发。非流式继续返回完整 JSON；流式通过 OkHttp `ResponseBody` 到 NanoHTTPD chunked response 透明转发 provider SSE。明确 JSON 响应会在 1 MiB 上限内完整解析，仅接受 object/array，重新序列化为单行 `data:` 事件并追加 `[DONE]`；畸形 JSON 或 primitive top-level 返回安全 502。流关闭会关闭 response 并取消 OkHttp call；stream terminal diagnostics 以严格 enum 记录 `completed`、`canceled` 或 `read_error` 且只回调一次。diagnostics 只记录脱敏元数据，不记录 API key、prompt、SSE chunk、生成正文或 provider 错误原文。2026-07-11 与 2026-07-17 的非流式、持久化和 secret 脱敏设备验收继续有效；2026-07-21 Pixel 8 / Android 15 模拟器已通过真实 custom provider 的 non-streaming、streaming 增量显示、停止生成、重启持久化与 diagnostics 验收，证据只记录 boolean、HTTP status/MIME、文本长度、事件 code 和安全字段名，不记录任何聊天正文；terminal diagnostics 补充由 JVM 测试验证，未声称在该真实 provider 流程中重新观察。
+- 基础 MVP 的 Task 9 已落地固定 Android patch queue，Task 11 及后续兼容修复已扩展为 11 个可审计 patch。Patch 只应用于构建工作树，不修改 upstream checkout；Persona、World Info、群组、recent chats、背景、附件、导入导出、主题和 preset 等已实现核心入口保持可见，Extensions marketplace、本地模型和 multiuser 继续隐藏，远程图片、语音、向量、字幕和翻译按 capability 显示外部服务说明。2026-07-16 API 35 冷启动复核中，第 3 秒仍显示原生启动页而非黑色 WebView，第 13 秒官方 UI 可用，`app_ready` 约 12.1 秒；黑色 surface 验收通过，冷启动总耗时保留为性能优化项。
 - 2026-07-12 将项目主体完成标准提升为“官方单用户功能基本全量”：补齐所有普通用户可见核心 UI 对应的原生能力；远程 embedding、图片、TTS、STT 采用可选 capability；本地重型模型和任意 Node 扩展明确排除。旧数据迁移降级为主体完成后的可选独立项目。
 - 2026-07-16 已完成 SAF 数据导出桥及审查加固：只允许已知 `127.0.0.1:<port>` 主文档注入随机 nonce；browser-generated staging 必须携带同一 nonce header，并受单文件 32 MiB、活动 ticket 数和总暂存字节配额约束；文件名、MIME 与扩展名必须匹配业务白名单。角色/聊天等服务端导出复用单次 ticket，World Info、附件等浏览器生成内容通过 `/api/stapk/exports/create` 暂存后交给 `ACTION_CREATE_DOCUMENT`，异步失败会显示用户可见错误。Activity 配置变化期间的 SAF 结果会保留到服务重绑后再消费 ticket。
 - Pixel 8 / Android 15 模拟器先卸载旧 app 后干净安装，官方首页正常加载；World Info JSON 在普通保存和 SAF 页面旋转后的配置变化场景均生成 14 字节 `{"entries":{}}`，私有 exports 目录随后为空，无崩溃且只有 `com.stapk.mobile` 进程。经 `adb forward` 对 staging endpoint 发起不带 nonce 的直接 POST，返回 `403 export_forbidden`。角色 JSON 与 World Info JSON 重新导入、完整官方单用户 UI 矩阵、真实外部 provider 和黑色 WebView surface 计时均已完成 API 35 验收；最新 output APK 再次 clean install 后 `/version` 返回 `node_runtime=false`。Android 7/10 延期到后续真机验收，详见 `docs/plan/2026-07-12-stapk-single-user-feature-validation-record.md`。
@@ -151,7 +151,7 @@ APK 可以通过 Kotlin/Java/Android 库访问文件、网络、加密、图片�
 - 背景的列出、上传、删除、重命名、文件夹管理和持久化。
 - 附件、上传、下载和导出所需的 Android SAF 桥接。
 - 官方 UI 正常运行所需的 tokenizer、token count、recent chats、文件和诊断 endpoint。
-- OpenAI-compatible 非 streaming 对话、错误透传、secret 脱敏和重启持久化。
+- OpenAI-compatible preset 可选 streaming/non-streaming 对话、错误透传、secret 脱敏和重启持久化。
 - 所有普通用户可见入口与原生兼容层能力一致；能力不可用时必须隐藏或明确降级。
 
 项目主体完成不要求：
@@ -300,7 +300,7 @@ mobile/app/src/main/assets/transform-report.json
 - 关闭登录、多用户、CSRF 等桌面 server 语境功能。
 - 隐藏第一版不支持的 provider 或功能入口。
 - 把默认 provider 设为 OpenAI-compatible。
-- 把默认 streaming 设为 false。
+- 把新安装默认 streaming 设为 false，但不得覆盖用户或 preset 已保存的 `stream_openai`。
 - 为 Android WebView 修复文件选择、下载、外链、viewport 或资源路径问题。
 - 让前端在缺失某些非 MVP endpoint 时显示降级状态，而不是卡死。
 
@@ -470,8 +470,10 @@ POST /api/backends/chat-completions/generate
 - 根据 settings/secrets 读取 base URL、API key、model。
 - 将 SillyTavern 前端生成请求转换为 OpenAI Chat Completions 请求。
 - 请求 OpenAI-compatible API。
-- 返回 SillyTavern 前端期望的响应形状。
-- 第一版默认关闭 streaming。
+- 非流式返回 SillyTavern 前端期望的完整 JSON 响应。
+- 流式原样转发 provider SSE 字节流，不在 Kotlin 中解析或改写正常 SSE event。
+- provider 在 `stream=true` 时明确返回 JSON，则将完整 JSON 包装为一个 SSE `data:` 事件并追加 `[DONE]`，避免前端产生空消息。
+- 新安装仍默认关闭 streaming，preset 可以独立启用并持久化 streaming。
 
 第一版支持：
 
@@ -481,10 +483,9 @@ OpenRouter: https://openrouter.ai/api/v1
 DeepSeek 或其他兼容服务：用户自定义 base URL
 ```
 
-第一版不支持：
+当前仍不支持：
 
 ```text
-SSE streaming
 tool calling 完整闭环
 multimodal 图片输入
 reasoning metadata 完整保留
@@ -688,14 +689,15 @@ filesDir/secrets/
 
 | 方案 | 优点 | 风险 |
 |------|------|------|
-| NanoHTTPD | 小、容易嵌入、适合 MVP | SSE、multipart、大文件和错误处理能力有限 |
+| NanoHTTPD | 小、容易嵌入、适合 MVP，可通过 chunked response 转发 SSE | multipart、大文件、断连和错误处理需要显式封装 |
 | Ktor Server | Kotlin 生态完整，路由和 JSON 更舒服 | Android 运行兼容性、包体、协程和生命周期需要验证 |
 | 自研最小 HTTP server | 可控，能只做需要的行为 | 容易漏 HTTP 细节，维护成本高 |
 
 MVP 建议：
 
 - 先用 spike 验证 NanoHTTPD 能否稳定支持静态资源、POST JSON、基础文件上传。
-- streaming 默认关闭，避免第一版依赖 SSE。
+- 新安装 streaming 默认关闭，但服务端同时支持 preset 可选 streaming/non-streaming。
+- streaming 使用 OkHttp 流式 body 与 NanoHTTPD chunked response；流关闭必须同步取消上游 call。
 - 如果 NanoHTTPD 卡在 multipart 或响应流，切换 Ktor Server 或自研最小实现。
 
 JSON 序列化可优先用 Kotlinx Serialization 或 Moshi。网络请求 OpenAI-compatible 可用 OkHttp。
@@ -717,6 +719,7 @@ WebView 行为：
 - 不提供局域网访问。
 - 不允许任意 app 通过公网访问。
 - SAF JavaScript bridge 和 `/api/stapk/exports/create` 使用 Activity 随机 nonce 双向约束；端口未知、端口不匹配或 `localhost` 主机均不得注入 bridge nonce。其他 loopback API 的统一会话认证若未来需要扩大，必须单独设计，不能复用可被普通 API 响应泄漏的固定 CSRF token。
+- provider streaming diagnostics 只允许记录 `host`、`status`、`durationMs`、`stream`、结束类型和异常类；禁止记录 Authorization、API key、请求 messages、SSE chunk、生成正文和 provider 错误原文。
 
 ## 错误处理
 
@@ -940,16 +943,18 @@ SillyTavern 前端在启动和发送消息过程中可能调用很多非显眼 e
 - 转换阶段注入 Android 默认 settings。
 - 默认 `main_api = openai`。
 - 默认 `chat_completion_source = openai` 或 custom OpenAI-compatible。
-- 默认关闭 streaming。
+- 新安装默认关闭 streaming，但保留并应用 preset 的 `stream_openai` 值。
 
-### OpenAI streaming 复杂
+### OpenAI streaming 的 provider 差异与断连释放
 
-SillyTavern 支持 streaming，但 Android MVP 如果一开始支持 SSE，会增加 HTTP server、前端协议和 provider 转发复杂度。
+不同 OpenAI-compatible provider 可能返回标准 SSE、未声明 MIME 的 SSE，或在收到 `stream=true` 时仍返回普通 JSON；WebView 停止生成和客户端断连还必须释放上游连接。
 
 应对：
 
-- 第一版强制 `stream_openai = false`。
-- 后续单独设计 SSE 支持。
+- 标准及未声明 JSON 的响应走透明字节流，不在 Kotlin 中统一改写 provider payload。
+- 明确 JSON 响应使用有大小上限的 SSE framing fallback，并追加 `[DONE]`。
+- 流式 InputStream 关闭时关闭 response 并取消 OkHttp call，覆盖停止生成、页面离开、断连和 socket 写失败路径。
+- 流式 diagnostics 只记录脱敏元数据，不复制正文或认证信息。
 
 ### 角色卡格式复杂
 
@@ -1006,10 +1011,13 @@ SillyTavern 的 vectors、图片、语音等能力可能依赖 Transformers、We
 | 2026-07-12 | 角色卡按官方 UI 实现 PNG/JSON 导入导出，WebP 只作为头像媒体 | 当前 upstream 导出菜单只有 PNG/JSON，PNG metadata 使用 `ccv3`/`chara`；不发明非标准 WebP 角色卡 metadata |
 | 2026-07-13 | 构建期 API scanner 改用 Acorn + parse5 | 自研 JavaScript/HTML lexer 连续审查仍暴露 regex、template、block、object spread 和 HTML attribute 语义缺口；两者只在构建期使用，不进入 APK |
 | 2026-07-15 | 普通业务数据导入导出保留在主体范围，完整应用备份恢复与 Data Maid 推迟为主体完成后的可选项目 | 角色、聊天和 World Info 需要直接面向用户的 SAF 互操作；整应用 ZIP 恢复涉及 manifest、事务、回滚和删除风险，不应阻断当前核心功能与发布收口 |
+| 2026-07-21 | OpenAI-compatible 支持 preset 可选 streaming/non-streaming | 消除前端 SSE 状态与原生 JSON 响应不一致导致的空消息，同时保留新安装默认关闭的保守行为 |
+| 2026-07-21 | 流式正常路径采用透明 SSE，明确 JSON 响应使用 framing fallback | 复用 SillyTavern 前端解析语义，兼容忽略 `stream=true` 的 custom provider，避免在 Kotlin 中重写厂商 payload |
+| 2026-07-21 | 断连取消上游请求，streaming diagnostics 只记录脱敏元数据 | 防止 foreground service 遗留请求，并确保 API key、prompt、SSE chunk 和生成正文不进入日志 |
 
 ## 已确认边界
 
-1. 基础对话继续只正式支持 OpenAI-compatible 非 streaming。
+1. 基础对话正式支持 OpenAI-compatible preset 可选 streaming/non-streaming；正常 SSE 透明转发，明确 JSON 响应使用 framing fallback。
 2. 项目主体补齐官方单用户核心能力，不追求全部 Node 服务端 endpoint。
 3. 本地重型模型、第三方扩展、多用户和远程访问明确排除。
 4. 远程 embedding、图片、TTS、STT 等使用 capability gate，可在主体功能稳定后增量接入。

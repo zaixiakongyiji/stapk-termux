@@ -216,7 +216,6 @@ class SettingsController(
             ?.takeIf { it in SUPPORTED_SOURCES }
             ?: "openai"
         openAi.addProperty("chat_completion_source", source)
-        openAi.addProperty("stream_openai", false)
     }
 
     private fun stripSecretFields(element: JsonElement) {

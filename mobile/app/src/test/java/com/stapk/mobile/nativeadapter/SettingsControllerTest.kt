@@ -13,7 +13,7 @@ import java.nio.file.Files
 
 class SettingsControllerTest {
     @Test
-    fun `default settings match upstream envelope and fixed provider mode`() {
+    fun `default settings keep streaming disabled`() {
         val paths = NativeAdapterPaths(Files.createTempDirectory("stapk-settings").toFile())
         val controller = SettingsController(paths)
 
@@ -21,7 +21,7 @@ class SettingsControllerTest {
 
         assertEquals(200, response.statusCode)
         val envelope = JsonParser.parseString(response.bodyText!!).asJsonObject
-        val settings = JsonParser.parseString(envelope.get("settings").asString).asJsonObject
+        val settings = currentSettings(response)
         assertEquals("openai", settings.get("main_api").asString)
         assertEquals("openai", settings.getAsJsonObject("oai_settings").get("chat_completion_source").asString)
         assertFalse(settings.getAsJsonObject("oai_settings").get("stream_openai").asBoolean)
@@ -31,6 +31,20 @@ class SettingsControllerTest {
         assertFalse(envelope.get("enable_accounts").asBoolean)
         assertFalse(envelope.getAsJsonObject("request_compression").get("enabled").asBoolean)
         assertTrue(paths.settingsFile.isFile)
+    }
+
+    @Test
+    fun `saved OpenAI streaming choice is preserved`() {
+        val paths = NativeAdapterPaths(Files.createTempDirectory("stapk-settings-streaming").toFile())
+        val controller = SettingsController(paths)
+
+        val response = controller.saveSettings(
+            """{"main_api":"openai","oai_settings":{"chat_completion_source":"custom","stream_openai":true}}"""
+        )
+
+        assertEquals(200, response.statusCode)
+        val settings = currentSettings(controller.getSettings())
+        assertTrue(settings.getAsJsonObject("oai_settings").get("stream_openai").asBoolean)
     }
 
     @Test
@@ -98,7 +112,7 @@ class SettingsControllerTest {
         assertEquals(512, settings.get("amount_gen").asInt)
         assertEquals("openai", settings.get("main_api").asString)
         assertEquals("custom", openAi.get("chat_completion_source").asString)
-        assertFalse(openAi.get("stream_openai").asBoolean)
+        assertTrue(openAi.get("stream_openai").asBoolean)
         assertEquals("gpt-4o-mini", openAi.get("openai_model").asString)
         assertEquals("https://example.test/v1", openAi.get("reverse_proxy").asString)
 
@@ -335,4 +349,7 @@ class SettingsControllerTest {
         connection.disconnect()
         return status to response
     }
+
+    private fun currentSettings(response: HttpResponse) = JsonParser.parseString(response.bodyText!!).asJsonObject
+        .get("settings").asString.let { JsonParser.parseString(it).asJsonObject }
 }

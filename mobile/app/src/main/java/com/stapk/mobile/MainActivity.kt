@@ -183,16 +183,21 @@ class MainActivity : Activity() {
                 if (filePathCallback == null) return false
                 fileUploadCallback?.onReceiveValue(null)
                 fileUploadCallback = filePathCallback
-                val intent = fileChooserParams?.createIntent()
-                if (intent == null) {
+                val params = fileChooserParams ?: return false.also {
+                    fileUploadCallback?.onReceiveValue(null)
+                    fileUploadCallback = null
+                }
+                val baseIntent = runCatching { params.createIntent() }.getOrNull()
+                if (baseIntent == null) {
                     fileUploadCallback?.onReceiveValue(null)
                     fileUploadCallback = null
                     return false
                 }
-                expandedFileChooserMimeTypes(fileChooserParams.acceptTypes)?.let { mimeTypes ->
-                    intent.type = "*/*"
-                    intent.putExtra(Intent.EXTRA_MIME_TYPES, mimeTypes)
-                }
+                val intent = prepareWebFileChooserIntent(
+                    baseIntent = baseIntent,
+                    acceptTypes = params.acceptTypes,
+                    allowMultiple = params.mode == FileChooserParams.MODE_OPEN_MULTIPLE
+                )
                 return runCatching {
                     startActivityForResult(intent, FILE_CHOOSER_REQUEST_CODE)
                     true
@@ -290,13 +295,18 @@ class MainActivity : Activity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (requestCode == FILE_CHOOSER_REQUEST_CODE) {
-            val uris = if (resultCode == RESULT_OK) {
-                WebChromeClient.FileChooserParams.parseResult(resultCode, data)
-            } else {
-                null
+            val callback = fileUploadCallback.also { fileUploadCallback = null }
+            val readableUris = runCatching {
+                val standardResult = runCatching {
+                    WebChromeClient.FileChooserParams.parseResult(resultCode, data)
+                }.getOrNull()
+                val parsedUris = parseWebFileChooserResult(resultCode, data, standardResult)
+                filterReadableFileChooserUris(parsedUris, ::canReadSelectedFile)
+            }.getOrNull()
+            if (resultCode == RESULT_OK && readableUris == null) {
+                Toast.makeText(this, R.string.file_import_unreadable, Toast.LENGTH_LONG).show()
             }
-            fileUploadCallback?.onReceiveValue(uris)
-            fileUploadCallback = null
+            callback?.onReceiveValue(readableUris)
             return
         }
         if (requestCode == SAF_EXPORT_REQUEST_CODE) {
@@ -311,6 +321,10 @@ class MainActivity : Activity() {
         }
         super.onActivityResult(requestCode, resultCode, data)
     }
+
+    private fun canReadSelectedFile(uri: Uri): Boolean = runCatching {
+        contentResolver.openInputStream(uri)?.use { true } ?: false
+    }.getOrDefault(false)
 
     private fun resumePendingSafWrite() {
         val service = nativeService ?: return

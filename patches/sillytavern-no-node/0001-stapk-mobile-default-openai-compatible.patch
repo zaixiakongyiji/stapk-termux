@@ -24,15 +24,14 @@ diff --git a/public/scripts/openai.js b/public/scripts/openai.js
 index 97b9665..c2aa66d 100644
 --- a/public/scripts/openai.js
 +++ b/public/scripts/openai.js
-@@ -4236,6 +4236,12 @@ function loadOpenAISettings(data, settings) {
+@@ -4236,6 +4236,11 @@ function loadOpenAISettings(data, settings) {
  
      migrateChatCompletionSettings(settings);
  
-+    // stAPK mobile 仅暴露 OpenAI 和通用 OpenAI-compatible 非流式请求。
++    // stAPK mobile 仅暴露 OpenAI 和通用 OpenAI-compatible 请求。
 +    settings.chat_completion_source = ['openai', 'custom'].includes(settings.chat_completion_source)
 +        ? settings.chat_completion_source
 +        : 'openai';
-+    settings.stream_openai = false;
 +
      for (const key of Object.keys(default_settings)) {
          oai_settings[key] = settings[key] ?? default_settings[key];

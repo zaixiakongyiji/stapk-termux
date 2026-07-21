@@ -7,8 +7,10 @@ import fi.iki.elonen.NanoFileUpload
 import fi.iki.elonen.NanoHTTPD
 import fi.iki.elonen.NanoHTTPD.ResponseException
 import java.io.File
+import java.io.FilterInputStream
 import java.io.FileOutputStream
 import java.io.IOException
+import java.io.InputStream
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 import java.util.Locale
@@ -63,6 +65,13 @@ class NativeHttpServer(
         ExtensionArchiveInstaller(paths)
     )
     private val router = NativeRouter().also(::registerRoutes)
+
+    override fun useGzipWhenAccepted(response: Response): Boolean =
+        if (response.data is StreamingBodyInputStream) {
+            false
+        } else {
+            super.useGzipWhenAccepted(response)
+        }
 
     override fun serve(session: IHTTPSession): Response {
         exportStore.cleanupExpired()
@@ -251,7 +260,9 @@ class NativeHttpServer(
 
     private fun toNanoResponse(response: HttpResponse): Response {
         val status = Response.Status.lookup(response.statusCode) ?: HttpStatus(response.statusCode)
-        val nanoResponse = response.bodyFile?.let { bodyFile ->
+        val nanoResponse = response.bodyStream?.let { bodyStream ->
+            newChunkedResponse(status, response.mimeType, StreamingBodyInputStream(bodyStream))
+        } ?: response.bodyFile?.let { bodyFile ->
             newFixedLengthResponse(
                 status,
                 response.mimeType,
@@ -520,6 +531,7 @@ class NativeHttpServer(
 
     private class UploadTooLargeException(cause: Throwable? = null) : RuntimeException(cause)
     private class MultipartParseException(cause: Throwable? = null) : RuntimeException(cause)
+    private class StreamingBodyInputStream(body: InputStream) : FilterInputStream(body)
 
     companion object {
         internal fun normalizeJsonContentType(value: String): String {

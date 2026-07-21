@@ -241,7 +241,7 @@ class StaticAssetControllerTest {
     }
 
     @Test
-    fun `persists settings through loopback endpoints`() {
+    fun `persists settings including OpenAI streaming through loopback endpoints`() {
         val filesDir = Files.createTempDirectory("stapk-files").toFile()
         val paths = NativeAdapterPaths(filesDir)
         paths.webDir.mkdirs()
@@ -269,7 +269,7 @@ class StaticAssetControllerTest {
             val updatedSettings = JsonParser.parseString(updatedEnvelope.get("settings").asString).asJsonObject
             assertEquals("Loopback", updatedSettings.get("username").asString)
             assertEquals("openai", updatedSettings.get("main_api").asString)
-            assertFalse(updatedSettings.getAsJsonObject("oai_settings").get("stream_openai").asBoolean)
+            assertTrue(updatedSettings.getAsJsonObject("oai_settings").get("stream_openai").asBoolean)
 
             val invalid = postJson("$baseUrl/api/settings/save", "{invalid")
             assertEquals(400, invalid.statusCode)

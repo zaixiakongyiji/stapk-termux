@@ -55,6 +55,8 @@ class DiagnosticLogger(
         "status" -> value.toIntOrNull()?.takeIf { it in 100..599 }?.toString()
         "host" -> value.lowercase().takeIf { HOST.matches(it) }
         "durationMs" -> value.toLongOrNull()?.takeIf { it in 0..MAX_DURATION_MS }?.toString()
+        "stream" -> value.toBooleanStrictOrNull()?.toString()
+        "terminal" -> value.takeIf { it in PROVIDER_STREAM_TERMINALS }
         "file" -> value.takeIf { ExportMetadata.isFileName(it) }
         "errorClass" -> value.takeIf { ERROR_CLASS.matches(it) }
         "sha256" -> value.lowercase().takeIf { SHA256.matches(it) }
@@ -94,5 +96,6 @@ class DiagnosticLogger(
         val HOST = Regex("(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)*[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?")
         val ERROR_CLASS = Regex("[A-Za-z_$][A-Za-z0-9_$.]{0,159}")
         val SHA256 = Regex("[a-f0-9]{64}")
+        val PROVIDER_STREAM_TERMINALS = setOf("completed", "canceled", "read_error")
     }
 }

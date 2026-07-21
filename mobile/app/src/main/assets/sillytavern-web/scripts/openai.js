@@ -4236,11 +4236,10 @@ function loadOpenAISettings(data, settings) {
 
     migrateChatCompletionSettings(settings);
 
-    // stAPK mobile 仅暴露 OpenAI 和通用 OpenAI-compatible 非流式请求。
+    // stAPK mobile 仅暴露 OpenAI 和通用 OpenAI-compatible 请求。
     settings.chat_completion_source = ['openai', 'custom'].includes(settings.chat_completion_source)
         ? settings.chat_completion_source
         : 'openai';
-    settings.stream_openai = false;
 
     for (const key of Object.keys(default_settings)) {
         oai_settings[key] = settings[key] ?? default_settings[key];

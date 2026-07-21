@@ -163,7 +163,8 @@ test('Android no-node patch series lists all auditable MVP patches', async () =>
     '0007-stapk-mobile-saf-export.patch',
     '0008-stapk-mobile-capability-gates.patch',
     '0009-stapk-mobile-extension-and-import-compatibility.patch',
-    '0010-stapk-mobile-unicode-and-embedded-lorebook.patch'
+    '0010-stapk-mobile-unicode-and-embedded-lorebook.patch',
+    '0011-stapk-mobile-world-info-global-selector.patch'
   ]);
   const patches = await Promise.all(series.map(async (patchName) => {
     const patchPath = path.join(PATCH_QUEUE_DIR, patchName);
@@ -173,6 +174,83 @@ test('Android no-node patch series lists all auditable MVP patches', async () =>
   for (const [patchName, contents] of patches) {
     assert.ok(!contents.includes('\r'), `${patchName} must use LF line endings`);
   }
+});
+
+test('default OpenAI patch preserves upstream streaming preset behavior', async () => {
+  await withTempOutput(async (root) => {
+    const patchedDir = path.join(root, 'patched');
+    const patchQueueDir = path.join(root, 'patches');
+    await mkdir(path.join(patchedDir, 'public', 'scripts'), { recursive: true });
+    await mkdir(patchQueueDir, { recursive: true });
+    git(patchedDir, ['init']);
+    git(patchedDir, ['config', 'user.name', 'stapk-test']);
+    git(patchedDir, ['config', 'user.email', 'stapk-test@localhost']);
+    git(patchedDir, ['config', 'core.autocrlf', 'false']);
+
+    await writeFile(
+      path.join(patchedDir, 'public', 'script.js'),
+      [
+        'export async function getSettings(initLoaderHandle = null) {',
+        "        $('#amount_gen').val(amount_gen);",
+        "        $('#amount_gen_counter').val(amount_gen);",
+        '',
+        '        //Load which API we are using',
+        '        if (settings.main_api == undefined) {',
+        "            settings.main_api = 'kobold';",
+        '        }',
+        '',
+        "        if (settings.main_api == 'poe') {",
+        "            settings.main_api = 'openai';",
+        '        }',
+        '',
+        '        main_api = settings.main_api;',
+        "        $('#main_api').val(main_api);",
+        "        $(`#main_api option[value=${main_api}]`).attr('selected', 'true');",
+        ''
+      ].join('\n'),
+      'utf8'
+    );
+    await writeFile(
+      path.join(patchedDir, 'public', 'scripts', 'openai.js'),
+      [
+        'const settingsToUpdate = {',
+        "    stream_openai: ['#stream_toggle', 'stream_openai', true, false],",
+        '};',
+        '',
+        'function loadOpenAISettings(data, settings) {',
+        '',
+        '    migrateChatCompletionSettings(settings);',
+        '',
+        '    for (const key of Object.keys(default_settings)) {',
+        '        oai_settings[key] = settings[key] ?? default_settings[key];',
+        '        const settingToUpdate = Object.values(settingsToUpdate).find(([_, k]) => k === key);',
+        '    }',
+        '}',
+        '',
+        "$('#stream_toggle').on('change', function () {",
+        "    oai_settings.stream_openai = !!$('#stream_toggle').prop('checked');",
+        '    saveSettingsDebounced();',
+        '});',
+        ''
+      ].join('\n'),
+      'utf8'
+    );
+    git(patchedDir, ['add', '.']);
+    git(patchedDir, ['commit', '-m', 'upstream fixtures']);
+    await writeFile(
+      path.join(patchQueueDir, '0001-stapk-mobile-default-openai-compatible.patch'),
+      await readFile(path.join(PATCH_QUEUE_DIR, '0001-stapk-mobile-default-openai-compatible.patch'), 'utf8'),
+      'utf8'
+    );
+    await writeFile(patchQueueDir + path.sep + 'series', '0001-stapk-mobile-default-openai-compatible.patch\n', 'utf8');
+
+    await transformModule.applyPatchQueue({ patchedDir, patchQueueDir });
+
+    const openAiScript = await readFile(path.join(patchedDir, 'public', 'scripts', 'openai.js'), 'utf8');
+    assert.doesNotMatch(openAiScript, /settings\.stream_openai\s*=\s*false/);
+    assert.match(openAiScript, /stream_openai:\s*\['#stream_toggle'/);
+    assert.match(openAiScript, /oai_settings\.stream_openai\s*=\s*!!\$\('#stream_toggle'\)/);
+  });
 });
 
 test('Android no-node Web assets expose only MVP API providers', async () => {
