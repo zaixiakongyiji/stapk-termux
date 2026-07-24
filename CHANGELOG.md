@@ -1,5 +1,30 @@
 # 更新日志
 
+## v0.3.0 - 无 Node 原生正式版 (2026-07-25)
+
+stAPK 0.3.0 正式版将 SillyTavern 官方 Web UI 与 Android 原生兼容后端整合为不含 Node.js 运行时的单用户 APK，并完成移动端导入、流式传输与扩展事务恢复的正式验收。
+
+### 核心能力
+
+- 通过 Kotlin 原生适配层提供 OpenAI-compatible 模型列表、聊天补全、角色卡、聊天、World Info、预设、Regex、Summarize、媒体与 SAF 导入导出。
+- 支持 OpenAI-compatible 流式与非流式回复；Streaming 开关随预设保存和导入，默认关闭。
+- 适配 Android 系统文件选择器及部分 OEM 文件管理器返回的文件参数，修复角色卡导入无响应。
+- 修复 World Info 导入后被误认为不可取消的全局世界书，并补齐移动端全局世界书选择与清空交互。
+
+### 扩展稳定性
+
+- 扩展安装、更新和删除改为带 journal 的事务流程，并使用应用级共享锁阻止并发 mutation 破坏状态。
+- 启动时自动恢复安装、更新或删除中断留下的事务；无法安全采用的目录进入 quarantine，不再由空目录永久阻塞重新安装。
+- 对 archive、路径、sidecar 和 registry 执行严格校验，失败时回滚并返回明确错误。
+- 修复扩展删除失败仍显示成功并刷新页面的问题，补充移动端可见操作的 UI capability 合同与构建期校验。
+
+### 发布与兼容性
+
+- APK 运行时不包含 Node.js、npm、`node_modules`、`server.js`、Termux 或 Shell 服务进程。
+- 已在 Pixel 8 / Android 15（API 35）完成预设持久化、扩展完整生命周期、事务恢复、诊断脱敏和无运行时 Node 验收。
+- 第三方 client-only 扩展仅在其依赖的 SillyTavern API 已由原生适配层实现时可用。
+- 0.3.0 建议全新安装；不承诺从 0.2.x 自动迁移数据，替换旧版本前请先导出需要保留的内容。
+
 ## v0.3.0-beta.1 - 无 Node 原生适配测试版 (2026-07-18)
 
 这是 stAPK 0.3.0 的首个公开测试版本。应用不再在 Android 设备中携带或启动 Node.js，而是在构建期把 SillyTavern Web 资源转换为由 Kotlin 原生适配层承载的 APK。
