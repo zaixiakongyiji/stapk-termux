@@ -13,6 +13,7 @@ import {
   hashDirectory,
   syncNoNodeAndroidAssets
 } from '../../scripts/stapk-transform-no-node.mjs';
+import { hashPatchQueue } from '../../scripts/stapk-artifact-hashes.mjs';
 import * as transformModule from '../../scripts/stapk-transform-no-node.mjs';
 import { verifyNoNodeOutput } from '../../scripts/stapk-verify-no-node-transform.mjs';
 
@@ -29,9 +30,30 @@ async function withTempOutput(fn) {
   }
 }
 
-async function writeValidOutput(out) {
-  await mkdir(path.join(out, 'sillytavern-web'), { recursive: true });
-  await writeFile(path.join(out, 'sillytavern-web', 'index.html'), '<!doctype html>\n', 'utf8');
+async function refreshOutputHashes(out, {
+  patchQueueDir = PATCH_QUEUE_DIR,
+} = {}) {
+  const manifestPath = path.join(out, 'stapk-web-manifest.json');
+  const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
+  manifest.hashes = {
+    webRootSha256: await hashDirectory(path.join(out, 'sillytavern-web')),
+    patchQueueSha256: await hashPatchQueue(patchQueueDir),
+  };
+  await writeFile(manifestPath, JSON.stringify(manifest), 'utf8');
+}
+
+async function writeValidOutput(out, options = {}) {
+  await mkdir(path.join(out, 'sillytavern-web', 'css'), { recursive: true });
+  await writeFile(
+    path.join(out, 'sillytavern-web', 'index.html'),
+    '<!doctype html><link rel="stylesheet" href="css/main.css">\n',
+    'utf8'
+  );
+  await writeFile(
+    path.join(out, 'sillytavern-web', 'css', 'main.css'),
+    '#catalog-end { display: block !important; }\n',
+    'utf8'
+  );
   await writeFile(
     path.join(out, 'sillytavern-web', 'lib.js'),
     'export const bundled = true;\n',
@@ -40,6 +62,16 @@ async function writeValidOutput(out) {
   await writeFile(
     path.join(out, 'sillytavern-web', 'stapk-capabilities.json'),
     JSON.stringify({ schemaVersion: 1, capabilities: {} }),
+    'utf8'
+  );
+  await writeFile(
+    path.join(out, 'sillytavern-web', 'stapk-ui-capabilities.json'),
+    JSON.stringify({
+      schemaVersion: 1,
+      hiddenStylesheets: [{ path: 'css/main.css', catalogBefore: '#catalog-end' }],
+      implementedActions: [],
+      hiddenSelectors: []
+    }),
     'utf8'
   );
   await writeFile(
@@ -61,7 +93,7 @@ async function writeValidOutput(out) {
       generatedAt: '2026-07-09T00:00:00.000Z',
       upstream: { repo: 'https://github.com/SillyTavern/SillyTavern.git', ref: 'release', commit: 'abc123' },
       output: { webRoot: 'sillytavern-web', apiContract: 'api-contract.json' },
-      hashes: { webRootSha256: 'hash', patchQueueSha256: 'hash' },
+      hashes: { webRootSha256: '', patchQueueSha256: '' },
       noRuntimeNode: true
     }),
     'utf8'
@@ -71,6 +103,7 @@ async function writeValidOutput(out) {
     JSON.stringify({ ok: true }),
     'utf8'
   );
+  await refreshOutputHashes(out, options);
 }
 
 function git(cwd, args) {
@@ -213,10 +246,7 @@ test('default OpenAI patch preserves upstream streaming preset behavior', async 
     await writeFile(
       path.join(patchedDir, 'public', 'scripts', 'openai.js'),
       [
-        'const settingsToUpdate = {',
-        "    stream_openai: ['#stream_toggle', 'stream_openai', true, false],",
-        '};',
-        '',
+        ...Array(4234).fill(''),
         'function loadOpenAISettings(data, settings) {',
         '',
         '    migrateChatCompletionSettings(settings);',
@@ -226,6 +256,26 @@ test('default OpenAI patch preserves upstream streaming preset behavior', async 
         '        const settingToUpdate = Object.values(settingsToUpdate).find(([_, k]) => k === key);',
         '    }',
         '}',
+        '',
+        ...Array(425).fill(''),
+        'async function onPresetImportFileChange(e) {',
+        '    let presetBody;',
+        '',
+        '    try {',
+        '        presetBody = JSON.parse(await getFileText(e.target.files[0]));',
+        '    } catch (err) {',
+        '        toastr.error(t`Invalid file`);',
+        '        return;',
+        '    }',
+        '',
+        '    const fields = sensitiveFields.filter(field => presetBody[field]).map(field => `<b>${field}</b>`);',
+        '    const shouldConfirm = fields.length > 0;',
+        '',
+        '}',
+        '',
+        'const settingsToUpdate = {',
+        "    stream_openai: ['#stream_toggle', 'stream_openai', true, false],",
+        '};',
         '',
         "$('#stream_toggle').on('change', function () {",
         "    oai_settings.stream_openai = !!$('#stream_toggle').prop('checked');",
@@ -250,6 +300,104 @@ test('default OpenAI patch preserves upstream streaming preset behavior', async 
     assert.doesNotMatch(openAiScript, /settings\.stream_openai\s*=\s*false/);
     assert.match(openAiScript, /stream_openai:\s*\['#stream_toggle'/);
     assert.match(openAiScript, /oai_settings\.stream_openai\s*=\s*!!\$\('#stream_toggle'\)/);
+  });
+});
+
+test('default OpenAI patch normalizes imported streaming presets to booleans', async () => {
+  await withTempOutput(async (root) => {
+    const patchedDir = path.join(root, 'patched');
+    const patchQueueDir = path.join(root, 'patches');
+    await mkdir(path.join(patchedDir, 'public', 'scripts'), { recursive: true });
+    await mkdir(patchQueueDir, { recursive: true });
+    git(patchedDir, ['init']);
+    git(patchedDir, ['config', 'user.name', 'stapk-test']);
+    git(patchedDir, ['config', 'user.email', 'stapk-test@localhost']);
+    git(patchedDir, ['config', 'core.autocrlf', 'false']);
+
+    await writeFile(
+      path.join(patchedDir, 'public', 'script.js'),
+      [
+        'export async function getSettings(initLoaderHandle = null) {',
+        "        $('#amount_gen').val(amount_gen);",
+        "        $('#amount_gen_counter').val(amount_gen);",
+        '',
+        '        //Load which API we are using',
+        '        if (settings.main_api == undefined) {',
+        "            settings.main_api = 'kobold';",
+        '        }',
+        '',
+        "        if (settings.main_api == 'poe') {",
+        "            settings.main_api = 'openai';",
+        '        }',
+        '',
+        '        main_api = settings.main_api;',
+        "        $('#main_api').val(main_api);",
+        "        $(`#main_api option[value=${main_api}]`).attr('selected', 'true');",
+        ''
+      ].join('\n'),
+      'utf8'
+    );
+    await writeFile(
+      path.join(patchedDir, 'public', 'scripts', 'openai.js'),
+      [
+        ...Array(4234).fill(''),
+        'function loadOpenAISettings(data, settings) {',
+        '',
+        '    migrateChatCompletionSettings(settings);',
+        '',
+        '    for (const key of Object.keys(default_settings)) {',
+        '        oai_settings[key] = settings[key] ?? default_settings[key];',
+        '        const settingToUpdate = Object.values(settingsToUpdate).find(([_, k]) => k === key);',
+        '    }',
+        '}',
+        '',
+        ...Array(425).fill(''),
+        'async function onPresetImportFileChange(e) {',
+        '    const importedFile = await getFileText(e.target.files[0]);',
+        '    let presetBody;',
+        '',
+        '    try {',
+        '        presetBody = JSON.parse(importedFile);',
+        '    } catch (err) {',
+        '        return;',
+        '    }',
+        '',
+        '    const fields = sensitiveFields.filter(field => presetBody[field]).map(field => `<b>${field}</b>`);',
+        '    const shouldConfirm = fields.length > 0;',
+        '',
+        '}',
+        ''
+      ].join('\n'),
+      'utf8'
+    );
+    git(patchedDir, ['add', '.']);
+    git(patchedDir, ['commit', '-m', 'upstream preset fixture']);
+    await writeFile(
+      path.join(patchQueueDir, '0001-stapk-mobile-default-openai-compatible.patch'),
+      await readFile(path.join(PATCH_QUEUE_DIR, '0001-stapk-mobile-default-openai-compatible.patch'), 'utf8'),
+      'utf8'
+    );
+    await writeFile(path.join(patchQueueDir, 'series'), '0001-stapk-mobile-default-openai-compatible.patch\n', 'utf8');
+
+    await transformModule.applyPatchQueue({ patchedDir, patchQueueDir });
+
+    const openAiScript = await readFile(path.join(patchedDir, 'public', 'scripts', 'openai.js'), 'utf8');
+    const normalization = openAiScript.match(
+      /presetBody\.stream_openai = typeof presetBody\.stream_openai === 'boolean'\s*\? presetBody\.stream_openai\s*:\s*false;/,
+    )?.[0];
+    assert.ok(normalization, 'Missing imported stream_openai normalization');
+    const normalize = new Function('presetBody', `${normalization}\nreturn presetBody.stream_openai;`);
+
+    for (const [preset, expected] of [
+      [{ stream_openai: true }, true],
+      [{ stream_openai: false }, false],
+      [{}, false],
+      [{ stream_openai: 'true' }, false],
+      [{ stream_openai: 1 }, false],
+      [{ stream_openai: null }, false],
+    ]) {
+      assert.equal(normalize(preset), expected);
+    }
   });
 });
 
@@ -458,6 +606,95 @@ test('copyCapabilityRuntime exposes only core capabilities without build paths',
   });
 });
 
+test('verifyNoNodeOutput rejects a Web asset changed after manifest generation', async () => {
+  await withTempOutput(async (out) => {
+    await writeValidOutput(out);
+    await writeFile(
+      path.join(out, 'sillytavern-web', 'css', 'main.css'),
+      '#catalog-end { color: red; display: block !important; }\n',
+      'utf8'
+    );
+
+    await assert.rejects(
+      verifyNoNodeOutput({ out }),
+      /Web root SHA-256 mismatch/
+    );
+  });
+});
+
+test('verifyNoNodeOutput rejects patch queue source changed after manifest generation', async () => {
+  await withTempOutput(async (out) => {
+    const patchQueueDir = await mkdtemp(path.join(os.tmpdir(), 'stapk-patch-queue-'));
+    try {
+      await writeFile(path.join(patchQueueDir, 'series'), 'sample.patch\n', 'utf8');
+      await writeFile(path.join(patchQueueDir, 'sample.patch'), 'original patch\n', 'utf8');
+      await writeValidOutput(out, { patchQueueDir });
+      await writeFile(path.join(patchQueueDir, 'sample.patch'), 'changed patch\n', 'utf8');
+
+      await assert.rejects(
+        verifyNoNodeOutput({ out, patchQueueDir }),
+        /Patch queue SHA-256 mismatch/
+      );
+    } finally {
+      await rm(patchQueueDir, { recursive: true, force: true });
+    }
+  });
+});
+
+test('verifyNoNodeOutput accepts a published patch hash without local patch queue access', async () => {
+  await withTempOutput(async (out) => {
+    const patchQueueDir = path.join(out, 'missing-patch-queue');
+    await writeValidOutput(out);
+    const manifest = JSON.parse(await readFile(
+      path.join(out, 'stapk-web-manifest.json'),
+      'utf8'
+    ));
+
+    const result = await verifyNoNodeOutput({
+      out,
+      patchQueueDir,
+      expectedPatchQueueSha256: manifest.hashes.patchQueueSha256,
+    });
+
+    assert.equal(result.ok, true);
+  });
+});
+
+test('copyUiCapabilityContract validates and publishes the formal UI contract', async () => {
+  assert.equal(
+    typeof transformModule.copyUiCapabilityContract,
+    'function',
+    'transform must export copyUiCapabilityContract'
+  );
+
+  await withTempOutput(async (root) => {
+    const uiCapabilityFile = path.join(root, 'ui-capabilities.json');
+    const capabilityFile = path.join(root, 'capabilities.json');
+    const outWebRoot = path.join(root, 'sillytavern-web');
+    const uiContract = {
+      schemaVersion: 1,
+      hiddenStylesheets: [{ path: 'css/stapk-mobile.css', catalogBefore: '#catalog-end' }],
+      implementedActions: [],
+      hiddenSelectors: []
+    };
+    await Promise.all([
+      writeFile(uiCapabilityFile, JSON.stringify(uiContract), 'utf8'),
+      writeFile(capabilityFile, JSON.stringify({ schemaVersion: 1, capabilities: [] }), 'utf8')
+    ]);
+
+    await transformModule.copyUiCapabilityContract({
+      uiCapabilityFile,
+      capabilityFile,
+      outWebRoot
+    });
+
+    assert.deepEqual(
+      JSON.parse(await readFile(path.join(outWebRoot, 'stapk-ui-capabilities.json'), 'utf8')),
+      uiContract
+    );
+  });
+});
+
 test('copyDefaultPresets includes upstream OpenAI defaults in the generated Web root', async () => {
   await withTempOutput(async (root) => {
     const patchedDir = path.join(root, 'patched');
@@ -485,6 +722,7 @@ test('syncNoNodeAndroidAssets replaces Web output and removes legacy Node assets
     await mkdir(transformOut, { recursive: true });
     await writeValidOutput(transformOut);
     await writeFile(path.join(transformOut, 'sillytavern-web', 'app.js'), 'new web asset\n', 'utf8');
+    await refreshOutputHashes(transformOut);
 
     await mkdir(path.join(androidAssetsDir, 'sillytavern-web'), { recursive: true });
     await mkdir(path.join(androidAssetsDir, 'nested'), { recursive: true });

@@ -10,16 +10,10 @@ object SafePath {
     }
 
     fun child(root: File, relativePath: String): File {
-        require(relativePath.isNotBlank() && !hasControlCharacter(relativePath)) { "Invalid child path" }
-        require(!containsEncodedSeparator(relativePath)) { "Encoded separators are not allowed" }
-        require(!isAbsolute(relativePath)) { "Absolute paths are not allowed" }
-        require(!relativePath.contains('\\')) { "Backslash separators are not allowed" }
-        require(relativePath.split('/').none { it.isEmpty() || it == "." || it == ".." }) {
-            "Unsafe child path"
-        }
+        val segments = segments(relativePath)
 
         val canonicalRoot = root.canonicalFile
-        val child = File(canonicalRoot, relativePath).canonicalFile
+        val child = File(canonicalRoot, segments.joinToString("/")).canonicalFile
         val rootPrefix = "${canonicalRoot.path}${File.separator}"
         require(child.path.startsWith(rootPrefix)) { "Child escapes root" }
         return child
@@ -33,9 +27,17 @@ object SafePath {
         }
         val normalized = value.replace('\\', '/')
         require(!normalized.startsWith('/')) { "Absolute ZIP entry is not allowed" }
-        val segments = normalized.split('/')
-        require(segments.none { it.isEmpty() || it == "." || it == ".." }) { "Unsafe ZIP entry" }
-        return segments.joinToString("/")
+        return segments(normalized).joinToString("/")
+    }
+
+    fun segments(relativePath: String): List<String> {
+        require(relativePath.isNotBlank() && !hasControlCharacter(relativePath)) { "Invalid child path" }
+        require(!containsEncodedSeparator(relativePath)) { "Encoded separators are not allowed" }
+        require(!isAbsolute(relativePath)) { "Absolute paths are not allowed" }
+        require(!relativePath.contains('\\')) { "Backslash separators are not allowed" }
+        val segments = relativePath.split('/')
+        require(segments.none { it.isEmpty() || it == "." || it == ".." }) { "Unsafe child path" }
+        return segments
     }
 
     private fun containsEncodedSeparator(value: String): Boolean =

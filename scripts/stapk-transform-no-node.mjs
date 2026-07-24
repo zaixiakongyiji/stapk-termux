@@ -1,15 +1,21 @@
 #!/usr/bin/env node
 
 import { execFileSync } from 'node:child_process';
-import crypto from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { cp, mkdir, readdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
 import { fileURLToPath } from 'node:url';
 
+import {
+  hashDirectory,
+  inspectPatchQueue
+} from './stapk-artifact-hashes.mjs';
 import { scanWebContract } from './stapk-scan-web-contract.mjs';
 import { verifyNoNodeOutput } from './stapk-verify-no-node-transform.mjs';
+import { validateUiCapabilityContract } from './stapk-verify-ui-capability-contract.mjs';
+
+export { hashDirectory } from './stapk-artifact-hashes.mjs';
 
 const DEFAULT_REPO = 'https://github.com/SillyTavern/SillyTavern.git';
 const BUILD_DIR = path.resolve('build/stapk-no-node');
@@ -22,6 +28,8 @@ const API_CONTRACT_NAME = 'api-contract.json';
 const MANIFEST_NAME = 'stapk-web-manifest.json';
 const REPORT_NAME = 'transform-report.json';
 const CAPABILITY_RUNTIME_NAME = 'stapk-capabilities.json';
+const UI_CAPABILITY_SOURCE = path.resolve('transform/no-node/ui-capabilities.json');
+const UI_CAPABILITY_RUNTIME_NAME = 'stapk-ui-capabilities.json';
 const ANDROID_METADATA_NAMES = [API_CONTRACT_NAME, MANIFEST_NAME, REPORT_NAME];
 const TRANSPARENT_PNG_BASE64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgQIAff6XWQAAAABJRU5ErkJggg==';
 
@@ -49,6 +57,11 @@ export async function transformNoNode({ repo = DEFAULT_REPO, ref = 'release', ou
   await copyNoNodeWebAssets({ sourceWebRoot, outWebRoot });
   await copyNoNodeWebSupportAssets({ outWebRoot });
   await copyCapabilityRuntime({
+    capabilityFile: path.resolve('transform/no-node/capabilities.json'),
+    outWebRoot
+  });
+  await copyUiCapabilityContract({
+    uiCapabilityFile: UI_CAPABILITY_SOURCE,
     capabilityFile: path.resolve('transform/no-node/capabilities.json'),
     outWebRoot
   });
@@ -152,6 +165,29 @@ export async function copyCapabilityRuntime({ capabilityFile, outWebRoot }) {
   });
 }
 
+export async function copyUiCapabilityContract({
+  uiCapabilityFile,
+  capabilityFile,
+  outWebRoot
+}) {
+  const [uiContract, capabilities] = await Promise.all([
+    readJsonIfExists(path.resolve(uiCapabilityFile)),
+    readJsonIfExists(path.resolve(capabilityFile))
+  ]);
+  if (!uiContract) {
+    throw new Error(`UI capability contract does not exist: ${path.resolve(uiCapabilityFile)}`);
+  }
+  if (!capabilities) {
+    throw new Error(`Capability contract does not exist: ${path.resolve(capabilityFile)}`);
+  }
+
+  const errors = validateUiCapabilityContract({ uiContract, capabilities });
+  if (errors.length > 0) {
+    throw new Error(`Invalid UI capability contract:\n${errors.join('\n')}`);
+  }
+  await writeJson(path.join(path.resolve(outWebRoot), UI_CAPABILITY_RUNTIME_NAME), uiContract);
+}
+
 export async function copyDefaultPresets({ patchedDir, outWebRoot }) {
   const source = path.join(path.resolve(patchedDir), 'default', 'content', 'presets', 'openai');
   if (!existsSync(source)) return;
@@ -197,6 +233,11 @@ export async function syncNoNodeAndroidAssets({ transformOut, androidAssetsDir }
   const absoluteOut = path.resolve(transformOut);
   const absoluteAssets = path.resolve(androidAssetsDir);
   await verifyNoNodeOutput({ out: absoluteOut });
+  const buildManifest = JSON.parse(await readFile(
+    path.join(absoluteOut, MANIFEST_NAME),
+    'utf8'
+  ));
+  const expectedPatchQueueSha256 = buildManifest.hashes.patchQueueSha256;
 
   const assetsParent = path.dirname(absoluteAssets);
   const assetsName = path.basename(absoluteAssets);
@@ -215,7 +256,10 @@ export async function syncNoNodeAndroidAssets({ transformOut, androidAssetsDir }
     await cp(path.join(absoluteOut, metadataName), path.join(stagedAssets, metadataName));
   }
 
-  await verifyNoNodeOutput({ out: stagedAssets });
+  await verifyNoNodeOutput({
+    out: stagedAssets,
+    expectedPatchQueueSha256
+  });
   await rm(previousAssets, { recursive: true, force: true });
   if (existsSync(absoluteAssets)) {
     await rename(absoluteAssets, previousAssets);
@@ -223,7 +267,10 @@ export async function syncNoNodeAndroidAssets({ transformOut, androidAssetsDir }
 
   try {
     await rename(stagedAssets, absoluteAssets);
-    await verifyNoNodeOutput({ out: absoluteAssets });
+    await verifyNoNodeOutput({
+      out: absoluteAssets,
+      expectedPatchQueueSha256
+    });
   } catch (error) {
     await rm(absoluteAssets, { recursive: true, force: true });
     if (existsSync(previousAssets)) {
@@ -233,22 +280,6 @@ export async function syncNoNodeAndroidAssets({ transformOut, androidAssetsDir }
   }
 
   await rm(previousAssets, { recursive: true, force: true });
-}
-
-export async function hashDirectory(root) {
-  const absoluteRoot = path.resolve(root);
-  const hash = crypto.createHash('sha256');
-  const files = await listFiles(absoluteRoot);
-
-  for (const file of files) {
-    const relativePath = toPosixPath(path.relative(absoluteRoot, file));
-    hash.update(relativePath);
-    hash.update('\0');
-    hash.update(await readFile(file));
-    hash.update('\0');
-  }
-
-  return hash.digest('hex');
 }
 
 export function findSourceWebRoot(patchedDir) {
@@ -293,32 +324,14 @@ async function preparePatchedTree({ upstreamDir, patchedDir }) {
 }
 
 export async function applyPatchQueue({ patchedDir, patchQueueDir }) {
-  const seriesPath = path.join(patchQueueDir, 'series');
-  if (!existsSync(seriesPath)) {
-    return {
-      names: [],
-      sha256: crypto.createHash('sha256').update('').digest('hex')
-    };
-  }
+  const patchQueue = await inspectPatchQueue(patchQueueDir);
 
-  const series = await readFile(seriesPath, 'utf8');
-  const patchNames = series.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
-  const hash = crypto.createHash('sha256');
-
-  for (const patchName of patchNames) {
+  for (const patchName of patchQueue.names) {
     const patchPath = path.join(patchQueueDir, patchName);
-    const patchContents = await readFile(patchPath, 'utf8');
-    hash.update(patchName);
-    hash.update('\0');
-    hash.update(patchContents);
-    hash.update('\0');
     git(['apply', '--3way', patchPath], patchedDir);
   }
 
-  return {
-    names: patchNames,
-    sha256: hash.digest('hex')
-  };
+  return patchQueue;
 }
 
 async function listFiles(root) {

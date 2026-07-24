@@ -282,6 +282,26 @@ Recovery 不只依赖 phase，还必须比较当前 registry 与 journal 的 old
 | 502 | `extension_source_unavailable` | GitHub、redirect 或 archive transport 失败 |
 | 503 | `extension_recovery_required` | 启动恢复无法安全完成 |
 | 500 | `extension_registry_write_failed` | registry commit 失败且已完成回滚 |
+| 500 | `extension_transaction_failed` | journal 或目录 mutation 失败且已完成回滚 |
+
+`ready` 可以在锁外作为快速失败标记读取；journal 只能在获得全局 mutation lock 后读取。正常事务持有锁期间 journal 必然存在，并发请求必须等待该事务结束，再根据新的 registry 状态返回 409 或继续，不能因为观察到正常的在途 journal 而误报 503。
+
+Controller 使用明确的 domain exception 一对一映射，不允许通过通用 `Exception` 或 `IOException` 推断状态：
+
+- `ExtensionAlreadyInstalledException` → 409 `extension_already_installed`
+- `ExtensionOperationConflictException` → 409 `extension_operation_conflict`
+- `InvalidExtensionArchiveException` → 422 `invalid_extension_archive`
+- `ExtensionArchiveTransportException` → 502 `extension_source_unavailable`
+- `ExtensionRegistryWriteException` → 500 `extension_registry_write_failed`
+- `ExtensionTransactionException` → 500 `extension_transaction_failed`
+- `ExtensionRecoveryRequiredException` → 503 `extension_recovery_required`
+
+Recovery 对 sidecar 使用以下确定规则：
+
+- 已注册 target 的 sidecar 缺失、损坏或与 registry 不匹配时，以 registry 为权威；先保留性隔离无效 sidecar entry，再写入正确 sidecar，target 保持启用。
+- 未注册 target 的 sidecar 缺失、损坏、非普通文件或与 target basename 不匹配时，整个 target 移入 quarantine。
+- 未注册 target 的有效 sidecar 若与已注册 record 冲突，未注册 target 移入 quarantine，已注册 target 保留。
+- 多个未注册有效 sidecar 互相发生 folder 或 repository 冲突时，所有冲突 target 都移入 quarantine，不选择胜者；其余无冲突 record 一次性重建 registry。
 
 ## 11. Diagnostics
 

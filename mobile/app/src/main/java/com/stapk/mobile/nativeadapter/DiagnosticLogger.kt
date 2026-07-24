@@ -60,6 +60,12 @@ class DiagnosticLogger(
         "file" -> value.takeIf { ExportMetadata.isFileName(it) }
         "errorClass" -> value.takeIf { ERROR_CLASS.matches(it) }
         "sha256" -> value.lowercase().takeIf { SHA256.matches(it) }
+        "operation" -> value.takeIf { it in EXTENSION_OPERATIONS }
+        "phase" -> value.takeIf { it in EXTENSION_PHASES }
+        "folder" -> value.takeIf { EXTENSION_FOLDER.matches(it) }
+        "result" -> value.takeIf { CODE.matches(it) }
+        "recoveredCount", "quarantinedCount" ->
+            value.toIntOrNull()?.takeIf { it >= 0 }?.toString()
         else -> null
     }
 
@@ -97,5 +103,8 @@ class DiagnosticLogger(
         val ERROR_CLASS = Regex("[A-Za-z_$][A-Za-z0-9_$.]{0,159}")
         val SHA256 = Regex("[a-f0-9]{64}")
         val PROVIDER_STREAM_TERMINALS = setOf("completed", "canceled", "read_error")
+        val EXTENSION_OPERATIONS = setOf("install", "update", "delete")
+        val EXTENSION_PHASES = setOf("prepared", "files_activated", "registry_committed")
+        val EXTENSION_FOLDER = Regex("[A-Za-z0-9][A-Za-z0-9._-]{0,119}")
     }
 }

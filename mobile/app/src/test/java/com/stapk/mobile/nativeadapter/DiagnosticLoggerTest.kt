@@ -102,6 +102,78 @@ class DiagnosticLoggerTest {
     }
 
     @Test
+    fun `extension transaction diagnostics keep only strict metadata`() {
+        val logsDir = Files.createTempDirectory("stapk-diagnostics-extension-transaction").toFile()
+        val logger = DiagnosticLogger(logsDir)
+
+        logger.event(
+            DiagnosticArea.STORAGE,
+            "extension_transaction_recovered",
+            mapOf(
+                "operation" to "update",
+                "phase" to "files_activated",
+                "folder" to "ST-Prompt-Template",
+                "result" to "recovered",
+                "errorClass" to "java.io.IOException",
+                "recoveredCount" to "2",
+                "quarantinedCount" to "1",
+                "responseBody" to "private response body",
+                "manifest" to "private manifest",
+                "apiKey" to "top-secret",
+                "prompt" to "private prompt"
+            )
+        )
+
+        val text = logsDir.resolve("diagnostics.jsonl").readText()
+        val fields = JsonParser.parseString(text.trim()).asJsonObject.getAsJsonObject("fields")
+        assertEquals(
+            setOf(
+                "operation",
+                "phase",
+                "folder",
+                "result",
+                "errorClass",
+                "recoveredCount",
+                "quarantinedCount"
+            ),
+            fields.keySet()
+        )
+        assertEquals("update", fields.get("operation").asString)
+        assertEquals("files_activated", fields.get("phase").asString)
+        assertEquals("ST-Prompt-Template", fields.get("folder").asString)
+        assertEquals("recovered", fields.get("result").asString)
+        assertEquals("2", fields.get("recoveredCount").asString)
+        assertEquals("1", fields.get("quarantinedCount").asString)
+        assertFalse(text.contains("private response body"))
+        assertFalse(text.contains("private manifest"))
+        assertFalse(text.contains("top-secret"))
+        assertFalse(text.contains("private prompt"))
+    }
+
+    @Test
+    fun `invalid extension transaction metadata is dropped`() {
+        val logsDir = Files.createTempDirectory("stapk-diagnostics-invalid-extension-transaction").toFile()
+        val logger = DiagnosticLogger(logsDir)
+
+        logger.event(
+            DiagnosticArea.STORAGE,
+            "extension_transaction_invalid",
+            mapOf(
+                "operation" to "INSTALL",
+                "phase" to "unknown",
+                "folder" to "../escape",
+                "result" to "contains secret whitespace",
+                "recoveredCount" to "-1",
+                "quarantinedCount" to "not-a-number"
+            )
+        )
+
+        val fields = JsonParser.parseString(logsDir.resolve("diagnostics.jsonl").readText().trim())
+            .asJsonObject.getAsJsonObject("fields")
+        assertEquals(0, fields.size())
+    }
+
+    @Test
     fun `logger rotates at size limit and retains three backups`() {
         val logsDir = Files.createTempDirectory("stapk-diagnostics-rotate").toFile()
         val logger = DiagnosticLogger(logsDir, maxBytes = 180, backupCount = 3)

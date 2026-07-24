@@ -72,7 +72,7 @@ class OpenAiCompatibleControllerTest {
                 val firstBytes = stream.readExactly(firstEvent.toByteArray().size)
 
                 assertEquals(firstEvent, firstBytes.toString(Charsets.UTF_8))
-                assertTrue(server.gateReached)
+                assertTrue(server.awaitGateReached())
                 assertFalse(server.finished)
                 server.releaseRemainingBody()
                 assertTrue(server.awaitFinished())
@@ -788,6 +788,7 @@ class OpenAiCompatibleControllerTest {
         private val serverSocket = ServerSocket(0, 1, InetAddress.getByName("127.0.0.1"))
         private val activeSocket = AtomicReference<Socket?>()
         private val release = CountDownLatch(1)
+        private val firstBodyWritten = CountDownLatch(1)
         private val workerFinished = CountDownLatch(1)
         private val gateWasReached = AtomicBoolean(false)
         private val responseWasFinished = AtomicBoolean(false)
@@ -801,6 +802,7 @@ class OpenAiCompatibleControllerTest {
                     writeHeaders(output)
                     if (firstBody.isNotEmpty()) writeBodyPart(output, firstBody)
                     gateWasReached.set(true)
+                    firstBodyWritten.countDown()
                     output.flush()
                     release.await()
                     if (remainingBody.isNotEmpty()) writeBodyPart(output, remainingBody)
@@ -822,6 +824,9 @@ class OpenAiCompatibleControllerTest {
         fun releaseRemainingBody() {
             release.countDown()
         }
+
+        fun awaitGateReached(): Boolean =
+            firstBodyWritten.await(5, TimeUnit.SECONDS) && gateWasReached.get()
 
         fun awaitFinished(): Boolean =
             workerFinished.await(5, TimeUnit.SECONDS) && responseWasFinished.get()

@@ -77,7 +77,7 @@ test('formal Android assets expose Task 2 endpoints and supported UI entrypoints
   assert.match(extensions, /fetch\('\/api\/extensions\/discover'\)/);
   assert.match(extensions, /const extensions = await discoverExtensions\(\);/);
   assert.match(css, /#extensions_settings2 \.extension_container:not\(#qr_container\)/);
-  assert.match(css, /label\[for="extensions_notify_updates"\]/);
+  assert.doesNotMatch(css, /label\[for="extensions_notify_updates"\]/);
   assert.match(css, /#extensions_settings2 ~ hr/);
   assert.match(css, /\.userBackupButton/);
   assert.match(css, /\.userResetAllButton/);

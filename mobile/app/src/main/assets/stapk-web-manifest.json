@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-07-21T08:59:45.574Z",
+  "generatedAt": "2026-07-24T18:16:57.635Z",
   "upstream": {
     "repo": "https://github.com/SillyTavern/SillyTavern.git",
     "ref": "release",
@@ -12,8 +12,8 @@
     "apiContract": "api-contract.json"
   },
   "hashes": {
-    "webRootSha256": "bb87049bb970b5ae70d028d726c776261622a502dc56a77509e8ba3f647c3ef0",
-    "patchQueueSha256": "4748bd7a2c9854d93c407c3023e4ffa7e6fdf6243404983897937c480938de60"
+    "webRootSha256": "02e1a7ee9fb600c1a336204c4a21843235d198b34cf08f5a223d383ca3b8fa8a",
+    "patchQueueSha256": "b4291b6522601519367d5046c0f9663e04e70b7486baf6a64fb10bf74473bd0f"
   },
   "noRuntimeNode": true
 }

@@ -13,7 +13,8 @@
     "scan:no-node-contract": "node scripts/stapk-scan-web-contract.mjs --web-root build/stapk-no-node/upstream/public --out build/no-node-payload/api-contract.json --allowlist transform/no-node/mvp-api-allowlist.json --capabilities transform/no-node/capabilities.json --upstream-ref release",
     "transform:no-node": "node scripts/stapk-transform-no-node.mjs --ref release --out build/no-node-payload --android-assets mobile/app/src/main/assets --clean",
     "transform:no-node:verify": "node scripts/stapk-verify-no-node-transform.mjs --out build/no-node-payload --capabilities transform/no-node/capabilities.json",
-    "verify:no-node-capabilities": "node scripts/stapk-verify-capability-contract.mjs --contract build/no-node-payload/api-contract.json --capabilities transform/no-node/capabilities.json"
+    "verify:no-node-capabilities": "node scripts/stapk-verify-capability-contract.mjs --contract build/no-node-payload/api-contract.json --capabilities transform/no-node/capabilities.json",
+    "verify:no-node-ui": "node scripts/stapk-verify-ui-capability-contract.mjs --web-root build/no-node-payload/sillytavern-web --ui-contract build/no-node-payload/sillytavern-web/stapk-ui-capabilities.json --api-contract build/no-node-payload/api-contract.json --capabilities transform/no-node/capabilities.json"
   },
   "dependencies": {
     "yaml": "^2.4.5"
@@ -21,6 +22,10 @@
   "devDependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
     "acorn": "8.17.0",
-    "parse5": "7.3.0"
+    "linkedom": "0.18.12",
+    "parse5": "7.3.0",
+    "postcss": "8.5.22",
+    "postcss-selector-parser": "7.1.4",
+    "semver": "7.7.3"
   }
 }

@@ -1,16 +1,11 @@
 package com.stapk.mobile.nativeadapter
 
-import com.google.gson.GsonBuilder
-import com.google.gson.JsonElement
-import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 
 class ExtensionRegistry(
     private val paths: NativeAdapterPaths,
     private val store: AtomicFileStore = AtomicFileStore(paths.quarantineDir)
 ) {
-    private val gson = GsonBuilder().disableHtmlEscaping().create()
-
     @Synchronized
     fun list(): List<ExtensionRecord> = readRecords().sortedBy { it.folderName.lowercase() }
 
@@ -53,12 +48,27 @@ class ExtensionRegistry(
         return removed
     }
 
+    @Synchronized
+    fun replaceAll(records: List<ExtensionRecord>) {
+        require(records.indices.none { index ->
+            records.indices.any { otherIndex ->
+                otherIndex > index && records[index].folderName.equals(records[otherIndex].folderName, ignoreCase = true)
+            }
+        }) { "Extension folder already exists" }
+        require(records.indices.none { index ->
+            records.indices.any { otherIndex ->
+                otherIndex > index && records[index].repositoryUrl.equals(records[otherIndex].repositoryUrl, ignoreCase = true)
+            }
+        }) { "Extension repository already exists" }
+        writeRecords(records)
+    }
+
     private fun readRecords(): MutableList<ExtensionRecord> {
         val file = paths.extensionRegistryFile
         if (!file.isFile) return mutableListOf()
         return try {
             JsonParser.parseString(file.readText()).asJsonArray
-                .map(::parseRecord)
+                .map(ExtensionRecordCodec::decode)
                 .toMutableList()
         } catch (_: Exception) {
             store.quarantine(file, "invalid_extension_registry")
@@ -67,28 +77,8 @@ class ExtensionRegistry(
     }
 
     private fun writeRecords(records: List<ExtensionRecord>) {
-        store.writeText(paths.extensionRegistryFile, gson.toJson(records.sortedBy { it.folderName.lowercase() }))
+        val json = records.sortedBy { it.folderName.lowercase() }
+            .joinToString(prefix = "[", postfix = "]") { ExtensionRecordCodec.encode(it) }
+        store.writeText(paths.extensionRegistryFile, json)
     }
-
-    private fun parseRecord(element: JsonElement): ExtensionRecord {
-        val source = element.asJsonObject
-        return ExtensionRecord(
-            folderName = source.requiredString("folderName"),
-            repositoryUrl = source.requiredString("repositoryUrl"),
-            owner = source.requiredString("owner"),
-            repository = source.requiredString("repository"),
-            branch = source.requiredString("branch"),
-            commitSha = source.requiredString("commitSha"),
-            installedAt = source.requiredLong("installedAt"),
-            updatedAt = source.requiredLong("updatedAt")
-        )
-    }
-
-    private fun JsonObject.requiredString(name: String): String =
-        get(name)?.takeIf { it.isJsonPrimitive && it.asJsonPrimitive.isString }?.asString
-            ?.takeIf(String::isNotBlank) ?: throw IllegalArgumentException("Missing $name")
-
-    private fun JsonObject.requiredLong(name: String): Long =
-        get(name)?.takeIf { it.isJsonPrimitive && it.asJsonPrimitive.isNumber }?.asLong
-            ?: throw IllegalArgumentException("Missing $name")
 }

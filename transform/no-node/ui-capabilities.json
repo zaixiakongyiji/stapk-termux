@@ -1,0 +1,404 @@
+{
+  "schemaVersion": 1,
+  "hiddenStylesheets": [
+    {
+      "path": "css/stapk-mobile.css",
+      "catalogBefore": "#qr_container"
+    }
+  ],
+  "implementedActions": [
+    {
+      "name": "Streaming",
+      "selector": "#stream_toggle",
+      "capability": "core.chats",
+      "endpoint": "POST /api/backends/chat-completions/generate",
+      "source": {
+        "type": "html",
+        "path": "index.html"
+      }
+    },
+    {
+      "name": "Extension install",
+      "selector": "#third_party_extension_button",
+      "capability": "native.extensions",
+      "endpoint": "POST /api/extensions/install",
+      "source": {
+        "type": "html",
+        "path": "index.html"
+      }
+    },
+    {
+      "name": "Extension details",
+      "selector": "#extensions_details",
+      "capability": "native.extensions",
+      "endpoint": "GET /api/extensions/discover",
+      "source": {
+        "type": "html",
+        "path": "index.html"
+      }
+    },
+    {
+      "name": "Extension manual update",
+      "selector": ".btn_update",
+      "capability": "native.extensions",
+      "endpoint": "POST /api/extensions/update",
+      "source": {
+        "type": "javascript",
+        "path": "scripts/extensions.js",
+        "factory": "makeActionButton",
+        "event": "click",
+        "handler": "onUpdateClick",
+        "eventSelector": ".extensions_info .extension_block .btn_update",
+        "delegationReceiver": "document",
+        "constructionFunction": "generateExtensionElement",
+        "eventFunction": "initExtensions",
+        "runtimeProbe": {
+          "element": "button",
+          "ancestors": [
+            {
+              "element": "div",
+              "classes": [
+                "extensions_info"
+              ],
+              "binding": "extensionsMenu",
+              "ownerFunction": "showExtensionsDetails"
+            },
+            {
+              "element": "div",
+              "classes": [
+                "marginBot10"
+              ],
+              "binding": "externalContainer",
+              "ownerFunction": "showExtensionsDetails"
+            },
+            {
+              "element": "div",
+              "classes": [
+                "extension_block"
+              ],
+              "binding": "block",
+              "ownerFunction": "generateExtensionElement"
+            },
+            {
+              "element": "div",
+              "classes": [
+                "extension_actions"
+              ],
+              "binding": "actionsDiv",
+              "ownerFunction": "generateExtensionElement"
+            }
+          ],
+          "topology": {
+            "recordFunction": "getExtensionData",
+            "recordBinding": "extensionElement",
+            "listFunction": "showExtensionsDetails",
+            "listBinding": "extensions",
+            "externalFlag": "isExternal",
+            "selectedContainer": "container",
+            "constructionFlagParameter": "isExternal"
+          }
+        },
+        "visibilityTransition": {
+          "className": "displayNone",
+          "required": true,
+          "querySelector": ".btn_update",
+          "queryReceiver": "extensionBlock",
+          "recordSelectorBinding": "selector",
+          "recordIdentityBinding": "externalId",
+          "recordSelectorFactory": "getNameSelector",
+          "ownerFunction": "checkForUpdatesManual",
+          "dataFactory": "getExtensionVersion",
+          "condition": {
+            "object": "data",
+            "property": "isUpToDate",
+            "operator": "===",
+            "value": false
+          }
+        }
+      }
+    },
+    {
+      "name": "Extension delete",
+      "selector": ".btn_delete",
+      "capability": "native.extensions",
+      "endpoint": "POST /api/extensions/delete",
+      "source": {
+        "type": "javascript",
+        "path": "scripts/extensions.js",
+        "factory": "makeActionButton",
+        "event": "click",
+        "handler": "onDeleteClick",
+        "eventSelector": ".extensions_info .extension_block .btn_delete",
+        "delegationReceiver": "document",
+        "constructionFunction": "generateExtensionElement",
+        "eventFunction": "initExtensions",
+        "runtimeProbe": {
+          "element": "button",
+          "ancestors": [
+            {
+              "element": "div",
+              "classes": [
+                "extensions_info"
+              ],
+              "binding": "extensionsMenu",
+              "ownerFunction": "showExtensionsDetails"
+            },
+            {
+              "element": "div",
+              "classes": [
+                "marginBot10"
+              ],
+              "binding": "externalContainer",
+              "ownerFunction": "showExtensionsDetails"
+            },
+            {
+              "element": "div",
+              "classes": [
+                "extension_block"
+              ],
+              "binding": "block",
+              "ownerFunction": "generateExtensionElement"
+            },
+            {
+              "element": "div",
+              "classes": [
+                "extension_actions"
+              ],
+              "binding": "actionsDiv",
+              "ownerFunction": "generateExtensionElement"
+            }
+          ],
+          "topology": {
+            "recordFunction": "getExtensionData",
+            "recordBinding": "extensionElement",
+            "listFunction": "showExtensionsDetails",
+            "listBinding": "extensions",
+            "externalFlag": "isExternal",
+            "selectedContainer": "container",
+            "constructionFlagParameter": "isExternal"
+          }
+        }
+      }
+    },
+    {
+      "name": "Extension update notifications",
+      "selector": "#extensions_notify_updates",
+      "capability": "native.extensions",
+      "endpoint": "POST /api/extensions/version",
+      "source": {
+        "type": "html",
+        "path": "index.html"
+      }
+    },
+    {
+      "name": "World Info",
+      "selector": "#WI-SP-button",
+      "capability": "core.world_info",
+      "endpoint": "POST /api/worldinfo/get",
+      "source": {
+        "type": "html",
+        "path": "index.html"
+      }
+    }
+  ],
+  "hiddenSelectors": [
+    {
+      "selector": ".userBackupButton",
+      "capability": "excluded.multiuser",
+      "status": "unsupported_hidden",
+      "reason": "Single-user Android mode does not expose account backup or full reset controls."
+    },
+    {
+      "selector": ".userResetAllButton",
+      "capability": "excluded.multiuser",
+      "status": "unsupported_hidden",
+      "reason": "Single-user Android mode does not expose account backup or full reset controls."
+    },
+    {
+      "selector": "#main-API-selector-block",
+      "capability": "excluded.local_models",
+      "status": "unsupported_hidden",
+      "reason": "No-node mode fixes the backend to OpenAI-compatible chat completion."
+    },
+    {
+      "selector": ".stapk-mobile-unsupported",
+      "capability": "excluded.extensions",
+      "status": "unsupported_hidden",
+      "reason": "The native adapter does not implement these server-backed extension controls."
+    },
+    {
+      "selector": "#extensions_settings .extension_container:not(#expressions_container)",
+      "capability": "excluded.extensions",
+      "status": "unsupported_hidden",
+      "reason": "The native adapter does not implement these server-backed extension controls."
+    },
+    {
+      "selector": "#extensions_settings2 .extension_container:not(#qr_container):not(#regex_container):not(#summarize_container)",
+      "capability": "excluded.extensions",
+      "status": "unsupported_hidden",
+      "reason": "The native adapter does not implement these server-backed extension controls."
+    },
+    {
+      "selector": "#extensions_settings2 ~ hr",
+      "capability": "excluded.extensions",
+      "status": "unsupported_hidden",
+      "reason": "The native adapter does not implement these server-backed extension controls."
+    },
+    {
+      "selector": "#extensions_settings2 ~ .alignitemscenter.flex-container.justifyCenter.wide100p",
+      "capability": "excluded.extensions",
+      "status": "unsupported_hidden",
+      "reason": "The native adapter does not implement these server-backed extension controls."
+    },
+    {
+      "selector": "#extensions_settings2 ~ .alignitemsflexstart.flex-container.wide100p",
+      "capability": "excluded.extensions",
+      "status": "unsupported_hidden",
+      "reason": "The native adapter does not implement these server-backed extension controls."
+    },
+    {
+      "selector": "#external_import_button",
+      "capability": "excluded.extensions",
+      "status": "unsupported_hidden",
+      "reason": "The native adapter does not implement these server-backed extension controls."
+    },
+    {
+      "selector": ".external_import_button",
+      "capability": "excluded.extensions",
+      "status": "unsupported_hidden",
+      "reason": "The native adapter does not implement these server-backed extension controls."
+    },
+    {
+      "selector": "label[for=\"expression_override\"]",
+      "capability": "excluded.extensions",
+      "status": "unsupported_hidden",
+      "reason": "The native adapter does not implement these server-backed extension controls."
+    },
+    {
+      "selector": "label[for=\"expression_override\"] + small",
+      "capability": "excluded.extensions",
+      "status": "unsupported_hidden",
+      "reason": "The native adapter does not implement these server-backed extension controls."
+    },
+    {
+      "selector": "label[for=\"expression_override\"] + small + .flex-container",
+      "capability": "excluded.extensions",
+      "status": "unsupported_hidden",
+      "reason": "The native adapter does not implement these server-backed extension controls."
+    },
+    {
+      "selector": ".expression_api_block",
+      "capability": "excluded.extensions",
+      "status": "unsupported_hidden",
+      "reason": "The native adapter does not implement these server-backed extension controls."
+    },
+    {
+      "selector": ".expression_llm_prompt_block",
+      "capability": "excluded.extensions",
+      "status": "unsupported_hidden",
+      "reason": "The native adapter does not implement these server-backed extension controls."
+    },
+    {
+      "selector": ".expression_prompt_type_block",
+      "capability": "excluded.extensions",
+      "status": "unsupported_hidden",
+      "reason": "The native adapter does not implement these server-backed extension controls."
+    },
+    {
+      "selector": "label[for=\"expression_translate\"]",
+      "capability": "excluded.extensions",
+      "status": "unsupported_hidden",
+      "reason": "The native adapter does not implement these server-backed extension controls."
+    },
+    {
+      "selector": "#expression_translate",
+      "capability": "excluded.extensions",
+      "status": "unsupported_hidden",
+      "reason": "The native adapter does not implement these server-backed extension controls."
+    },
+    {
+      "selector": "#sd_container",
+      "capability": "excluded.extensions",
+      "status": "unsupported_hidden",
+      "reason": "The native adapter does not implement these server-backed extension controls."
+    },
+    {
+      "selector": "#sd_wand_container",
+      "capability": "excluded.extensions",
+      "status": "unsupported_hidden",
+      "reason": "The native adapter does not implement these server-backed extension controls."
+    },
+    {
+      "selector": "#sd_gen",
+      "capability": "excluded.extensions",
+      "status": "unsupported_hidden",
+      "reason": "The native adapter does not implement these server-backed extension controls."
+    },
+    {
+      "selector": "#sd_dropdown",
+      "capability": "excluded.extensions",
+      "status": "unsupported_hidden",
+      "reason": "The native adapter does not implement these server-backed extension controls."
+    },
+    {
+      "selector": ".sd_message_gen",
+      "capability": "excluded.extensions",
+      "status": "unsupported_hidden",
+      "reason": "The native adapter does not implement these server-backed extension controls."
+    },
+    {
+      "selector": "#tts_container",
+      "capability": "excluded.extensions",
+      "status": "unsupported_hidden",
+      "reason": "The native adapter does not implement these server-backed extension controls."
+    },
+    {
+      "selector": "#tts_wand_container",
+      "capability": "excluded.extensions",
+      "status": "unsupported_hidden",
+      "reason": "The native adapter does not implement these server-backed extension controls."
+    },
+    {
+      "selector": "#ttsExtensionMenuItem",
+      "capability": "excluded.extensions",
+      "status": "unsupported_hidden",
+      "reason": "The native adapter does not implement these server-backed extension controls."
+    },
+    {
+      "selector": "#ttsExtensionNarrateAll",
+      "capability": "excluded.extensions",
+      "status": "unsupported_hidden",
+      "reason": "The native adapter does not implement these server-backed extension controls."
+    },
+    {
+      "selector": ".mes_narrate",
+      "capability": "excluded.extensions",
+      "status": "unsupported_hidden",
+      "reason": "The native adapter does not implement these server-backed extension controls."
+    },
+    {
+      "selector": "#stt_container",
+      "capability": "excluded.extensions",
+      "status": "unsupported_hidden",
+      "reason": "The native adapter does not implement these server-backed extension controls."
+    },
+    {
+      "selector": "#vectors_container",
+      "capability": "excluded.extensions",
+      "status": "unsupported_hidden",
+      "reason": "The native adapter does not implement these server-backed extension controls."
+    },
+    {
+      "selector": ".btn_move",
+      "capability": "excluded.extensions",
+      "status": "unsupported_hidden",
+      "reason": "The native adapter does not implement these server-backed extension controls."
+    },
+    {
+      "selector": ".btn_branch",
+      "capability": "excluded.extensions",
+      "status": "unsupported_hidden",
+      "reason": "The native adapter does not implement these server-backed extension controls."
+    }
+  ]
+}

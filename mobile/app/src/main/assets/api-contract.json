@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-07-21T08:59:45.153Z",
+  "generatedAt": "2026-07-24T18:16:57.274Z",
   "upstream": {
     "ref": "release",
     "commit": "8172dcd0ee672d3cd9a5e5f7af134f91a45cd2b8",
@@ -1059,12 +1059,12 @@
         },
         {
           "file": "scripts/extensions.js",
-          "line": 2102,
+          "line": 2108,
           "expression": "/api/characters/merge-attributes"
         },
         {
           "file": "scripts/extensions.js",
-          "line": 2166,
+          "line": 2172,
           "expression": "/api/characters/merge-attributes"
         },
         {
@@ -1596,7 +1596,7 @@
       "sourceLocations": [
         {
           "file": "scripts/extensions.js",
-          "line": 1634,
+          "line": 1640,
           "expression": "/api/extensions/branches"
         }
       ]
@@ -1653,7 +1653,7 @@
       "sourceLocations": [
         {
           "file": "scripts/extensions.js",
-          "line": 1746,
+          "line": 1752,
           "expression": "/api/extensions/install"
         }
       ]
@@ -1691,7 +1691,7 @@
       "sourceLocations": [
         {
           "file": "scripts/extensions.js",
-          "line": 1666,
+          "line": 1672,
           "expression": "/api/extensions/switch"
         }
       ]
@@ -1729,7 +1729,7 @@
       "sourceLocations": [
         {
           "file": "scripts/extensions.js",
-          "line": 1601,
+          "line": 1607,
           "expression": "/api/extensions/version"
         }
       ]
@@ -3316,7 +3316,7 @@
       "sourceLocations": [
         {
           "file": "scripts/openai.js",
-          "line": 4865,
+          "line": 4869,
           "expression": "/api/presets/delete"
         },
         {
@@ -3365,7 +3365,7 @@
         },
         {
           "file": "scripts/openai.js",
-          "line": 4715,
+          "line": 4719,
           "expression": "/api/presets/save"
         },
         {

@@ -17,12 +17,43 @@ import java.util.Locale
 import org.apache.commons.fileupload.FileUploadBase
 import org.apache.commons.fileupload.disk.DiskFileItemFactory
 
-class NativeHttpServer(
+class NativeHttpServer private constructor(
     private val paths: NativeAdapterPaths,
-    port: Int = 0,
-    private val exportStore: ExportStore = ExportStore(paths.exportsDir),
-    private val diagnosticLogger: DiagnosticLogger = DiagnosticLogger(paths.logsDir)
+    port: Int,
+    private val exportStore: ExportStore,
+    private val diagnosticLogger: DiagnosticLogger,
+    private val extensionSubsystemFactory: (NativeAdapterPaths, AtomicFileStore, DiagnosticLogger) -> ExtensionSubsystem,
+    @Suppress("UNUSED_PARAMETER") constructorMarker: ExtensionSubsystemFactoryConstructorMarker
 ) : NanoHTTPD("127.0.0.1", port) {
+    constructor(
+        paths: NativeAdapterPaths,
+        port: Int = 0,
+        exportStore: ExportStore = ExportStore(paths.exportsDir),
+        diagnosticLogger: DiagnosticLogger = DiagnosticLogger(paths.logsDir)
+    ) : this(
+        paths,
+        port,
+        exportStore,
+        diagnosticLogger,
+        ::createExtensionSubsystem,
+        ExtensionSubsystemFactoryConstructorMarker
+    )
+
+    internal constructor(
+        paths: NativeAdapterPaths,
+        port: Int = 0,
+        exportStore: ExportStore = ExportStore(paths.exportsDir),
+        diagnosticLogger: DiagnosticLogger = DiagnosticLogger(paths.logsDir),
+        extensionSubsystemFactory: (NativeAdapterPaths, AtomicFileStore, DiagnosticLogger) -> ExtensionSubsystem
+    ) : this(
+        paths,
+        port,
+        exportStore,
+        diagnosticLogger,
+        extensionSubsystemFactory,
+        ExtensionSubsystemFactoryConstructorMarker
+    )
+
     @Volatile
     private var bridgeNonce: String? = null
     private val atomicStore = AtomicFileStore(paths.quarantineDir, diagnosticLogger)
@@ -57,13 +88,7 @@ class NativeHttpServer(
     private val sprites = SpriteController(paths, atomicStore)
     private val tokenizer = TokenizerController()
     private val openAi = OpenAiCompatibleController(paths, diagnosticLogger = diagnosticLogger)
-    private val extensionRegistry = ExtensionRegistry(paths, atomicStore)
-    private val extensions = ExtensionController(
-        paths,
-        extensionRegistry,
-        GitHubExtensionClient(),
-        ExtensionArchiveInstaller(paths)
-    )
+    private val extensionSubsystem = extensionSubsystemFactory(paths, atomicStore, diagnosticLogger)
     private val router = NativeRouter().also(::registerRoutes)
 
     override fun useGzipWhenAccepted(response: Response): Boolean =
@@ -158,11 +183,11 @@ class NativeHttpServer(
         router.post("/api/tokenizers/openai/count") {
             tokenizer.count(it.query["model"]?.firstOrNull().orEmpty(), it.controllerBody())
         }
-        router.get("/api/extensions/discover") { extensions.discover() }
-        router.post("/api/extensions/install") { extensions.install(it.controllerBody()) }
-        router.post("/api/extensions/version") { extensions.version(it.controllerBody()) }
-        router.post("/api/extensions/update") { extensions.update(it.controllerBody()) }
-        router.post("/api/extensions/delete") { extensions.delete(it.controllerBody()) }
+        router.get("/api/extensions/discover") { extensionSubsystem.routes.discover() }
+        router.post("/api/extensions/install") { extensionSubsystem.routes.install(it.controllerBody()) }
+        router.post("/api/extensions/version") { extensionSubsystem.routes.version(it.controllerBody()) }
+        router.post("/api/extensions/update") { extensionSubsystem.routes.update(it.controllerBody()) }
+        router.post("/api/extensions/delete") { extensionSubsystem.routes.delete(it.controllerBody()) }
         router.post("/api/characters/all") { characters.allCharacters() }
         router.post("/api/characters/create") { characters.createCharacter(it.controllerBody()) }
         router.post("/api/characters/get") { characters.getCharacter(it.controllerBody()) }
@@ -553,3 +578,5 @@ class NativeHttpServer(
         private const val MAX_MULTIPART_HEADER_BYTES = 8 * 1024
     }
 }
+
+private object ExtensionSubsystemFactoryConstructorMarker

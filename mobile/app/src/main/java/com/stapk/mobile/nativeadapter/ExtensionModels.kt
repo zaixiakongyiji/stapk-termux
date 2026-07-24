@@ -3,6 +3,7 @@ package com.stapk.mobile.nativeadapter
 import okhttp3.ResponseBody
 import java.io.File
 import java.io.IOException
+import java.io.Closeable
 
 data class ExtensionRecord(
     val folderName: String,
@@ -40,10 +41,45 @@ data class ExtensionRelease(
     val archive: ResponseBody
 )
 
-data class InstalledExtension(
-    val record: ExtensionRecord,
-    val directory: File
+enum class ExtensionOperation {
+    INSTALL,
+    UPDATE,
+    DELETE
+}
+
+enum class ExtensionTransactionPhase {
+    PREPARED,
+    FILES_ACTIVATED,
+    REGISTRY_COMMITTED
+}
+
+data class ExtensionTransaction(
+    val schemaVersion: Int = 1,
+    val transactionId: String,
+    val operation: ExtensionOperation,
+    val phase: ExtensionTransactionPhase,
+    val folderName: String,
+    val oldRecord: ExtensionRecord?,
+    val newRecord: ExtensionRecord?,
+    val stagingName: String?,
+    val backupName: String?,
+    val trashName: String?
 )
+
+class PreparedExtension(
+    val record: ExtensionRecord,
+    val stagingDirectory: File
+) : Closeable {
+    private var closed = false
+
+    override fun close() {
+        if (closed) return
+        if (stagingDirectory.exists() && !stagingDirectory.deleteRecursively()) {
+            throw IOException("Unable to remove prepared extension staging directory")
+        }
+        closed = true
+    }
+}
 
 fun interface ExtensionSource {
     fun resolve(url: String, branch: String?): ExtensionRelease
@@ -57,5 +93,8 @@ class ExtensionHttpException(val statusCode: Int) :
 class ExtensionRedirectException(message: String) : ExtensionSourceException(message)
 
 class ExtensionDownloadTooLargeException : ExtensionSourceException("Extension archive exceeds download limit")
+
+class ExtensionArchiveTransportException(cause: IOException) :
+    ExtensionSourceException("Unable to read extension archive", cause)
 
 class InvalidExtensionArchiveException(message: String, cause: Throwable? = null) : IOException(message, cause)

@@ -5,6 +5,7 @@ import path from 'node:path';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Worker } from 'node:worker_threads';
+import semver from 'semver';
 
 import {
   extractApiLiterals,
@@ -20,6 +21,13 @@ const PROJECT_CAPABILITIES = JSON.parse(await readFile(
   path.resolve('transform/no-node/capabilities.json'),
   'utf8'
 ));
+const BUILD_PARSER_ROOTS = [
+  'acorn',
+  'linkedom',
+  'parse5',
+  'postcss',
+  'postcss-selector-parser',
+];
 
 async function withTempDirectory(prefix, fn) {
   const directory = await mkdtemp(path.join(os.tmpdir(), prefix));
@@ -30,21 +38,118 @@ async function withTempDirectory(prefix, fn) {
   }
 }
 
-test('build parser lockfile preserves the Node 20.0 dependency contract', async () => {
-  const packageJson = JSON.parse(await readFile(path.resolve('package.json'), 'utf8'));
-  const packageLock = JSON.parse(await readFile(path.resolve('package-lock.json'), 'utf8'));
+function verifyBuildParserLockfile({ packageJson, packageLock }) {
   const rootPackage = packageLock.packages[''];
   const parse5Package = packageLock.packages['node_modules/parse5'];
   const entitiesPackage = packageLock.packages['node_modules/entities'];
+  const linkedomPackage = packageLock.packages['node_modules/linkedom'];
+  const cssSelectPackage = packageLock.packages['node_modules/css-select'];
 
   assert.equal(packageJson.engines.node, '>=20.0.0');
+  assert.ok(semver.satisfies('20.0.0', packageJson.engines.node));
   assert.equal(packageJson.devDependencies.parse5, '7.3.0');
+  assert.equal(packageJson.devDependencies.linkedom, '0.18.12');
+  assert.equal(packageJson.devDependencies.semver, '7.7.3');
   assert.equal(rootPackage.devDependencies.parse5, '7.3.0');
+  assert.equal(rootPackage.devDependencies.linkedom, '0.18.12');
+  assert.equal(rootPackage.devDependencies.semver, '7.7.3');
   assert.equal(parse5Package.version, '7.3.0');
   assert.equal(parse5Package.dev, true);
   assert.equal(parse5Package.dependencies.entities, '^6.0.0');
   assert.ok(Number.parseInt(entitiesPackage.version, 10) < 8, entitiesPackage.version);
-  assert.notEqual(entitiesPackage.engines?.node, '>=20.19.0');
+  assert.equal(linkedomPackage.version, '0.18.12');
+  assert.equal(linkedomPackage.dependencies['css-select'], '^5.1.0');
+  assert.ok(Number.parseInt(cssSelectPackage.version, 10) < 7, cssSelectPackage.version);
+
+  const visited = new Set();
+  const queue = BUILD_PARSER_ROOTS.map((name) => ({ name, requesterPath: '' }));
+  while (queue.length > 0) {
+    const { name, requesterPath } = queue.shift();
+    const packagePath = resolveLockfileDependencyPath(
+      packageLock.packages,
+      requesterPath,
+      name
+    );
+    assert.ok(
+      packagePath,
+      `${name} dependency node is missing (required by ${requesterPath || 'lockfile root'})`
+    );
+    if (visited.has(packagePath)) continue;
+    visited.add(packagePath);
+
+    const packageRecord = packageLock.packages[packagePath];
+    const engineRange = packageRecord.engines?.node;
+    if (engineRange) {
+      assert.ok(
+        semver.satisfies('20.0.0', engineRange),
+        `${packagePath} engines.node "${engineRange}" does not accept Node 20.0.0`
+      );
+    }
+    for (const dependencyName of runtimeDependencyNames(packageRecord)) {
+      queue.push({ name: dependencyName, requesterPath: packagePath });
+    }
+  }
+}
+
+function runtimeDependencyNames(packageRecord) {
+  const names = new Set([
+    ...Object.keys(packageRecord.dependencies ?? {}),
+    ...Object.keys(packageRecord.optionalDependencies ?? {}),
+  ]);
+  for (const peerName of Object.keys(packageRecord.peerDependencies ?? {})) {
+    if (packageRecord.peerDependenciesMeta?.[peerName]?.optional !== true) {
+      names.add(peerName);
+    }
+  }
+  return names;
+}
+
+function resolveLockfileDependencyPath(packages, requesterPath, dependencyName) {
+  let searchPath = requesterPath;
+  while (true) {
+    const candidate = searchPath
+      ? `${searchPath}/node_modules/${dependencyName}`
+      : `node_modules/${dependencyName}`;
+    if (Object.hasOwn(packages, candidate)) return candidate;
+    if (!searchPath) return null;
+    searchPath = parentLockfilePackagePath(searchPath);
+  }
+}
+
+function parentLockfilePackagePath(packagePath) {
+  return packagePath.replace(
+    /(?:^|\/)node_modules\/(?:@[^/]+\/)?[^/]+$/,
+    ''
+  );
+}
+
+test('build parser lockfile preserves the Node 20.0 dependency contract', async () => {
+  const packageJson = JSON.parse(await readFile(path.resolve('package.json'), 'utf8'));
+  const packageLock = JSON.parse(await readFile(path.resolve('package-lock.json'), 'utf8'));
+
+  verifyBuildParserLockfile({ packageJson, packageLock });
+});
+
+test('build parser lockfile rejects a deep dependency engine incompatible with Node 20.0', async () => {
+  const packageJson = JSON.parse(await readFile(path.resolve('package.json'), 'utf8'));
+  const packageLock = JSON.parse(await readFile(path.resolve('package-lock.json'), 'utf8'));
+  packageLock.packages['node_modules/dom-serializer'].engines = { node: '>=20.19.0' };
+
+  assert.throws(
+    () => verifyBuildParserLockfile({ packageJson, packageLock }),
+    /dom-serializer.*20\.0\.0/
+  );
+});
+
+test('build parser lockfile rejects a missing deep dependency node', async () => {
+  const packageJson = JSON.parse(await readFile(path.resolve('package.json'), 'utf8'));
+  const packageLock = JSON.parse(await readFile(path.resolve('package-lock.json'), 'utf8'));
+  delete packageLock.packages['node_modules/dom-serializer'];
+
+  assert.throws(
+    () => verifyBuildParserLockfile({ packageJson, packageLock }),
+    /dom-serializer.*missing/
+  );
 });
 
 test('scanWebContract discovers API literals from constants and template strings', async () => {

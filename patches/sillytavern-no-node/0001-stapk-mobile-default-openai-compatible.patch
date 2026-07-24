@@ -21,7 +21,7 @@ index 68a5461..2f0bd26 100644
          $('#main_api').val(main_api);
          $(`#main_api option[value=${main_api}]`).attr('selected', 'true');
 diff --git a/public/scripts/openai.js b/public/scripts/openai.js
-index 97b9665..c2aa66d 100644
+index 97b9665..fbf74e5 100644
 --- a/public/scripts/openai.js
 +++ b/public/scripts/openai.js
 @@ -4236,6 +4236,11 @@ function loadOpenAISettings(data, settings) {
@@ -36,3 +36,14 @@ index 97b9665..c2aa66d 100644
      for (const key of Object.keys(default_settings)) {
          oai_settings[key] = settings[key] ?? default_settings[key];
          const settingToUpdate = Object.values(settingsToUpdate).find(([_, k]) => k === key);
+@@ -4677,6 +4682,10 @@ async function onPresetImportFileChange(e) {
+         return;
+     }
+ 
++    presetBody.stream_openai = typeof presetBody.stream_openai === 'boolean'
++        ? presetBody.stream_openai
++        : false;
++
+     const fields = sensitiveFields.filter(field => presetBody[field]).map(field => `<b>${field}</b>`);
+     const shouldConfirm = fields.length > 0;
+ 

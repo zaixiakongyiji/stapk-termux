@@ -4682,6 +4682,10 @@ async function onPresetImportFileChange(e) {
         return;
     }
 
+    presetBody.stream_openai = typeof presetBody.stream_openai === 'boolean'
+        ? presetBody.stream_openai
+        : false;
+
     const fields = sensitiveFields.filter(field => presetBody[field]).map(field => `<b>${field}</b>`);
     const shouldConfirm = fields.length > 0;
 

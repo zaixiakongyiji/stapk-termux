@@ -35,5 +35,6 @@ data class NativeAdapterPaths(private val filesDir: File) {
     val stateDir: File = File(filesDir, "state")
     val adapterStateFile: File = File(stateDir, "native-adapter-state.json")
     val extensionRegistryFile: File = File(stateDir, "extensions.json")
+    val extensionTransactionFile: File = File(stateDir, "extension-transaction.json")
     val legacySillyTavernDir: File = File(filesDir, "SillyTavern")
 }

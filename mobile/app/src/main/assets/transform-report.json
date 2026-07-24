@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "generatedAt": "2026-07-21T08:59:45.739Z",
+  "generatedAt": "2026-07-24T18:16:58.776Z",
   "output": "C:\\Users\\31029\\Documents\\GitHub\\stapk-termux\\build\\no-node-payload",
   "upstream": {
     "repo": "https://github.com/SillyTavern/SillyTavern.git",
@@ -31,7 +31,16 @@
     "ok": true,
     "errors": [],
     "warnings": [],
-    "scannedFiles": 600,
+    "uiCapabilityVerification": {
+      "ok": true,
+      "errors": [],
+      "summary": {
+        "implementedActions": 7,
+        "hiddenSelectors": 33,
+        "localStylesheets": 40
+      }
+    },
+    "scannedFiles": 601,
     "scannedDirectories": 47
   }
 }

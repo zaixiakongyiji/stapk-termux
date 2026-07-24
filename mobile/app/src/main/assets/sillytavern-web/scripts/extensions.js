@@ -1561,14 +1561,14 @@ async function moveExtension(extensionName, source, destination) {
 export async function deleteExtension(extensionName, shouldClean = false) {
     const fullExtensionName = extensionName.startsWith('third-party') ? extensionName : `third-party${extensionName}`;
 
-    if (shouldClean) {
-        await callExtensionHook(fullExtensionName, 'clean');
-    }
-
-    await callExtensionHook(fullExtensionName, 'delete');
-
     try {
-        await fetch('/api/extensions/delete', {
+        if (shouldClean) {
+            await callExtensionHook(fullExtensionName, 'clean');
+        }
+
+        await callExtensionHook(fullExtensionName, 'delete');
+
+        const response = await fetch('/api/extensions/delete', {
             method: 'POST',
             headers: getRequestHeaders(),
             body: JSON.stringify({
@@ -1576,12 +1576,18 @@ export async function deleteExtension(extensionName, shouldClean = false) {
                 global: getExtensionType(extensionName) === 'global',
             }),
         });
+
+        if (!response.ok) {
+            throw new Error('Extension delete failed');
+        }
+
+        // Delete or clean might have updated settings, which could race with the page reload, so we'll force save here
+        await saveSettings();
     } catch (error) {
         console.error('Error:', error);
+        toastr.error(t`Extension delete failed`);
+        return;
     }
-
-    // Delete or clean might have updated settings, which could race with the page reload, so we'll force save here
-    await saveSettings();
 
     toastr.success(t`Extension ${extensionName} deleted`);
     delay(1000).then(() => location.reload());

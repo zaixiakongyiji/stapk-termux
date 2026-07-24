@@ -7,14 +7,20 @@ import { parseArgs } from 'node:util';
 import { fileURLToPath } from 'node:url';
 
 import {
+  hashDirectory,
+  hashPatchQueue
+} from './stapk-artifact-hashes.mjs';
+import {
   isCapabilityVerificationAllowed,
   verifyCapabilityContract
 } from './stapk-verify-capability-contract.mjs';
+import { verifyUiCapabilityContract } from './stapk-verify-ui-capability-contract.mjs';
 
 const REQUIRED_FILES = [
   'sillytavern-web/index.html',
   'sillytavern-web/lib.js',
   'sillytavern-web/stapk-capabilities.json',
+  'sillytavern-web/stapk-ui-capabilities.json',
   'api-contract.json',
   'stapk-web-manifest.json'
 ];
@@ -38,7 +44,12 @@ const FORBIDDEN_SEGMENTS = new Set([
   'node_modules'
 ]);
 
-export async function verifyNoNodeOutput({ out }) {
+export async function verifyNoNodeOutput({
+  out,
+  capabilityFile = path.resolve('transform/no-node/capabilities.json'),
+  patchQueueDir = path.resolve('patches/sillytavern-no-node'),
+  expectedPatchQueueSha256
+}) {
   const absoluteOut = path.resolve(out);
   const errors = [];
   const warnings = [];
@@ -76,6 +87,39 @@ export async function verifyNoNodeOutput({ out }) {
     if (manifest.noRuntimeNode !== true) {
       errors.push('Manifest must set noRuntimeNode: true');
     }
+
+    const manifestWebRootSha256 = manifest.hashes?.webRootSha256;
+    if (!isSha256(manifestWebRootSha256)) {
+      errors.push('Manifest hashes.webRootSha256 must be a lowercase SHA-256');
+    } else {
+      const webRoot = path.join(absoluteOut, 'sillytavern-web');
+      if (existsSync(webRoot)) {
+        const actualWebRootSha256 = await hashDirectory(webRoot);
+        if (actualWebRootSha256 !== manifestWebRootSha256) {
+          errors.push(
+            `Web root SHA-256 mismatch: expected ${manifestWebRootSha256}, got ${actualWebRootSha256}`
+          );
+        }
+      }
+    }
+
+    const manifestPatchQueueSha256 = manifest.hashes?.patchQueueSha256;
+    if (!isSha256(manifestPatchQueueSha256)) {
+      errors.push('Manifest hashes.patchQueueSha256 must be a lowercase SHA-256');
+    } else {
+      let expectedPatchHash = expectedPatchQueueSha256;
+      if (expectedPatchHash === undefined) {
+        expectedPatchHash = await hashPatchQueue(patchQueueDir);
+      } else if (!isSha256(expectedPatchHash)) {
+        errors.push('Expected patch queue SHA-256 must be a lowercase SHA-256');
+      }
+
+      if (isSha256(expectedPatchHash) && expectedPatchHash !== manifestPatchQueueSha256) {
+        errors.push(
+          `Patch queue SHA-256 mismatch: expected ${expectedPatchHash}, got ${manifestPatchQueueSha256}`
+        );
+      }
+    }
   }
 
   const contractPath = path.join(absoluteOut, 'api-contract.json');
@@ -86,10 +130,29 @@ export async function verifyNoNodeOutput({ out }) {
     }
   }
 
+  let uiCapabilityVerification = null;
+  const webRoot = path.join(absoluteOut, 'sillytavern-web');
+  const uiContractPath = path.join(webRoot, 'stapk-ui-capabilities.json');
+  if (
+    existsSync(path.join(webRoot, 'index.html'))
+    && existsSync(uiContractPath)
+    && existsSync(contractPath)
+    && existsSync(path.resolve(capabilityFile))
+  ) {
+    uiCapabilityVerification = await verifyUiCapabilityContract({
+      webRoot,
+      uiContractFile: uiContractPath,
+      apiContractFile: contractPath,
+      capabilityFile
+    });
+    errors.push(...uiCapabilityVerification.errors.map((error) => `UI capability: ${error}`));
+  }
+
   const result = {
     ok: errors.length === 0,
     errors,
     warnings,
+    uiCapabilityVerification,
     scannedFiles: entries.filter((entry) => !entry.isDirectory).length,
     scannedDirectories: entries.filter((entry) => entry.isDirectory).length
   };
@@ -166,6 +229,10 @@ function findBareBrowserModuleSpecifiers(source) {
   return [...specifiers].sort();
 }
 
+function isSha256(value) {
+  return typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
+}
+
 function toPosixPath(value) {
   return value.split(path.sep).join('/');
 }
@@ -185,10 +252,14 @@ async function main() {
   }
 
   try {
-    const outputVerification = await verifyNoNodeOutput({ out: values.out });
+    const capabilityFile = values.capabilities ?? 'transform/no-node/capabilities.json';
+    const outputVerification = await verifyNoNodeOutput({
+      out: values.out,
+      capabilityFile
+    });
     const [apiContract, capabilities] = await Promise.all([
       readJson(path.join(values.out, 'api-contract.json')),
-      readJson(values.capabilities ?? 'transform/no-node/capabilities.json')
+      readJson(capabilityFile)
     ]);
     const capabilityVerification = verifyCapabilityContract({ apiContract, capabilities });
     const result = {

@@ -2,7 +2,6 @@
 .stapk-mobile-unsupported,
 .userBackupButton,
 .userResetAllButton,
-label[for="extensions_notify_updates"],
 #extensions_settings .extension_container:not(#expressions_container),
 #extensions_settings2 .extension_container:not(#qr_container):not(#regex_container):not(#summarize_container),
 #extensions_settings2 ~ hr,

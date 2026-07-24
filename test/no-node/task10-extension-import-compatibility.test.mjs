@@ -1,8 +1,166 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
+import vm from 'node:vm';
 
 const root = new URL('../..', import.meta.url);
+
+function extractDeleteExtension(source) {
+  const match = source.match(
+    /export async function deleteExtension\(extensionName, shouldClean = false\) \{[\s\S]*?\n\}\r?\n\r?\n\/\*\*/,
+  );
+  assert.ok(match, 'deleteExtension() source must be present');
+  return match[0].replace(/^export /, '').replace(/\r?\n\r?\n\/\*\*$/, '');
+}
+
+async function runDeleteExtensionFixture(source, response, {
+  rejectedHook = null,
+  saveSettingsError = null,
+  shouldClean = false,
+} = {}) {
+  const calls = {
+    errors: [],
+    rejections: [],
+    reloads: 0,
+    successes: [],
+  };
+  const context = {
+    callExtensionHook: async (_name, hookName) => {
+      if (hookName === rejectedHook) throw new Error(`${hookName} hook failed`);
+    },
+    console: { error: () => {} },
+    delay: async () => {},
+    fetch: async () => {
+      if (response instanceof Error) throw response;
+      return response;
+    },
+    getExtensionType: () => 'local',
+    getRequestHeaders: () => ({}),
+    location: { reload: () => { calls.reloads += 1; } },
+    saveSettings: async () => {
+      if (saveSettingsError) throw saveSettingsError;
+    },
+    t: (strings, ...values) => strings.reduce(
+      (result, string, index) => result + string + (values[index] ?? ''),
+      '',
+    ),
+    toastr: {
+      error: (...args) => calls.errors.push(args),
+      success: (...args) => calls.successes.push(args),
+    },
+  };
+
+  try {
+    await vm.runInNewContext(
+      `${extractDeleteExtension(source)}\ndeleteExtension('sample-extension', ${shouldClean});`,
+      context,
+    );
+  } catch (error) {
+    calls.rejections.push(error);
+  }
+  await Promise.resolve();
+  return calls;
+}
+
+test('extension deletion reports HTTP 500 without a success toast or reload', async () => {
+  const extensions = await readFile(
+    new URL('./mobile/app/src/main/assets/sillytavern-web/scripts/extensions.js', root),
+    'utf8',
+  );
+
+  const calls = await runDeleteExtensionFixture(extensions, {
+    ok: false,
+    status: 500,
+    statusText: 'Internal Server Error',
+  });
+
+  assert.equal(calls.successes.length, 0);
+  assert.equal(calls.reloads, 0);
+  assert.ok(
+    calls.errors.some((args) => args.includes('Extension delete failed')),
+    'HTTP 500 must display Extension delete failed',
+  );
+});
+
+test('extension deletion reports success and reloads after HTTP 200', async () => {
+  const extensions = await readFile(
+    new URL('./mobile/app/src/main/assets/sillytavern-web/scripts/extensions.js', root),
+    'utf8',
+  );
+
+  const calls = await runDeleteExtensionFixture(extensions, {
+    ok: true,
+    status: 200,
+    statusText: 'OK',
+  });
+
+  assert.equal(calls.errors.length, 0);
+  assert.deepEqual(calls.successes, [['Extension sample-extension deleted']]);
+  assert.equal(calls.reloads, 1);
+});
+
+test('extension deletion reports a rejected fetch without a success toast or reload', async () => {
+  const extensions = await readFile(
+    new URL('./mobile/app/src/main/assets/sillytavern-web/scripts/extensions.js', root),
+    'utf8',
+  );
+
+  const calls = await runDeleteExtensionFixture(extensions, new Error('network unavailable'));
+
+  assert.equal(calls.successes.length, 0);
+  assert.equal(calls.reloads, 0);
+  assert.ok(
+    calls.errors.some((args) => args.includes('Extension delete failed')),
+    'fetch rejection must display Extension delete failed',
+  );
+});
+
+for (const hookName of ['clean', 'delete']) {
+  test(`extension deletion reports a rejected ${hookName} hook without success or reload`, async () => {
+    const extensions = await readFile(
+      new URL('./mobile/app/src/main/assets/sillytavern-web/scripts/extensions.js', root),
+      'utf8',
+    );
+
+    const calls = await runDeleteExtensionFixture(
+      extensions,
+      { ok: true, status: 200, statusText: 'OK' },
+      {
+        rejectedHook: hookName,
+        shouldClean: hookName === 'clean',
+      },
+    );
+
+    assert.equal(calls.successes.length, 0);
+    assert.equal(calls.reloads, 0);
+    assert.equal(calls.rejections.length, 0);
+    assert.ok(
+      calls.errors.some((args) => args.includes('Extension delete failed')),
+      `${hookName} hook rejection must display Extension delete failed`,
+    );
+  });
+}
+
+test('extension deletion reports saveSettings rejection after HTTP 200 without success or reload', async () => {
+  const extensions = await readFile(
+    new URL('./mobile/app/src/main/assets/sillytavern-web/scripts/extensions.js', root),
+    'utf8',
+  );
+
+  const calls = await runDeleteExtensionFixture(
+    extensions,
+    { ok: true, status: 200, statusText: 'OK' },
+    { saveSettingsError: new Error('settings unavailable') },
+  );
+
+  assert.equal(calls.successes.length, 0);
+  assert.equal(calls.reloads, 0);
+  assert.equal(calls.rejections.length, 0);
+  assert.ok(
+    calls.errors.some((args) => args.includes('Extension delete failed')),
+    'saveSettings rejection must display Extension delete failed',
+  );
+});
 
 test('character import resolves missing extensions from MIME and reports unsupported files', async () => {
   const script = await readFile(
@@ -133,6 +291,7 @@ test('extension manager discovers native extensions and exposes only supported c
   assert.doesNotMatch(unsupportedSelector, /#extensions_details/);
   assert.doesNotMatch(unsupportedSelector, /#extensions_install/);
   assert.doesNotMatch(unsupportedSelector, /#third_party_extension_button/);
+  assert.doesNotMatch(unsupportedSelector, /label\[for="extensions_notify_updates"\]/);
   assert.match(mobileCss, /\.btn_move\s*,\s*\.btn_branch\s*\{\s*display:\s*none\s*!important;/);
   assert.doesNotMatch(installMenu, /Install for all users/);
   assert.doesNotMatch(installMenu, /extension_branch_name/);

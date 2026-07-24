@@ -2,10 +2,10 @@ diff --git a/public/css/stapk-mobile.css b/public/css/stapk-mobile.css
 index a4ea49c..b3ecd16 100644
 --- a/public/css/stapk-mobile.css
 +++ b/public/css/stapk-mobile.css
-@@ -3,10 +3,7 @@
+@@ -3,10 +3,6 @@
  .userBackupButton,
  .userResetAllButton,
- label[for="extensions_notify_updates"],
+-label[for="extensions_notify_updates"],
 -#extensions_details,
 -#extensions_install,
 -#third_party_extension_button,
@@ -99,6 +99,51 @@ index d551b12..d955f74 100644
  function onDisableExtensionClick() {
      const name = $(this).data('name');
      disableExtension(name, false);
+@@ -1541,28 +1561,34 @@ export async function deleteExtension(extensionName, shouldClean = false) {
+ export async function deleteExtension(extensionName, shouldClean = false) {
+     const fullExtensionName = extensionName.startsWith('third-party') ? extensionName : `third-party${extensionName}`;
+ 
+-    if (shouldClean) {
+-        await callExtensionHook(fullExtensionName, 'clean');
+-    }
+-
+-    await callExtensionHook(fullExtensionName, 'delete');
+-
+     try {
+-        await fetch('/api/extensions/delete', {
++        if (shouldClean) {
++            await callExtensionHook(fullExtensionName, 'clean');
++        }
++
++        await callExtensionHook(fullExtensionName, 'delete');
++
++        const response = await fetch('/api/extensions/delete', {
+             method: 'POST',
+             headers: getRequestHeaders(),
+             body: JSON.stringify({
+                 extensionName,
+                 global: getExtensionType(extensionName) === 'global',
+             }),
+         });
++
++        if (!response.ok) {
++            throw new Error('Extension delete failed');
++        }
++
++        // Delete or clean might have updated settings, which could race with the page reload, so we'll force save here
++        await saveSettings();
+     } catch (error) {
+         console.error('Error:', error);
++        toastr.error(t`Extension delete failed`);
++        return;
+     }
+ 
+-    // Delete or clean might have updated settings, which could race with the page reload, so we'll force save here
+-    await saveSettings();
+-
+     toastr.success(t`Extension ${extensionName} deleted`);
+     delay(1000).then(() => location.reload());
+ }
 @@ -1772,12 +1792,7 @@ export async function loadExtensionSettings(settings, versionChanged, enableAuto
  
      // Activate offline extensions

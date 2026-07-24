@@ -11,11 +11,17 @@ class ExtensionController(
     private val paths: NativeAdapterPaths,
     private val registry: ExtensionRegistry,
     private val source: ExtensionSource,
-    private val installer: ExtensionArchiveInstaller
-) {
+    private val installer: ExtensionArchiveInstaller,
+    private val coordinator: ExtensionMutationCoordinator = ExtensionMutationCoordinator(
+        paths,
+        registry,
+        ExtensionTransactionJournal(paths),
+        ExtensionDirectoryQuarantine(paths)
+    )
+) : ExtensionRoutes {
     private val gson = GsonBuilder().disableHtmlEscaping().create()
 
-    fun discover(): HttpResponse {
+    override fun discover(): HttpResponse {
         val extensions = JsonArray()
         SYSTEM_EXTENSIONS.forEach { name ->
             extensions.add(JsonObject().apply {
@@ -32,50 +38,29 @@ class ExtensionController(
         return HttpResponse.json(200, gson.toJson(extensions))
     }
 
-    fun install(body: String): HttpResponse {
+    override fun install(body: String): HttpResponse {
         val request = parseObject(body) ?: return error(400, "invalid_extension_request")
         if (request.unsupportedGlobal()) return error(400, "global_extensions_not_supported")
         val url = request.stringValue("url").takeIf(String::isNotBlank)
             ?: return error(400, "invalid_extension_request")
         val branch = request.stringValue("branch").takeIf(String::isNotBlank)
-        val release = try {
-            source.resolve(url, branch)
-        } catch (_: IllegalArgumentException) {
-            return error(400, "invalid_github_repository")
-        } catch (_: ExtensionSourceException) {
-            return error(502, "extension_source_unavailable")
-        }
-        if (registry.list().any {
-                it.repositoryUrl.equals(release.repository.canonicalUrl, ignoreCase = true) ||
-                    it.folderName.equals(release.repository.repository, ignoreCase = true)
+        return mutationResponse {
+            coordinator.requireRecoveryReady()
+            val release = resolve(url, branch)
+            installer.prepare(release).use { prepared ->
+                val displayName = readDisplayName(prepared.stagingDirectory)
+                    ?: prepared.record.folderName
+                val installed = coordinator.install(prepared)
+                HttpResponse.json(200, gson.toJson(JsonObject().apply {
+                    addProperty("display_name", displayName)
+                    addProperty("extensionPath", "/scripts/extensions/third-party/${installed.folderName}")
+                    addProperty("folderName", installed.folderName)
+                }))
             }
-        ) {
-            release.archive.close()
-            return error(409, "extension_already_installed")
         }
-        val installed = try {
-            installer.install(release)
-        } catch (_: InvalidExtensionArchiveException) {
-            return error(422, "invalid_extension_archive")
-        }
-        try {
-            registry.install(installed.record)
-        } catch (_: IllegalStateException) {
-            installed.directory.deleteRecursively()
-            return error(409, "extension_already_installed")
-        } catch (_: Exception) {
-            installed.directory.deleteRecursively()
-            return error(500, "extension_registry_write_failed")
-        }
-        val displayName = readDisplayName(installed.directory) ?: installed.record.folderName
-        return HttpResponse.json(200, gson.toJson(JsonObject().apply {
-            addProperty("display_name", displayName)
-            addProperty("extensionPath", "/scripts/extensions/third-party/${installed.record.folderName}")
-            addProperty("folderName", installed.record.folderName)
-        }))
     }
 
-    fun version(body: String): HttpResponse {
+    override fun version(body: String): HttpResponse {
         val request = parseObject(body) ?: return error(400, "invalid_extension_request")
         if (request.unsupportedGlobal()) return error(400, "global_extensions_not_supported")
         val record = findRecord(request) ?: return error(404, "extension_not_found")
@@ -95,58 +80,73 @@ class ExtensionController(
         }))
     }
 
-    fun update(body: String): HttpResponse {
+    override fun update(body: String): HttpResponse {
         val request = parseObject(body) ?: return error(400, "invalid_extension_request")
         if (request.unsupportedGlobal()) return error(400, "global_extensions_not_supported")
-        val record = findRecord(request) ?: return error(404, "extension_not_found")
-        val release = try {
-            source.resolve(record.repositoryUrl, record.branch)
-        } catch (_: IllegalArgumentException) {
-            return error(400, "invalid_github_repository")
-        } catch (_: ExtensionSourceException) {
-            return error(502, "extension_source_unavailable")
-        }
-        if (record.commitSha == release.commitSha) {
-            release.archive.close()
-            return updateResponse(record.commitSha, true)
-        }
-        val installed = try {
-            installer.install(release, replacing = record)
-        } catch (_: InvalidExtensionArchiveException) {
-            return error(422, "invalid_extension_archive")
-        }
-        return try {
-            registry.update(installed.record)
-            updateResponse(installed.record.commitSha, false)
-        } catch (_: Exception) {
-            error(500, "extension_registry_write_failed")
+        return mutationResponse {
+            val folderName = requestedFolderName(request)
+                ?: return@mutationResponse error(404, "extension_not_found")
+            val record = coordinator.findRecordForMutation(folderName)
+                ?: return@mutationResponse error(404, "extension_not_found")
+            val release = resolve(record.repositoryUrl, record.branch)
+            installer.prepare(release, replacing = record).use { prepared ->
+                val updated = coordinator.update(record, prepared)
+                updateResponse(updated.commitSha, updated.commitSha == record.commitSha)
+            }
         }
     }
 
-    fun delete(body: String): HttpResponse {
+    override fun delete(body: String): HttpResponse {
         val request = parseObject(body) ?: return error(400, "invalid_extension_request")
         if (request.unsupportedGlobal()) return error(400, "global_extensions_not_supported")
-        val record = findRecord(request) ?: return error(404, "extension_not_found")
-        val directory = paths.extensionsDir.resolve(record.folderName)
-        if (directory.exists() && !directory.deleteRecursively()) {
-            return error(500, "extension_delete_failed")
-        }
-        return try {
-            registry.remove(record.folderName)
+        return mutationResponse {
+            val folderName = requestedFolderName(request)
+                ?: return@mutationResponse error(404, "extension_not_found")
+            val record = coordinator.findRecordForMutation(folderName)
+                ?: return@mutationResponse error(404, "extension_not_found")
+            coordinator.delete(record)
             HttpResponse.json(200, "{}")
-        } catch (_: Exception) {
-            error(500, "extension_registry_write_failed")
         }
+    }
+
+    private fun resolve(url: String, branch: String?): ExtensionRelease = try {
+        source.resolve(url, branch)
+    } catch (exception: IllegalArgumentException) {
+        throw InvalidGitHubRepositoryException(exception)
+    }
+
+    private fun mutationResponse(block: () -> HttpResponse): HttpResponse = try {
+        block()
+    } catch (_: InvalidGitHubRepositoryException) {
+        error(400, "invalid_github_repository")
+    } catch (_: ExtensionAlreadyInstalledException) {
+        error(409, "extension_already_installed")
+    } catch (_: ExtensionOperationConflictException) {
+        error(409, "extension_operation_conflict")
+    } catch (_: InvalidExtensionArchiveException) {
+        error(422, "invalid_extension_archive")
+    } catch (_: ExtensionArchiveTransportException) {
+        error(502, "extension_source_unavailable")
+    } catch (_: ExtensionSourceException) {
+        error(502, "extension_source_unavailable")
+    } catch (_: ExtensionRegistryWriteException) {
+        error(500, "extension_registry_write_failed")
+    } catch (_: ExtensionTransactionException) {
+        error(500, "extension_transaction_failed")
+    } catch (_: ExtensionRecoveryRequiredException) {
+        error(503, "extension_recovery_required")
     }
 
     private fun findRecord(request: JsonObject): ExtensionRecord? {
-        val folderName = request.stringValue("extensionName")
+        val folderName = requestedFolderName(request) ?: return null
+        return registry.find(folderName)
+    }
+
+    private fun requestedFolderName(request: JsonObject): String? =
+        request.stringValue("extensionName")
             .removePrefix("third-party/")
             .removePrefix("/")
             .takeIf(String::isNotBlank)
-            ?: return null
-        return registry.find(folderName)
-    }
 
     private fun updateResponse(commitSha: String, isUpToDate: Boolean): HttpResponse =
         HttpResponse.json(200, gson.toJson(JsonObject().apply {
@@ -155,13 +155,10 @@ class ExtensionController(
             addProperty("commitHash", commitSha)
         }))
 
-    private fun readDisplayName(directory: java.io.File): String? = try {
+    private fun readDisplayName(directory: java.io.File): String? =
         JsonParser.parseString(directory.resolve("manifest.json").readText()).asJsonObject
             .stringValue("display_name")
             .takeIf(String::isNotBlank)
-    } catch (_: Exception) {
-        null
-    }
 
     private fun JsonObject.unsupportedGlobal(): Boolean {
         val value = get("global") ?: return false
@@ -193,4 +190,7 @@ class ExtensionController(
             "memory"
         )
     }
+
+    private class InvalidGitHubRepositoryException(cause: IllegalArgumentException) :
+        IllegalArgumentException(cause)
 }
