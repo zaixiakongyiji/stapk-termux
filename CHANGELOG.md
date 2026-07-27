@@ -1,5 +1,17 @@
 # 更新日志
 
+## v0.3.1 - 扩展下载稳定性修复 (2026-07-27)
+
+本版本修复真机在较慢网络下安装大型 GitHub 扩展时，下载超过 OkHttp 默认 10 秒读取超时后失败的问题。
+
+### 修复内容
+
+- 为扩展 GitHub 下载链路设置独立且有上限的超时：连接 20 秒、读取 120 秒、写入 20 秒、单次调用 180 秒。
+- 对 metadata、commit、archive redirect、archive download 和 archive read 阶段进行分类诊断，便于区分失败位置。
+- 扩展源失败日志仅记录操作、阶段和异常类型，不记录仓库 URL、响应正文、压缩包内容或异常消息。
+- 严格校验 GitHub 返回的 `default_branch` 与 commit `sha` 字段，统一包装读取中断和无效响应。
+- 保持现有扩展事务、回滚机制和 `502 extension_source_unavailable` API 合同不变。
+
 ## v0.3.0 - 无 Node 原生正式版 (2026-07-25)
 
 stAPK 0.3.0 正式版将 SillyTavern 官方 Web UI 与 Android 原生兼容后端整合为不含 Node.js 运行时的单用户 APK，并完成移动端导入、流式传输与扩展事务恢复的正式验收。

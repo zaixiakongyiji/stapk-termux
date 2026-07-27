@@ -2,11 +2,11 @@
 
 > 将 SillyTavern 转换为无 Node.js 运行时的 Android 原生应用。
 
-[下载 v0.3.0](https://github.com/zaixiakongyiji/stapk-termux/releases/tag/v0.3.0) · [查看更新日志](CHANGELOG.md) · [查看设计文档](docs/superpowers/specs/2026-07-09-stapk-no-node-native-adapter-design.md)
+[下载 v0.3.1](https://github.com/zaixiakongyiji/stapk-termux/releases/tag/v0.3.1) · [查看更新日志](CHANGELOG.md) · [查看设计文档](docs/superpowers/specs/2026-07-09-stapk-no-node-native-adapter-design.md)
 
 stAPK Mobile 把 [SillyTavern](https://github.com/SillyTavern/SillyTavern) 官方 Web UI 转换成一个可直接安装的 Android APK。APK 运行时不内置 Node.js、npm、`node_modules` 或 `server.js`；Android 侧通过 WebView 加载转换后的静态资源，并由 Kotlin 原生 HTTP 兼容后端提供单用户核心接口。
 
-> `v0.3.0` 是首个 no-node 正式版，按全新安装交付。0.2.x 数据不会自动迁移，请在替换旧版本前先导出需要保留的数据。
+> `v0.3.1` 是当前 no-node 正式版，按全新安装交付。0.2.x 数据不会自动迁移，请在替换旧版本前先导出需要保留的数据。
 
 旧的 0.2.x Node runtime 方案仅保留在 Git 历史中。当前开发以 [no-node 原生适配设计](docs/superpowers/specs/2026-07-09-stapk-no-node-native-adapter-design.md) 和 [单用户功能完成计划](docs/plan/2026-07-12-stapk-single-user-feature-completion-plan.md) 为准。
 
@@ -94,13 +94,13 @@ stAPK Mobile 把 [SillyTavern](https://github.com/SillyTavern/SillyTavern) 官�
 
 ## 下载
 
-前往 [Releases](https://github.com/zaixiakongyiji/stapk-termux/releases) 页面下载 APK。当前正式版为 [v0.3.0](https://github.com/zaixiakongyiji/stapk-termux/releases/tag/v0.3.0)。
+前往 [Releases](https://github.com/zaixiakongyiji/stapk-termux/releases) 页面下载 APK。当前正式版为 [v0.3.1](https://github.com/zaixiakongyiji/stapk-termux/releases/tag/v0.3.1)。
 
 | 要求 | 说明 |
 |------|------|
 | Android 版本 | 7.0+ (API 24+) |
 | APK 类型 | 通用 APK；不包含 native runtime，不按 CPU ABI 拆包 |
-| 安装方式 | 0.3.0 建议全新安装，暂不自动迁移 0.2.x 数据 |
+| 安装方式 | 0.3.1 建议全新安装，暂不自动迁移 0.2.x 数据 |
 | 存储空间 | APK 约 25 MB，另需保存角色、聊天、扩展和媒体数据的空间 |
 
 ## 构建
@@ -138,8 +138,8 @@ Release 可通过仓库变量 `SILLYTAVERN_REF` 固定上游 tag/commit；未设
 
 ```bash
 git push origin master
-git tag -a v0.3.0 -m "release: 发布 stAPK 0.3.0"
-git push origin v0.3.0
+git tag -a v0.3.1 -m "release: 发布 stAPK 0.3.1"
+git push origin v0.3.1
 ```
 
 详细说明见 [GitHub 自动构建与发版](docs/reference/github-release-automation.md)。
