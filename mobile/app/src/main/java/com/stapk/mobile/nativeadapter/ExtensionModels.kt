@@ -85,16 +85,39 @@ fun interface ExtensionSource {
     fun resolve(url: String, branch: String?): ExtensionRelease
 }
 
-open class ExtensionSourceException(message: String, cause: Throwable? = null) : IOException(message, cause)
+enum class ExtensionSourcePhase(val diagnosticValue: String) {
+    UNKNOWN("unknown"),
+    METADATA("metadata"),
+    COMMIT("commit"),
+    ARCHIVE_REDIRECT("archive_redirect"),
+    ARCHIVE_DOWNLOAD("archive_download"),
+    ARCHIVE_READ("archive_read")
+}
 
-class ExtensionHttpException(val statusCode: Int) :
-    ExtensionSourceException("GitHub request failed with HTTP $statusCode")
+open class ExtensionSourceException(
+    message: String,
+    cause: Throwable? = null,
+    val phase: ExtensionSourcePhase = ExtensionSourcePhase.UNKNOWN
+) : IOException(message, cause)
 
-class ExtensionRedirectException(message: String) : ExtensionSourceException(message)
+class ExtensionHttpException(
+    val statusCode: Int,
+    phase: ExtensionSourcePhase = ExtensionSourcePhase.UNKNOWN
+) : ExtensionSourceException("GitHub request failed with HTTP $statusCode", phase = phase)
 
-class ExtensionDownloadTooLargeException : ExtensionSourceException("Extension archive exceeds download limit")
+class ExtensionRedirectException(
+    message: String,
+    phase: ExtensionSourcePhase = ExtensionSourcePhase.UNKNOWN
+) : ExtensionSourceException(message, phase = phase)
 
-class ExtensionArchiveTransportException(cause: IOException) :
-    ExtensionSourceException("Unable to read extension archive", cause)
+class ExtensionDownloadTooLargeException(
+    phase: ExtensionSourcePhase = ExtensionSourcePhase.UNKNOWN
+) : ExtensionSourceException("Extension archive exceeds download limit", phase = phase)
+
+class ExtensionArchiveTransportException(cause: IOException) : ExtensionSourceException(
+    "Unable to read extension archive",
+    cause,
+    ExtensionSourcePhase.ARCHIVE_READ
+)
 
 class InvalidExtensionArchiveException(message: String, cause: Throwable? = null) : IOException(message, cause)

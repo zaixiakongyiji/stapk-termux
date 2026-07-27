@@ -17,7 +17,8 @@ class ExtensionController(
         registry,
         ExtensionTransactionJournal(paths),
         ExtensionDirectoryQuarantine(paths)
-    )
+    ),
+    private val diagnosticLogger: DiagnosticLogger? = null
 ) : ExtensionRoutes {
     private val gson = GsonBuilder().disableHtmlEscaping().create()
 
@@ -44,7 +45,7 @@ class ExtensionController(
         val url = request.stringValue("url").takeIf(String::isNotBlank)
             ?: return error(400, "invalid_extension_request")
         val branch = request.stringValue("branch").takeIf(String::isNotBlank)
-        return mutationResponse {
+        return mutationResponse("install") {
             coordinator.requireRecoveryReady()
             val release = resolve(url, branch)
             installer.prepare(release).use { prepared ->
@@ -68,7 +69,8 @@ class ExtensionController(
             source.resolve(record.repositoryUrl, record.branch)
         } catch (_: IllegalArgumentException) {
             return error(400, "invalid_github_repository")
-        } catch (_: ExtensionSourceException) {
+        } catch (exception: ExtensionSourceException) {
+            recordSourceFailure("version", exception)
             return error(502, "extension_source_unavailable")
         }
         release.archive.close()
@@ -83,7 +85,7 @@ class ExtensionController(
     override fun update(body: String): HttpResponse {
         val request = parseObject(body) ?: return error(400, "invalid_extension_request")
         if (request.unsupportedGlobal()) return error(400, "global_extensions_not_supported")
-        return mutationResponse {
+        return mutationResponse("update") {
             val folderName = requestedFolderName(request)
                 ?: return@mutationResponse error(404, "extension_not_found")
             val record = coordinator.findRecordForMutation(folderName)
@@ -99,7 +101,7 @@ class ExtensionController(
     override fun delete(body: String): HttpResponse {
         val request = parseObject(body) ?: return error(400, "invalid_extension_request")
         if (request.unsupportedGlobal()) return error(400, "global_extensions_not_supported")
-        return mutationResponse {
+        return mutationResponse("delete") {
             val folderName = requestedFolderName(request)
                 ?: return@mutationResponse error(404, "extension_not_found")
             val record = coordinator.findRecordForMutation(folderName)
@@ -115,7 +117,10 @@ class ExtensionController(
         throw InvalidGitHubRepositoryException(exception)
     }
 
-    private fun mutationResponse(block: () -> HttpResponse): HttpResponse = try {
+    private fun mutationResponse(
+        operation: String,
+        block: () -> HttpResponse
+    ): HttpResponse = try {
         block()
     } catch (_: InvalidGitHubRepositoryException) {
         error(400, "invalid_github_repository")
@@ -125,9 +130,8 @@ class ExtensionController(
         error(409, "extension_operation_conflict")
     } catch (_: InvalidExtensionArchiveException) {
         error(422, "invalid_extension_archive")
-    } catch (_: ExtensionArchiveTransportException) {
-        error(502, "extension_source_unavailable")
-    } catch (_: ExtensionSourceException) {
+    } catch (exception: ExtensionSourceException) {
+        recordSourceFailure(operation, exception)
         error(502, "extension_source_unavailable")
     } catch (_: ExtensionRegistryWriteException) {
         error(500, "extension_registry_write_failed")
@@ -135,6 +139,24 @@ class ExtensionController(
         error(500, "extension_transaction_failed")
     } catch (_: ExtensionRecoveryRequiredException) {
         error(503, "extension_recovery_required")
+    }
+
+    private fun recordSourceFailure(operation: String, exception: ExtensionSourceException) {
+        var rootCause: Throwable = exception
+        while (rootCause.cause != null && rootCause.cause !== rootCause) {
+            rootCause = rootCause.cause!!
+        }
+        runCatching {
+            diagnosticLogger?.event(
+                DiagnosticArea.HTTP,
+                "extension_source_failed",
+                mapOf(
+                    "operation" to operation,
+                    "phase" to exception.phase.diagnosticValue,
+                    "errorClass" to rootCause.javaClass.name
+                )
+            )
+        }
     }
 
     private fun findRecord(request: JsonObject): ExtensionRecord? {

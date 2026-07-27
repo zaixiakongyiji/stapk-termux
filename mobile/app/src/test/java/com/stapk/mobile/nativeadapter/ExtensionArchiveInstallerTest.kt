@@ -140,6 +140,7 @@ class ExtensionArchiveInstallerTest {
         }
 
         assertTrue(failure is ExtensionSourceException)
+        assertEquals(ExtensionSourcePhase.ARCHIVE_READ, failure.phase)
         assertTrue(archive.closed)
         assertTrue(paths.extensionsDir.listFiles().orEmpty().isEmpty())
     }

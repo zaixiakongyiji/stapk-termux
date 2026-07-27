@@ -35,7 +35,8 @@ internal fun createExtensionSubsystem(
         registry,
         GitHubExtensionClient(),
         ExtensionArchiveInstaller(paths),
-        coordinator
+        coordinator,
+        diagnosticLogger
     )
     return ExtensionSubsystem(controller, recoveryResult)
 }

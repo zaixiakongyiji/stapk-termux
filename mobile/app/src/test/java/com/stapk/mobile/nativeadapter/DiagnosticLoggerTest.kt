@@ -151,6 +151,62 @@ class DiagnosticLoggerTest {
     }
 
     @Test
+    fun `extension source diagnostics keep only operation phase and error class`() {
+        val logsDir = Files.createTempDirectory("stapk-diagnostics-extension-source").toFile()
+        val logger = DiagnosticLogger(logsDir)
+
+        logger.event(
+            DiagnosticArea.HTTP,
+            "extension_source_failed",
+            mapOf(
+                "operation" to "version",
+                "phase" to "archive_download",
+                "errorClass" to "java.net.SocketTimeoutException",
+                "repository" to "private-owner/private-repository",
+                "url" to "https://github.com/private-owner/private-repository",
+                "message" to "private network details"
+            )
+        )
+
+        val text = logsDir.resolve("diagnostics.jsonl").readText()
+        val fields = JsonParser.parseString(text.trim()).asJsonObject.getAsJsonObject("fields")
+        assertEquals(setOf("operation", "phase", "errorClass"), fields.keySet())
+        assertEquals("version", fields.get("operation").asString)
+        assertEquals("archive_download", fields.get("phase").asString)
+        assertEquals("java.net.SocketTimeoutException", fields.get("errorClass").asString)
+        assertFalse(text.contains("private-owner"))
+        assertFalse(text.contains("private-repository"))
+        assertFalse(text.contains("private network details"))
+    }
+
+    @Test
+    fun `extension source diagnostics retain unknown phase without allowing it for transactions`() {
+        val logsDir = Files.createTempDirectory("stapk-diagnostics-extension-source-unknown").toFile()
+        val logger = DiagnosticLogger(logsDir)
+
+        logger.event(
+            DiagnosticArea.HTTP,
+            "extension_source_failed",
+            mapOf(
+                "operation" to "install",
+                "phase" to "unknown",
+                "errorClass" to "com.stapk.mobile.nativeadapter.ExtensionSourceException"
+            )
+        )
+        logger.event(
+            DiagnosticArea.STORAGE,
+            "extension_transaction_invalid",
+            mapOf("operation" to "install", "phase" to "unknown")
+        )
+
+        val events = logsDir.resolve("diagnostics.jsonl").readLines().map {
+            JsonParser.parseString(it).asJsonObject.getAsJsonObject("fields")
+        }
+        assertEquals("unknown", events[0].get("phase").asString)
+        assertFalse(events[1].has("phase"))
+    }
+
+    @Test
     fun `invalid extension transaction metadata is dropped`() {
         val logsDir = Files.createTempDirectory("stapk-diagnostics-invalid-extension-transaction").toFile()
         val logger = DiagnosticLogger(logsDir)

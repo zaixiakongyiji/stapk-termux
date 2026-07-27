@@ -32,7 +32,7 @@ class DiagnosticLogger(
             addProperty("code", code)
             add("fields", JsonObject().apply {
                 fields.toSortedMap().forEach { (key, value) ->
-                    sanitizeField(key, value)?.let { addProperty(key, it) }
+                    sanitizeField(code, key, value)?.let { addProperty(key, it) }
                 }
             })
         }.toString() + "\n"
@@ -49,7 +49,7 @@ class DiagnosticLogger(
         }
     }
 
-    private fun sanitizeField(key: String, value: String): String? = when (key) {
+    private fun sanitizeField(code: String, key: String, value: String): String? = when (key) {
         "method" -> value.takeIf { METHOD.matches(it) }
         "path" -> sanitizePath(value)
         "status" -> value.toIntOrNull()?.takeIf { it in 100..599 }?.toString()
@@ -61,7 +61,13 @@ class DiagnosticLogger(
         "errorClass" -> value.takeIf { ERROR_CLASS.matches(it) }
         "sha256" -> value.lowercase().takeIf { SHA256.matches(it) }
         "operation" -> value.takeIf { it in EXTENSION_OPERATIONS }
-        "phase" -> value.takeIf { it in EXTENSION_PHASES }
+        "phase" -> value.takeIf {
+            it in if (code == "extension_source_failed") {
+                EXTENSION_SOURCE_PHASES
+            } else {
+                EXTENSION_TRANSACTION_PHASES
+            }
+        }
         "folder" -> value.takeIf { EXTENSION_FOLDER.matches(it) }
         "result" -> value.takeIf { CODE.matches(it) }
         "recoveredCount", "quarantinedCount" ->
@@ -103,8 +109,20 @@ class DiagnosticLogger(
         val ERROR_CLASS = Regex("[A-Za-z_$][A-Za-z0-9_$.]{0,159}")
         val SHA256 = Regex("[a-f0-9]{64}")
         val PROVIDER_STREAM_TERMINALS = setOf("completed", "canceled", "read_error")
-        val EXTENSION_OPERATIONS = setOf("install", "update", "delete")
-        val EXTENSION_PHASES = setOf("prepared", "files_activated", "registry_committed")
+        val EXTENSION_OPERATIONS = setOf("install", "update", "delete", "version")
+        val EXTENSION_TRANSACTION_PHASES = setOf(
+            "prepared",
+            "files_activated",
+            "registry_committed"
+        )
+        val EXTENSION_SOURCE_PHASES = setOf(
+            "unknown",
+            "metadata",
+            "commit",
+            "archive_redirect",
+            "archive_download",
+            "archive_read"
+        )
         val EXTENSION_FOLDER = Regex("[A-Za-z0-9][A-Za-z0-9._-]{0,119}")
     }
 }

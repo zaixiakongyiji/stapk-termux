@@ -18,6 +18,7 @@ import org.junit.Test
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.net.HttpURLConnection
+import java.net.SocketTimeoutException
 import java.net.URL
 import java.nio.file.Files
 import java.util.concurrent.CountDownLatch
@@ -113,6 +114,52 @@ class ExtensionControllerTest {
         )
         assertEquals(422, invalidArchive.install("""{"url":"https://github.com/owner/repo"}""").statusCode)
         assertEquals(400, invalid.install("{invalid").statusCode)
+    }
+
+    @Test
+    fun `records safe source failure diagnostics for install and version`() {
+        val paths = paths("source-diagnostics")
+        val registry = ExtensionRegistry(paths)
+        val logger = DiagnosticLogger(paths.logsDir)
+        val source = ExtensionSource { _, _ ->
+            throw ExtensionSourceException(
+                "private-owner private-repository request failed",
+                SocketTimeoutException("private network details"),
+                ExtensionSourcePhase.ARCHIVE_DOWNLOAD
+            )
+        }
+        val controller = ExtensionController(
+            paths,
+            registry,
+            source,
+            ExtensionArchiveInstaller(paths),
+            coordinator(paths, registry),
+            diagnosticLogger = logger
+        )
+
+        assertError(controller.install(INSTALL_BODY), 502, "extension_source_unavailable")
+        registry.install(record("old"))
+        assertError(controller.version(UPDATE_BODY), 502, "extension_source_unavailable")
+
+        val text = paths.logsDir.resolve("diagnostics.jsonl").readText()
+        val events = text.lineSequence().filter(String::isNotBlank).map {
+            JsonParser.parseString(it).asJsonObject
+        }.toList()
+        assertEquals(2, events.size)
+        assertEquals(listOf("install", "version"), events.map {
+            it.getAsJsonObject("fields").get("operation").asString
+        })
+        events.forEach { event ->
+            val fields = event.getAsJsonObject("fields")
+            assertEquals("HTTP", event.get("area").asString)
+            assertEquals("extension_source_failed", event.get("code").asString)
+            assertEquals("archive_download", fields.get("phase").asString)
+            assertEquals("java.net.SocketTimeoutException", fields.get("errorClass").asString)
+        }
+        assertFalse(text.contains("private-owner"))
+        assertFalse(text.contains("private-repository"))
+        assertFalse(text.contains("private network details"))
+        assertFalse(text.contains("github.com"))
     }
 
     @Test
