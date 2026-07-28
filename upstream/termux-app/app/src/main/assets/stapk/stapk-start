@@ -1,7 +1,0 @@
-#!/data/data/com.stapk.termux/files/usr/bin/bash
-# stAPK Start - 兼容入口，实际交给托管运行时
-set -euo pipefail
-
-echo "DEPRECATED_DIRECT_START"
-echo "请通过 stAPK 控制面板启动托管运行时"
-exec "$PREFIX/bin/stapk-runtime"

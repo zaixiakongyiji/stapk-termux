@@ -6,14 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 stAPK Mobile 的当前 0.3.0 主线是把 [SillyTavern](https://github.com/SillyTavern/SillyTavern) 的官方 Web UI 转换成一个不包含 Node.js 运行时的 Android 原生应用。APK 运行时只包含 WebView、静态前端资源、Kotlin/Java 本地 HTTP 兼容后端、用户数据和模型设置；Node.js 只允许作为构建期工具存在。
 
-旧的 0.2.x 路线是“APK 内置私有 Node.js + `payload.tgz` + `node server.js` + WebView”。这条路线保留为历史实现和迁移来源，不再作为新功能的默认扩展方向。
-
-## Active codebase vs. legacy
-
-- **`mobile/`** — the current, active Android app (package `com.stapk.mobile`, Kotlin). **All current runtime work happens here.**
-- **`upstream/termux-app/`** — the legacy v0.1.x approach: a fork of Termux v0.118.3 (package `com.stapk.termux`) that ran SillyTavern via `stapk-*` shell scripts. **Abandoned in the v0.2.0 native rewrite.** `AGENTS.md` documents this old approach and is largely stale — trust `mobile/` source and `docs/superpowers/specs/2026-06-25-stapk-transformer-design.md` over AGENTS.md.
-
-When asked to change app behavior, work in `mobile/` unless explicitly told otherwise.
+所有当前运行时开发均在 `mobile/` 中进行；不要重新引入旧的 APK 内置 Node.js、payload archive 或 `node server.js` 路线。
 
 ## Build & test
 
@@ -48,9 +41,9 @@ Build config: `compileSdk=34`, `minSdk=24`, current `targetSdk=28`. ABI is `arm6
 - **`TavernWebViewClient.kt` / `StapkFileBridge.kt`** — 限定 loopback 主文档、外部 HTTPS 跳转和带 nonce 的 SAF bridge。
 - **`mobile/app/src/main/assets/`** — 只包含 no-node Web 资产、API contract、capability runtime、manifest 和 transform report，不得重新加入 runtime archive 或 payload tar。
 
-## Payload generation (legacy scripts in `scripts/`)
+## Payload generation
 
-`scripts/prepare-sillytavern-payload.sh` and `scripts/stapk-transform.mjs` belong to the older Node payload direction. They remain useful as references for reproducible upstream checkout, patch queue handling, and manifest generation, but the active 0.3.0 route is the no-node transform pipeline defined in `docs/plan/2026-07-09-stapk-no-node-native-adapter-implementation-plan.md`.
+当前构建期转换由 `scripts/stapk-transform-no-node.mjs` 和 `scripts/stapk-build-no-node-apk.mjs` 负责。不要重新引入 Node runtime、payload archive 或运行时解压流程。
 
 ## Known constraints / gotchas
 

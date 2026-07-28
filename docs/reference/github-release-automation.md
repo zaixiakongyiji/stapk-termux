@@ -20,8 +20,6 @@ GitHub 只会识别仓库根目录下的工作流：
 - `.github/workflows/ci.yml`
 - `.github/workflows/release.yml`
 
-`upstream/termux-app/.github/workflows/` 中的文件仅作为上游参考，不会直接驱动本仓库发版。
-
 ---
 
 ## 自动发版触发规则
@@ -65,8 +63,6 @@ GitHub Actions artifact 同时保留 APK 与转换证据，Release APK 直接来
 ---
 
 ## 大文件与转换产物约定
-
-旧 `upstream/termux-app/` 阶段使用的自定义 bootstrap 仍保留在历史目录中，但当前 `mobile/` 主线不再依赖它作为 Android App 工程入口。
 
 当前 `mobile/` 主线不再打包 Node.js runtime 或 SillyTavern payload。Web assets 由 no-node 转换器在构建期生成，CI/Release 不再下载历史 Termux LFS 资产。
 
@@ -199,7 +195,3 @@ git push origin v0.1.1
 ### 2. 自动发版发布通用 APK
 
 0.3.0 no-node 主线不包含 ABI 相关的 native runtime，APK 没有 `native-code` 限制，因此不再使用 `arm64-v8a` 后缀误导用户。
-
-### 3. 旧 Termux fork 发版说明只作历史参考
-
-`upstream/termux-app/`、bootstrap、Node.js runtime 和 `stapk-termux_...apk` 命名属于旧阶段。当前主线发版围绕 `mobile/`、`stapk-mobile_...apk`、no-node Web assets 和转换报告展开。

@@ -10,7 +10,7 @@
 
 ## 全局约束
 
-- 当前主线仅修改 `mobile/`，不得修改废弃的 `upstream/termux-app/`。
+- 当前主线仅修改 `mobile/`；已移除的 Termux 旧路线不再属于当前工作树。
 - `minSdk=24`、`compileSdk=34`、`targetSdk=28` 保持不变。
 - 不新增运行时 Node.js、npm、归档解包或全局明文网络权限。
 - 兼容逻辑覆盖角色卡、世界书、聊天记录等所有 `<input type="file">`，不得按业务类型写特例。

@@ -156,5 +156,4 @@ test('package workflows and LFS rules use the unified no-node build boundary', a
   }
   assert.ok(!attributes.includes('mobile/app/src/main/assets/payload.tgz'));
   assert.ok(!attributes.includes('mobile/app/src/main/assets/runtime-android-arm64-node'));
-  assert.ok(attributes.includes('upstream/termux-app/app/src/main/assets/SillyTavern.tar.gz'));
 });

@@ -1,15 +1,6 @@
 # ===== 构建产物 =====
 output/
 output-test/
-payload/SillyTavern.tar.gz
-payload/payload-manifest.json
-payload/work/
-upstream/termux-app/app/src/main/assets/SillyTavern.tar.gz
-upstream/termux-app/app/src/main/assets/payload-manifest.json
-upstream/termux-app/app/src/main/cpp/bootstrap-aarch64.zip*
-upstream/termux-app/app/src/main/cpp/*.zip
-!upstream/termux-app/app/src/main/assets/SillyTavern.tar.gz
-!upstream/termux-app/app/src/main/assets/payload-manifest.json
 
 # ===== IDE 和编辑器 =====
 .idea/
@@ -35,6 +26,7 @@ desktop.ini
 
 # ===== AI 工作流 =====
 .sisyphus/
+.omo/
 
 # ===== 开发内部文档 =====
 OPERATION_LOG.md
