@@ -62,8 +62,8 @@ test('build orchestrator runs strict gates in order and publishes six debug arti
     });
 
     assert.deepEqual(calls, [
-      `${nodeExecutable} --test --test-concurrency=1 test/no-node/alpha.test.mjs test/no-node/zeta.test.mjs`,
       `${nodeExecutable} scripts/stapk-transform-no-node.mjs --ref release --out ${path.join(root, 'build', 'no-node-payload')} --android-assets ${path.join(root, 'mobile', 'app', 'src', 'main', 'assets')} --clean`,
+      `${nodeExecutable} --test --test-concurrency=1 test/no-node/alpha.test.mjs test/no-node/zeta.test.mjs`,
       `${nodeExecutable} scripts/stapk-verify-no-node-transform.mjs --out ${path.join(root, 'build', 'no-node-payload')} --capabilities ${path.join(root, 'transform', 'no-node', 'capabilities.json')}`,
       `${nodeExecutable} scripts/stapk-verify-capability-contract.mjs --contract ${path.join(root, 'build', 'no-node-payload', 'api-contract.json')} --capabilities ${path.join(root, 'transform', 'no-node', 'capabilities.json')}`,
       'gradlew.bat --no-daemon :app:testDebugUnitTest',
@@ -111,6 +111,35 @@ test('build orchestrator preserves previous output when a strict gate fails', as
     assert.equal(await readFile(path.join(output, 'stapk-mobile-debug.apk'), 'utf8'), 'previous apk');
     await assert.rejects(access(path.join(output, 'stapk-mobile-debug.apk.sha256')));
     await assert.rejects(access(path.join(output, '.stapk-no-node-staging')));
+  });
+});
+
+test('build orchestrator forwards an optional upstream repo to transform', async () => {
+  await withTempProject(async (root) => {
+    const repo = 'file:///C:/cache/SillyTavern';
+    let firstCall;
+    const runCommand = async (command) => {
+      firstCall = command;
+      throw new Error('stop after transform command');
+    };
+
+    await assert.rejects(
+      buildNoNodeApk({
+        variant: 'debug',
+        ref: 'release',
+        repo,
+        projectRoot: root,
+        platform: 'win32',
+        runCommand
+      }),
+      /stop after transform command/
+    );
+
+    assert.deepEqual(firstCall.args.slice(0, 5), [
+      'scripts/stapk-transform-no-node.mjs',
+      '--repo', repo,
+      '--ref', 'release'
+    ]);
   });
 });
 

@@ -4,10 +4,7 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import java.io.File
 import java.io.FileOutputStream
-import java.nio.file.AtomicMoveNotSupportedException
-import java.nio.file.Files
-import java.nio.file.StandardCopyOption.ATOMIC_MOVE
-import java.nio.file.StandardCopyOption.REPLACE_EXISTING
+import java.io.IOException
 import java.security.MessageDigest
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
@@ -144,10 +141,20 @@ class AtomicFileStore private constructor(
         }
 
         private fun moveReplacing(source: File, target: File) {
+            if (!target.exists()) {
+                if (!source.renameTo(target)) throw IOException("Unable to replace ${target.name}")
+                return
+            }
+            val backup = File.createTempFile("${target.name}.", ".bak", requireNotNull(target.parentFile))
+            if (!backup.delete()) throw IOException("Unable to prepare replacement backup")
+            if (!target.renameTo(backup)) throw IOException("Unable to preserve ${target.name}")
             try {
-                Files.move(source.toPath(), target.toPath(), ATOMIC_MOVE, REPLACE_EXISTING)
-            } catch (_: AtomicMoveNotSupportedException) {
-                Files.move(source.toPath(), target.toPath(), REPLACE_EXISTING)
+                if (!source.renameTo(target)) throw IOException("Unable to replace ${target.name}")
+            } catch (error: Throwable) {
+                if (!backup.renameTo(target)) throw IOException("Unable to restore ${target.name}", error)
+                throw error
+            } finally {
+                if (backup.exists()) backup.delete()
             }
         }
     }

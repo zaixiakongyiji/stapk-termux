@@ -9,6 +9,7 @@ data class NativeAdapterPaths(private val filesDir: File) {
     val settingsFile: File = File(userConfigDir, "settings.json")
     val userProfileFile: File = File(userConfigDir, "user-profile.json")
     val providerConfigFile: File = File(userConfigDir, "provider-openai-compatible.json")
+    val embeddingProviderConfigFile: File = File(userConfigDir, "embedding-provider.json")
     val userDataDir: File = File(filesDir, "user_data")
     val exportsDir: File = File(userDataDir, "exports")
     val charactersDir: File = File(userDataDir, "characters")

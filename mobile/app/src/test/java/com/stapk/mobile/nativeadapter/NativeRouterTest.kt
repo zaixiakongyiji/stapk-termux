@@ -1,6 +1,7 @@
 package com.stapk.mobile.nativeadapter
 
 import com.google.gson.JsonParser
+import com.stapk.mobile.nativeadapter.vector.VectorRoutes
 import fi.iki.elonen.NanoHTTPD
 import fi.iki.elonen.NanoFileUpload
 import org.junit.Assert.assertEquals
@@ -26,6 +27,39 @@ import okhttp3.RequestBody
 import okio.BufferedSink
 
 class NativeRouterTest {
+    @Test
+    fun `injected vector routes accept only the supported POST endpoints`() {
+        val paths = NativeAdapterPaths(Files.createTempDirectory("stapk-vector-router").toFile())
+        val server = NativeHttpServer(paths, vectorRoutes = recordingVectorRoutes())
+        val pathsToExpectedBodies = mapOf(
+            "/api/vector/list" to "list",
+            "/api/vector/insert" to "insert",
+            "/api/vector/delete" to "delete",
+            "/api/vector/query" to "query",
+            "/api/vector/query-multi" to "query-multi",
+            "/api/vector/purge" to "purge",
+            "/api/vector/purge-all" to "purge-all",
+            "/api/stapk/embeddings/config/get" to "config-get",
+            "/api/stapk/embeddings/config/save" to "config-save",
+            "/api/stapk/embeddings/test" to "config-test"
+        )
+
+        server.start()
+        try {
+            pathsToExpectedBodies.forEach { (path, expected) ->
+                val (status, body) = post(server, path)
+                assertEquals(200, status)
+                assertEquals("{\"route\":\"$expected\"}", body)
+            }
+            val get = URL("http://127.0.0.1:${server.listeningPort}/api/vector/list").openConnection() as HttpURLConnection
+            get.requestMethod = "GET"
+            assertEquals(404, get.responseCode)
+            assertEquals(404, post(server, "/api/vector/missing").first)
+        } finally {
+            server.stop()
+        }
+    }
+
     @Test
     fun `JSON content type defaults to UTF-8 without overriding explicit charsets`() {
         assertEquals(
@@ -519,6 +553,21 @@ class NativeRouterTest {
         val status = connection.responseCode
         val stream = if (status >= 400) connection.errorStream else connection.inputStream
         return status to stream.bufferedReader().use { it.readText() }
+    }
+
+    private fun recordingVectorRoutes(): VectorRoutes = object : VectorRoutes {
+        override fun list(body: String): HttpResponse = route("list")
+        override fun insert(body: String): HttpResponse = route("insert")
+        override fun delete(body: String): HttpResponse = route("delete")
+        override fun query(body: String): HttpResponse = route("query")
+        override fun queryMulti(body: String): HttpResponse = route("query-multi")
+        override fun purge(body: String): HttpResponse = route("purge")
+        override fun purgeAll(): HttpResponse = route("purge-all")
+        override fun getConfig(): HttpResponse = route("config-get")
+        override fun saveConfig(body: String): HttpResponse = route("config-save")
+        override fun testConfig(): HttpResponse = route("config-test")
+
+        private fun route(name: String): HttpResponse = HttpResponse.json(200, "{\"route\":\"$name\"}")
     }
 
     private fun multipartBody(boundary: String, vararg parts: String): ByteArray =

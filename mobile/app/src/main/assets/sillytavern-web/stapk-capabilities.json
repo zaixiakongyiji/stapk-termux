@@ -12,7 +12,7 @@
     "core.tokenizers": true,
     "native.extensions": true,
     "core.data_management": true,
-    "remote.embeddings": false,
+    "remote.embeddings": true,
     "remote.image": false,
     "remote.tts": false,
     "remote.stt": false,

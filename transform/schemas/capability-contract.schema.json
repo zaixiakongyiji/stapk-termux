@@ -10,8 +10,8 @@
     "schemaVersion": { "const": 1 },
     "capabilities": {
       "type": "array",
-      "minItems": 19,
-      "maxItems": 19,
+      "minItems": 20,
+      "maxItems": 20,
       "items": { "$ref": "#/$defs/capability" }
     }
   },
@@ -27,6 +27,7 @@
         "core.backgrounds",
         "core.files",
         "core.tokenizers",
+        "native.extensions",
         "core.data_management",
         "remote.embeddings",
         "remote.image",
@@ -57,14 +58,18 @@
         },
         "uiPolicy": {
           "enum": ["visible_when_implemented", "visible_when_configured", "hidden"]
+        },
+        "runtimeAvailable": {
+          "type": "boolean"
         }
       },
       "allOf": [
         {
           "if": { "properties": { "kind": { "const": "core" } }, "required": ["kind"] },
           "then": {
+            "not": { "required": ["runtimeAvailable"] },
             "properties": {
-              "id": { "type": "string", "pattern": "^core\\." },
+              "id": { "type": "string", "pattern": "^(core|native)\\." },
               "defaultStatus": { "enum": ["implemented", "needs_review"] },
               "uiPolicy": { "const": "visible_when_implemented" }
             }
@@ -83,6 +88,7 @@
         {
           "if": { "properties": { "kind": { "const": "excluded" } }, "required": ["kind"] },
           "then": {
+            "not": { "required": ["runtimeAvailable"] },
             "properties": {
               "id": { "type": "string", "pattern": "^excluded\\." },
               "defaultStatus": { "const": "unsupported_hidden" },

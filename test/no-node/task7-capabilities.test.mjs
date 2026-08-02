@@ -78,7 +78,7 @@ test('formal assets implement local media endpoints and expose only supported sy
   assert.match(galleryScript, /id = 'show_gallery_wand_button'/);
   assert.match(galleryScript, /id: 'show_char_gallery'/);
   assert.match(mobileCss, /^\s*#extensions_settings \.extension_container:not\(#expressions_container\),?\s*$/m);
-  assert.match(mobileCss, /^\s*#extensions_settings2 \.extension_container:not\(#qr_container\):not\(#regex_container\):not\(#summarize_container\),?\s*$/m);
+  assert.match(mobileCss, /^\s*#extensions_settings2 \.extension_container:not\(#qr_container\):not\(#regex_container\):not\(#summarize_container\):not\(#vectors_container\),?\s*$/m);
   assert.doesNotMatch(mobileCss, /^\s*#extensions_settings,?\s*$/m);
   assert.match(expressionScript, /extension_settings\.expressions\.api = EXPRESSION_API\.none;/);
   assert.match(mobileCss, /^\s*label\[for="expression_override"\],?\s*$/m);

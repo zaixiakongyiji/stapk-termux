@@ -143,9 +143,11 @@
         "/api/openai/siliconflow/models/embedding",
         "/api/openai/workers-ai/models/embedding",
         "/api/openrouter/models/embedding",
-        "/api/vector"
+        "/api/vector",
+        "/api/stapk/embeddings"
       ],
-      "uiPolicy": "visible_when_configured"
+      "uiPolicy": "visible_when_configured",
+      "runtimeAvailable": true
     },
     {
       "id": "remote.image",

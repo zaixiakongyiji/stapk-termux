@@ -465,7 +465,7 @@ test('complete scanner scans regression assets without hanging', { timeout: 15_0
   const webRoot = path.resolve('mobile/app/src/main/assets/sillytavern-web');
   const assetFiles = [
     'scripts/extensions/gallery/jquery.nanogallery2.min.js',
-    'scripts/extensions/tts/lib/kokoro.web.js',
+    'scripts/extensions/tts/index.js',
     'script.js'
   ].map((file) => path.join(webRoot, ...file.split('/')));
   const timings = await scanAssetsInWorker(assetFiles, 10_000);

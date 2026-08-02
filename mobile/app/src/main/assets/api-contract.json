@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-07-24T18:16:57.274Z",
+  "generatedAt": "2026-08-02T17:45:32.837Z",
   "upstream": {
     "ref": "release",
     "commit": "8172dcd0ee672d3cd9a5e5f7af134f91a45cd2b8",
@@ -437,7 +437,7 @@
       "sourceLocations": [
         {
           "file": "scripts/extensions/vectors/index.js",
-          "line": 1455,
+          "line": 1465,
           "expression": "/api/backends/kobold/embed"
         }
       ]
@@ -2815,7 +2815,7 @@
       "sourceLocations": [
         {
           "file": "scripts/extensions/vectors/index.js",
-          "line": 155,
+          "line": 157,
           "expression": "/api/openai/chutes/models/embedding"
         }
       ]
@@ -2878,7 +2878,7 @@
         },
         {
           "file": "scripts/extensions/vectors/index.js",
-          "line": 168,
+          "line": 170,
           "expression": "/api/openai/electronhub/models"
         }
       ]
@@ -2954,7 +2954,7 @@
       "sourceLocations": [
         {
           "file": "scripts/extensions/vectors/index.js",
-          "line": 162,
+          "line": 164,
           "expression": "/api/openai/nanogpt/models/embedding"
         }
       ]
@@ -2973,7 +2973,7 @@
       "sourceLocations": [
         {
           "file": "scripts/extensions/vectors/index.js",
-          "line": 181,
+          "line": 183,
           "expression": "/api/openai/siliconflow/models/embedding"
         }
       ]
@@ -2992,7 +2992,7 @@
       "sourceLocations": [
         {
           "file": "scripts/extensions/vectors/index.js",
-          "line": 187,
+          "line": 189,
           "expression": "/api/openai/workers-ai/models/embedding"
         }
       ]
@@ -3049,7 +3049,7 @@
       "sourceLocations": [
         {
           "file": "scripts/extensions/vectors/index.js",
-          "line": 175,
+          "line": 177,
           "expression": "/api/openrouter/models/embedding"
         }
       ]
@@ -5015,6 +5015,63 @@
     },
     {
       "method": "POST",
+      "path": "/api/stapk/embeddings/config/get",
+      "status": "implemented",
+      "capability": "remote.embeddings",
+      "exposure": "visible_when_configured",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/vectors/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/vectors/index.js",
+          "line": 1253,
+          "expression": "/api/stapk/embeddings/config/get"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/stapk/embeddings/config/save",
+      "status": "implemented",
+      "capability": "remote.embeddings",
+      "exposure": "visible_when_configured",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/vectors/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/vectors/index.js",
+          "line": 1281,
+          "expression": "/api/stapk/embeddings/config/save"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/stapk/embeddings/test",
+      "status": "implemented",
+      "capability": "remote.embeddings",
+      "exposure": "visible_when_configured",
+      "inferredMethod": true,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/vectors/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/vectors/index.js",
+          "line": 1800,
+          "expression": "/api/stapk/embeddings/test"
+        }
+      ]
+    },
+    {
+      "method": "POST",
       "path": "/api/stapk/exports/create",
       "status": "implemented",
       "capability": "core.files",
@@ -5109,7 +5166,7 @@
         },
         {
           "file": "scripts/extensions/vectors/index.js",
-          "line": 324,
+          "line": 326,
           "expression": "/api/summarize"
         }
       ]
@@ -6567,7 +6624,7 @@
     {
       "method": "POST",
       "path": "/api/vector/delete",
-      "status": "external_optional",
+      "status": "implemented",
       "capability": "remote.embeddings",
       "exposure": "visible_when_configured",
       "inferredMethod": false,
@@ -6578,7 +6635,7 @@
       "sourceLocations": [
         {
           "file": "scripts/extensions/vectors/index.js",
-          "line": 1129,
+          "line": 1030,
           "expression": "/api/vector/delete"
         }
       ]
@@ -6586,7 +6643,88 @@
     {
       "method": "POST",
       "path": "/api/vector/insert",
-      "status": "external_optional",
+      "status": "implemented",
+      "capability": "remote.embeddings",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/vectors/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/vectors/index.js",
+          "line": 993,
+          "expression": "/api/vector/insert"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/vector/list",
+      "status": "implemented",
+      "capability": "remote.embeddings",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/vectors/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/vectors/index.js",
+          "line": 965,
+          "expression": "/api/vector/list"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/vector/purge",
+      "status": "implemented",
+      "capability": "remote.embeddings",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/vectors/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/vectors/index.js",
+          "line": 1120,
+          "expression": "/api/vector/purge"
+        },
+        {
+          "file": "scripts/extensions/vectors/index.js",
+          "line": 1151,
+          "expression": "/api/vector/purge"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/vector/purge-all",
+      "status": "implemented",
+      "capability": "remote.embeddings",
+      "exposure": "visible_when_configured",
+      "inferredMethod": false,
+      "dynamic": false,
+      "sourceFiles": [
+        "scripts/extensions/vectors/index.js"
+      ],
+      "sourceLocations": [
+        {
+          "file": "scripts/extensions/vectors/index.js",
+          "line": 1178,
+          "expression": "/api/vector/purge-all"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/vector/query",
+      "status": "implemented",
       "capability": "remote.embeddings",
       "exposure": "visible_when_configured",
       "inferredMethod": false,
@@ -6598,87 +6736,6 @@
         {
           "file": "scripts/extensions/vectors/index.js",
           "line": 1055,
-          "expression": "/api/vector/insert"
-        }
-      ]
-    },
-    {
-      "method": "POST",
-      "path": "/api/vector/list",
-      "status": "external_optional",
-      "capability": "remote.embeddings",
-      "exposure": "visible_when_configured",
-      "inferredMethod": false,
-      "dynamic": false,
-      "sourceFiles": [
-        "scripts/extensions/vectors/index.js"
-      ],
-      "sourceLocations": [
-        {
-          "file": "scripts/extensions/vectors/index.js",
-          "line": 1027,
-          "expression": "/api/vector/list"
-        }
-      ]
-    },
-    {
-      "method": "POST",
-      "path": "/api/vector/purge",
-      "status": "external_optional",
-      "capability": "remote.embeddings",
-      "exposure": "visible_when_configured",
-      "inferredMethod": false,
-      "dynamic": false,
-      "sourceFiles": [
-        "scripts/extensions/vectors/index.js"
-      ],
-      "sourceLocations": [
-        {
-          "file": "scripts/extensions/vectors/index.js",
-          "line": 1216,
-          "expression": "/api/vector/purge"
-        },
-        {
-          "file": "scripts/extensions/vectors/index.js",
-          "line": 1246,
-          "expression": "/api/vector/purge"
-        }
-      ]
-    },
-    {
-      "method": "POST",
-      "path": "/api/vector/purge-all",
-      "status": "external_optional",
-      "capability": "remote.embeddings",
-      "exposure": "visible_when_configured",
-      "inferredMethod": false,
-      "dynamic": false,
-      "sourceFiles": [
-        "scripts/extensions/vectors/index.js"
-      ],
-      "sourceLocations": [
-        {
-          "file": "scripts/extensions/vectors/index.js",
-          "line": 1272,
-          "expression": "/api/vector/purge-all"
-        }
-      ]
-    },
-    {
-      "method": "POST",
-      "path": "/api/vector/query",
-      "status": "external_optional",
-      "capability": "remote.embeddings",
-      "exposure": "visible_when_configured",
-      "inferredMethod": false,
-      "dynamic": false,
-      "sourceFiles": [
-        "scripts/extensions/vectors/index.js"
-      ],
-      "sourceLocations": [
-        {
-          "file": "scripts/extensions/vectors/index.js",
-          "line": 1153,
           "expression": "/api/vector/query"
         }
       ]
@@ -6686,7 +6743,7 @@
     {
       "method": "POST",
       "path": "/api/vector/query-multi",
-      "status": "external_optional",
+      "status": "implemented",
       "capability": "remote.embeddings",
       "exposure": "visible_when_configured",
       "inferredMethod": false,
@@ -6697,7 +6754,7 @@
       "sourceLocations": [
         {
           "file": "scripts/extensions/vectors/index.js",
-          "line": 1183,
+          "line": 1086,
           "expression": "/api/vector/query-multi"
         }
       ]
@@ -6799,8 +6856,8 @@
     }
   ],
   "summary": {
-    "implemented": 98,
-    "external_optional": 136,
+    "implemented": 108,
+    "external_optional": 129,
     "unsupported_hidden": 105,
     "needs_review": 0
   }

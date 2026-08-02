@@ -8,8 +8,24 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
 import java.nio.file.Files
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 class SecretStoreTest {
+    @Test
+    fun `embedding key is supported and always redacted in read state`() {
+        val paths = NativeAdapterPaths(Files.createTempDirectory("stapk-embedding-secret").toFile())
+        val store = SecretStore(paths)
+
+        store.write("api_key_embedding", "top-secret", "Embedding")
+
+        assertEquals("top-secret", store.load("api_key_embedding")?.value)
+        val state = JsonParser.parseString(store.readStateJson()).asJsonObject
+        assertEquals("********", state["api_key_embedding"].asJsonArray[0].asJsonObject["value"].asString)
+        assertFalse(store.readStateJson().contains("top-secret"))
+    }
+
     @Test
     fun `writes masked history with a single active secret`() {
         val paths = NativeAdapterPaths(Files.createTempDirectory("stapk-secret").toFile())
@@ -53,5 +69,34 @@ class SecretStoreTest {
         assertEquals("sk-legacy", store.load("api_key_openai")?.value)
         assertTrue(store.delete("api_key_openai", null))
         assertNull(store.load("api_key_openai"))
+    }
+
+    @Test
+    fun `separate store instances preserve concurrent updates`() {
+        val paths = NativeAdapterPaths(Files.createTempDirectory("stapk-secret-concurrent").toFile())
+        val first = SecretStore(paths)
+        val second = SecretStore(paths)
+        val ready = CountDownLatch(2)
+        val start = CountDownLatch(1)
+        val executor = Executors.newFixedThreadPool(2)
+
+        executor.execute {
+            ready.countDown()
+            start.await()
+            first.write("api_key_openai", "first-key", "First")
+        }
+        executor.execute {
+            ready.countDown()
+            start.await()
+            second.write("api_key_embedding", "second-key", "Second")
+        }
+        assertTrue(ready.await(5, TimeUnit.SECONDS))
+        start.countDown()
+        executor.shutdown()
+        assertTrue(executor.awaitTermination(5, TimeUnit.SECONDS))
+
+        val verifier = SecretStore(paths)
+        assertEquals("first-key", verifier.load("api_key_openai")?.value)
+        assertEquals("second-key", verifier.load("api_key_embedding")?.value)
     }
 }

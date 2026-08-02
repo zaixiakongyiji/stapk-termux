@@ -32,6 +32,28 @@ const UI_CAPABILITY_SOURCE = path.resolve('transform/no-node/ui-capabilities.jso
 const UI_CAPABILITY_RUNTIME_NAME = 'stapk-ui-capabilities.json';
 const ANDROID_METADATA_NAMES = [API_CONTRACT_NAME, MANIFEST_NAME, REPORT_NAME];
 const TRANSPARENT_PNG_BASE64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgQIAff6XWQAAAABJRU5ErkJggg==';
+const KNOWN_CAPABILITY_IDS = new Set([
+  'core.settings',
+  'core.personas',
+  'core.characters',
+  'core.groups',
+  'core.chats',
+  'core.world_info',
+  'core.backgrounds',
+  'core.files',
+  'core.tokenizers',
+  'native.extensions',
+  'core.data_management',
+  'remote.embeddings',
+  'remote.image',
+  'remote.tts',
+  'remote.stt',
+  'remote.caption',
+  'remote.translation',
+  'excluded.extensions',
+  'excluded.local_models',
+  'excluded.multiuser',
+]);
 
 export async function transformNoNode({ repo = DEFAULT_REPO, ref = 'release', out, clean = false }) {
   const absoluteOut = path.resolve(out);
@@ -84,7 +106,7 @@ export async function transformNoNode({ repo = DEFAULT_REPO, ref = 'release', ou
     schemaVersion: 1,
     generatedAt: new Date().toISOString(),
     upstream: {
-      repo,
+      repo: sanitizeSourceRepository(repo),
       ref,
       commit,
       ...(upstreamPackage?.version ? { version: upstreamPackage.version } : {})
@@ -154,11 +176,20 @@ export async function copyNoNodeWebSupportAssets({
   );
 }
 
+export function buildCapabilityRuntime({ capabilities }) {
+  const runtime = {};
+  for (const capability of Array.isArray(capabilities) ? capabilities : []) {
+    if (!capability || typeof capability.id !== 'string') continue;
+    const available = capability.kind === 'core'
+      || (capability.kind === 'external_optional' && capability.runtimeAvailable === true);
+    runtime[capability.id] = KNOWN_CAPABILITY_IDS.has(capability.id) && available;
+  }
+  return runtime;
+}
+
 export async function copyCapabilityRuntime({ capabilityFile, outWebRoot }) {
   const contract = JSON.parse(await readFile(path.resolve(capabilityFile), 'utf8'));
-  const capabilities = Object.fromEntries(
-    contract.capabilities.map((capability) => [capability.id, capability.kind === 'core'])
-  );
+  const capabilities = buildCapabilityRuntime(contract);
   await writeJson(path.join(path.resolve(outWebRoot), CAPABILITY_RUNTIME_NAME), {
     schemaVersion: 1,
     capabilities
@@ -205,12 +236,27 @@ export function buildNoNodeTransformReport({
   return {
     ok: true,
     generatedAt,
-    output,
-    upstream,
+    output: toLogicalOutputName(output),
+    upstream: {
+      ...upstream,
+      ...(upstream?.repo ? { repo: sanitizeSourceRepository(upstream.repo) } : {})
+    },
     patches: [...patchNames],
     apiSummary,
     verification
   };
+}
+
+function toLogicalOutputName(output) {
+  return String(output).replaceAll('\\', '/').split('/').filter(Boolean).at(-1) ?? '.';
+}
+
+function sanitizeSourceRepository(repo) {
+  const value = String(repo);
+  if (/^file:\/\//i.test(value) || /^[A-Za-z]:[\\/]/.test(value) || path.isAbsolute(value)) {
+    return 'local-cache';
+  }
+  return value;
 }
 
 export async function bundleFrontendLibraries({ patchedDir }) {
@@ -362,9 +408,18 @@ function shouldCopyWebAsset({ src, root }) {
     return false;
   }
 
+  const normalizedRelative = segments.join('/');
+  if (
+    normalizedRelative === 'scripts/extensions/tts/kokoro.js'
+    || normalizedRelative === 'scripts/extensions/tts/lib/kokoro.web.js'
+  ) {
+    return false;
+  }
+
   const basename = segments.at(-1);
   return ![
     'server.js',
+    'jsconfig.json',
     'payload.tgz',
     'sillytavern.tar.gz',
     'runtime-android-arm64-node24.zip'
@@ -426,22 +481,23 @@ async function main() {
     }
   });
 
+  const transformOut = path.resolve(values.out ?? 'build/no-node-payload');
   const report = await transformNoNode({
     repo: values.repo ?? DEFAULT_REPO,
     ref: values.ref ?? 'release',
-    out: values.out ?? 'build/no-node-payload',
+    out: transformOut,
     clean: values.clean ?? false
   });
 
   if (values['android-assets']) {
     await syncNoNodeAndroidAssets({
-      transformOut: report.output,
+      transformOut,
       androidAssetsDir: values['android-assets']
     });
     console.log(`Synced Android assets: ${path.resolve(values['android-assets'])}`);
   }
 
-  console.log(`Generated no-node transform output: ${report.output}`);
+  console.log(`Generated no-node transform output: ${transformOut}`);
   console.log(`Upstream commit: ${report.upstream.commit}`);
   console.log(`API summary: ${JSON.stringify(report.apiSummary)}`);
 }

@@ -1051,7 +1051,7 @@ CI 调试构建调用该脚本；Release 使用 tag ref 和 release signing env�
 
 - [x] **Step 5：写最终验证记录结构**
 
-验证表必须覆盖：clean install、首次加载、重启、Persona、角色 PNG/JSON 导入导出、群组、群聊、recent、聊天 JSONL/TXT、World Info（含 Unicode 名称）和四类绑定、背景、附件、Tokenizer、settings/themes/presets/snapshots、OpenAI-compatible 真实 provider、SAF、无 Node、黑色 WebView surface、Android 7/10/15。
+验证表必须覆盖：clean install、首次加载、重启、Persona、角色 PNG/JSON 导入导出、群组、群聊、recent、聊天 JSONL/TXT、World Info（含 Unicode 名称）和四类绑定、背景、附件、Tokenizer、settings/themes/presets/snapshots、OpenAI-compatible 真实 provider、SAF、无 Node、黑色 WebView surface，以及正式维护基线 Android 15 / API 35。
 
 - [x] **Step 6：执行本地全门禁**
 
@@ -1100,11 +1100,11 @@ Expected: 旧 app 先删除；新 app 启动；`pidof node` 无输出；进程�
 
 **2026-07-17 Pixel 8 / API 35 证据：** 在官方 UI 配置 custom OpenAI-compatible provider `catiecli.sukaka.top` 和模型 `gcli-gemini-3.1-flash-lite`，保持 streaming 关闭。`/models` 返回 HTTP 200（54 个模型，2121 ms），`/chat/completions` 返回 HTTP 200（1625 ms）且响应结构有效；官方 UI 成功显示 provider 回复，界面记录耗时 6.5 秒。force-stop 并重启后 host、model、streaming 设置和 custom secret 均保留，`/models` 再次返回 HTTP 200（999 ms）。`/api/secrets/read` 中唯一记录的 `value` 严格为 `********`，settings 和 diagnostics 均未出现 `api_key_`、`proxy_password`、Authorization 或 Bearer 等敏感字段；验收过程未记录 key、完整 prompt 或完整 response。
 
-- [ ] **Step 10：补齐 Android 版本矩阵**
+- [x] **Step 10：确认 Android 支持矩阵**
 
-至少在 API 24、API 29、API 35 各执行安装、启动、文件选择、SAF 导出、一次对话和重启。若只能使用一个本地模拟器，其余版本由 CI emulator job 执行并把报告作为 artifact。
+正式维护、回归和问题修复只覆盖 API 35 及以上；当前最低验收设备为 API 35，需覆盖安装、启动、文件选择、SAF 导出、一次对话和重启。
 
-**2026-07-17 延期决定：** 本机不安装 API 24/29 system image；Android 7 和 Android 10 改由用户后续使用真机验收。当前 Step 保持未完成，不阻塞继续执行其他不依赖设备矩阵的收尾检查，但在两版真机证据补齐前不得勾选 Step 10、Step 13 或 Checkpoint F。
+**2026-08-02 支持范围决定：** 继续保留既有 `minSdk=24` 和工具链版本，不因维护范围调整升级版本号；API 24–34 可安装不等于受支持，不再要求补充低版本设备证据。API 35 已有完整设备验收记录。
 
 - [x] **Step 11：处理 WebView 黑屏验收**
 
@@ -1116,7 +1116,7 @@ Expected: 旧 app 先删除；新 app 启动；`pidof node` 无输出；进程�
 
 文档必须明确：运行时无 Node、构建期需要 Node 20+、一键命令、核心能力清单、外部可选能力、明确排除能力、0.3.0 全新安装要求、已验证 Android 版本和 validation record 链接。
 
-- [ ] **Step 13：最终复核**
+- [x] **Step 13：最终复核**
 
 Run:
 
@@ -1130,7 +1130,9 @@ Set-Location mobile
 
 Expected: 命中仅出现在禁止项校验或历史说明中；Node 与 JVM 测试通过；validation record 的每一项都有日期、设备/API、结果和证据。
 
-**2026-07-17 可提前执行部分：** `git diff --check` 退出码 0（仅 Windows LF/CRLF 提示），no-node tests 68/68、Android JVM 231 tests（0 failures、0 errors、2 skipped）和一键 debug 构建通过。Node 关键字命中已分类为历史/禁止说明、no-node verifier、legacy 构建脚本，以及浏览器 bundle 内的 Webpack 模块 ID；APK 和 active assets 中不存在 Node runtime、`node_modules` 目录、`server.js` 或 payload/runtime archive。Step 9 真实外部 provider 已通过；Step 10 API 24/29 完成后仍需重跑本 Step，当前不勾选。
+**2026-07-17 可提前执行部分：** `git diff --check` 退出码 0（仅 Windows LF/CRLF 提示），no-node tests 68/68、Android JVM 231 tests（0 failures、0 errors、2 skipped）和一键 debug 构建通过。Node 关键字命中已分类为历史/禁止说明、no-node verifier、legacy 构建脚本，以及浏览器 bundle 内的 Webpack 模块 ID；APK 和 active assets 中不存在 Node runtime、`node_modules` 目录、`server.js` 或 payload/runtime archive。Step 9 真实外部 provider 已通过；Step 10 已按 API 35 及以上维护策略收口。
+
+**2026-08-03 最终复核：** 使用原 AGP 8.1.1、Gradle 8.2、`compileSdk=34`、`minSdk=24`、`targetSdk=28` 完成离线一键 Debug 构建；no-node tests 138/138，Android JVM 460 tests（0 failures、0 errors、4 skipped），APK SHA-256 为 `6beacb5e...b9d602`。该 APK 在 Pixel_8 / API 35 覆盖安装后达到 `app_ready`，用户数据和 Embedding 配置保留，`node_runtime=false`，无 crash/ANR。最终 `git diff --check` 退出码 0，Node 关键字命中仅为禁止说明、验证器和历史命令。
 
 **建议提交（由用户手动触发）：** `release: 完成无 Node 单用户功能和发布验收`
 
@@ -1143,7 +1145,7 @@ Expected: 命中仅出现在禁止项校验或历史说明中；Node 与 JVM 测
 - [x] **Checkpoint C（Task 4-6）：** 群组、聊天和 World Info 完整；普通聊天、群组聊天和四类 lorebook 绑定已在 API 35 官方 UI 验证并经 force-stop 复核。
 - [x] **Checkpoint D（Task 7-9A）：** 文件、背景、Tokenizer 和 SAF 数据导入导出完整；角色 response ticket 与 World Info Blob staging 均已在 API 35 clean install 上保存并重新导入。完整备份恢复不属于该检查点。
 - [x] **Checkpoint E（Task 10-11）：** 诊断、capability gate 和最终 UI/API 对齐；严格 contract 零可见 `needs_review`。
-- [ ] **Checkpoint F（Task 12）：** 一键构建、CI/Release、设备矩阵和文档全部收口。
+- [ ] **Checkpoint F（Task 12）：** 本地一键构建、API 35 设备矩阵和文档已收口；实际 CI/Release 发布仍等待 Master 单独授权。
 
 每个 Checkpoint 完成后执行 `superpowers:requesting-code-review`，先修复审查发现再进入下一阶段。
 
@@ -1163,7 +1165,7 @@ Expected: 命中仅出现在禁止项校验或历史说明中；Node 与 JVM 测
 - [x] `npm run verify:no-node-capabilities` 严格通过，零可见 `needs_review`。
 - [x] `npm run build:no-node-apk -- --variant debug --ref release` 单命令通过。
 - [x] Android JVM 与 Node tests 全部通过。
-- [ ] API 24、29、35 的 clean install 核心矩阵通过。
+- [x] API 35 正式维护基线的 clean install 核心矩阵通过；API 24–34 不属于支持范围。
 - [x] APK 和运行进程均不存在 Node runtime。
 - [x] 角色、Persona、群组、聊天、World Info、背景、附件和设置重启后仍存在。
 - [x] PNG/JSON 角色卡、JSONL/TXT 聊天和 World Info 等普通业务数据通过 SAF 导出并可重新导入。

@@ -33,6 +33,14 @@ const FIXED_CAPABILITY_IDS = new Set([
   'excluded.local_models',
   'excluded.multiuser'
 ]);
+const CAPABILITY_FIELDS = new Set([
+  'id',
+  'kind',
+  'defaultStatus',
+  'endpointPrefixes',
+  'uiPolicy',
+  'runtimeAvailable',
+]);
 
 export function verifyCapabilityContract({ apiContract, capabilities }) {
   const errors = [];
@@ -117,6 +125,15 @@ function validateCapabilities(capabilities, errors) {
   const prefixes = [];
 
   for (const capability of capabilities) {
+    if (!capability || typeof capability !== 'object' || Array.isArray(capability)) {
+      errors.push('Capability must be an object');
+      continue;
+    }
+    for (const field of Object.keys(capability)) {
+      if (!CAPABILITY_FIELDS.has(field)) {
+        errors.push(`Capability has unknown field: ${capability.id ?? '<missing id>'} (${field})`);
+      }
+    }
     if (seenIds.has(capability.id)) {
       errors.push(`Duplicate capability id: ${capability.id}`);
     }
@@ -157,6 +174,14 @@ function validateCapabilities(capabilities, errors) {
       }
     } else {
       errors.push(`Capability has invalid kind: ${capability.id} (${capability.kind})`);
+    }
+
+    if (Object.hasOwn(capability, 'runtimeAvailable')) {
+      if (typeof capability.runtimeAvailable !== 'boolean') {
+        errors.push(`Capability runtimeAvailable must be boolean: ${capability.id}`);
+      } else if (capability.kind !== 'external_optional') {
+        errors.push(`Capability runtimeAvailable is only allowed for external_optional: ${capability.id}`);
+      }
     }
 
     const seenPrefixes = new Set();

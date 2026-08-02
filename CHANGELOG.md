@@ -1,5 +1,23 @@
 # 更新日志
 
+## v0.3.2 - 远程 Embedding 与本地向量检索 (2026-08-03)
+
+本版本在 no-node Android 架构中恢复 SillyTavern 官方 Vector Storage / RAG 能力，通过用户配置的远程 Embedding Provider 生成向量，并使用应用私有 SQLite 保存可重建索引。
+
+### 新增能力
+
+- 支持 OpenAI 和 Custom OpenAI-compatible Embedding Provider，可保存配置并测试连接维度。
+- 支持 Data Bank、聊天记忆和 World Info 向量激活，兼容七个 `/api/vector/*` 接口。
+- 使用 Android framework SQLite 保存归一化 Float32 向量，提供精确 Top-K 查询、模型/端点 namespace 隔离和进程重启持久化。
+- Vector Storage 各类 RAG 开关默认关闭；首次启用前明确提示文本将发送给远程 Provider，并可能产生 API 费用。
+
+### 稳定性与隐私
+
+- Provider 限流、超时、错误响应、维度变化、数据库损坏和存储空间不足均返回稳定错误码，批量写入保持原子性。
+- 向量日志、Android logcat、诊断导出和 HTTP 错误响应不记录 API key、Authorization、Base URL、用户文本、metadata 正文或向量内容。
+- APK 不包含 Node.js、本地 Embedding 模型、ONNX、FAISS、HNSW 或 native vector extension。
+- 已在 Pixel 8 / Android 15（API 35）完成远程 Embedding、Vector query、真实 RAG、强停重启持久化和日志隐私验收；项目正式维护范围为 API 35 及以上。
+
 ## v0.3.1 - 扩展下载稳定性修复 (2026-07-27)
 
 本版本修复真机在较慢网络下安装大型 GitHub 扩展时，下载超过 OkHttp 默认 10 秒读取超时后失败的问题。

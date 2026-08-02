@@ -70,6 +70,7 @@ async function writeValidOutput(out, options = {}) {
       schemaVersion: 1,
       hiddenStylesheets: [{ path: 'css/main.css', catalogBefore: '#catalog-end' }],
       implementedActions: [],
+      configuredActions: [],
       hiddenSelectors: []
     }),
     'utf8'
@@ -169,7 +170,7 @@ test('buildNoNodeTransformReport records applied patch names', () => {
   const report = transformModule.buildNoNodeTransformReport({
     generatedAt: '2026-07-11T00:00:00.000Z',
     output: 'C:/tmp/no-node-payload',
-    upstream: { ref: 'release', commit: 'abc123' },
+    upstream: { repo: 'file:///C:/tmp/upstream-cache', ref: 'release', commit: 'abc123' },
     apiSummary: { implemented: 17, unsupported_hidden: 23, needs_review: 217 },
     verification: { ok: true },
     patchNames: ['0001-defaults.patch', '0002-hide-features.patch']
@@ -177,6 +178,10 @@ test('buildNoNodeTransformReport records applied patch names', () => {
 
   assert.deepEqual(report.patches, ['0001-defaults.patch', '0002-hide-features.patch']);
   assert.equal(report.generatedAt, '2026-07-11T00:00:00.000Z');
+  assert.equal(report.output, 'no-node-payload');
+  assert.equal(report.upstream.repo, 'local-cache');
+  assert.doesNotMatch(JSON.stringify(report), /file:\/\//i);
+  assert.doesNotMatch(JSON.stringify(report), /[A-Za-z]:[\\/]/);
   assert.equal(report.ok, true);
 });
 
@@ -197,7 +202,9 @@ test('Android no-node patch series lists all auditable MVP patches', async () =>
     '0008-stapk-mobile-capability-gates.patch',
     '0009-stapk-mobile-extension-and-import-compatibility.patch',
     '0010-stapk-mobile-unicode-and-embedded-lorebook.patch',
-    '0011-stapk-mobile-world-info-global-selector.patch'
+    '0011-stapk-mobile-world-info-global-selector.patch',
+    '0012-stapk-mobile-remote-embedding-vector-storage.patch',
+    '0013-stapk-mobile-redact-vector-console-content.patch'
   ]);
   const patches = await Promise.all(series.map(async (patchName) => {
     const patchPath = path.join(PATCH_QUEUE_DIR, patchName);
@@ -540,21 +547,28 @@ test('verifyNoNodeOutput rejects browser libraries with bare module imports', as
   });
 });
 
-test('copyNoNodeWebAssets copies static Web files and excludes node_modules', async () => {
+test('copyNoNodeWebAssets copies static Web files and excludes Node and local TTS model assets', async () => {
   await withTempOutput(async (out) => {
     const sourceWebRoot = path.join(out, 'source-public');
     const outWebRoot = path.join(out, 'sillytavern-web');
     await mkdir(path.join(sourceWebRoot, 'assets'), { recursive: true });
     await mkdir(path.join(sourceWebRoot, 'node_modules', 'bad'), { recursive: true });
+    await mkdir(path.join(sourceWebRoot, 'scripts', 'extensions', 'tts', 'lib'), { recursive: true });
     await writeFile(path.join(sourceWebRoot, 'index.html'), '<!doctype html>\n', 'utf8');
+    await writeFile(path.join(sourceWebRoot, 'jsconfig.json'), '{"exclude":["node_modules"]}\n', 'utf8');
     await writeFile(path.join(sourceWebRoot, 'assets', 'app.js'), 'console.log("ok");\n', 'utf8');
     await writeFile(path.join(sourceWebRoot, 'node_modules', 'bad', 'index.js'), 'bad\n', 'utf8');
+    await writeFile(path.join(sourceWebRoot, 'scripts', 'extensions', 'tts', 'kokoro.js'), 'onnx runtime\n', 'utf8');
+    await writeFile(path.join(sourceWebRoot, 'scripts', 'extensions', 'tts', 'lib', 'kokoro.web.js'), 'onnx runtime\n', 'utf8');
 
     await copyNoNodeWebAssets({ sourceWebRoot, outWebRoot });
 
     await access(path.join(outWebRoot, 'index.html'));
     await access(path.join(outWebRoot, 'assets', 'app.js'));
     await assert.rejects(access(path.join(outWebRoot, 'node_modules', 'bad', 'index.js')));
+    await assert.rejects(access(path.join(outWebRoot, 'jsconfig.json')));
+    await assert.rejects(access(path.join(outWebRoot, 'scripts', 'extensions', 'tts', 'kokoro.js')));
+    await assert.rejects(access(path.join(outWebRoot, 'scripts', 'extensions', 'tts', 'lib', 'kokoro.web.js')));
 
     const hash = await hashDirectory(outWebRoot);
     assert.match(hash, /^[a-f0-9]{64}$/);
@@ -578,7 +592,7 @@ test('copyNoNodeWebSupportAssets injects the tested SAF export helper', async ()
   });
 });
 
-test('copyCapabilityRuntime exposes only core capabilities without build paths', async () => {
+test('copyCapabilityRuntime exposes core and explicit runtime-available capabilities without build paths', async () => {
   await withTempOutput(async (root) => {
     const capabilityFile = path.join(root, 'capabilities.json');
     const outWebRoot = path.join(root, 'sillytavern-web');
@@ -586,6 +600,7 @@ test('copyCapabilityRuntime exposes only core capabilities without build paths',
       schemaVersion: 1,
       capabilities: [
         { id: 'core.settings', kind: 'core' },
+        { id: 'remote.embeddings', kind: 'external_optional', runtimeAvailable: true },
         { id: 'remote.image', kind: 'external_optional' },
         { id: 'excluded.extensions', kind: 'excluded' }
       ]
@@ -598,6 +613,7 @@ test('copyCapabilityRuntime exposes only core capabilities without build paths',
       schemaVersion: 1,
       capabilities: {
         'core.settings': true,
+        'remote.embeddings': true,
         'remote.image': false,
         'excluded.extensions': false
       }
@@ -675,6 +691,7 @@ test('copyUiCapabilityContract validates and publishes the formal UI contract', 
       schemaVersion: 1,
       hiddenStylesheets: [{ path: 'css/stapk-mobile.css', catalogBefore: '#catalog-end' }],
       implementedActions: [],
+      configuredActions: [],
       hiddenSelectors: []
     };
     await Promise.all([

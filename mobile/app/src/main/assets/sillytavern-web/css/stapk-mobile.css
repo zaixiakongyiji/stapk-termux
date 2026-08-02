@@ -3,7 +3,7 @@
 .userBackupButton,
 .userResetAllButton,
 #extensions_settings .extension_container:not(#expressions_container),
-#extensions_settings2 .extension_container:not(#qr_container):not(#regex_container):not(#summarize_container),
+#extensions_settings2 .extension_container:not(#qr_container):not(#regex_container):not(#summarize_container):not(#vectors_container),
 #extensions_settings2 ~ hr,
 #extensions_settings2 ~ .alignitemscenter.flex-container.justifyCenter.wide100p,
 #extensions_settings2 ~ .alignitemsflexstart.flex-container.wide100p,
@@ -28,8 +28,7 @@ label[for="expression_translate"],
 #ttsExtensionMenuItem,
 #ttsExtensionNarrateAll,
 .mes_narrate,
-#stt_container,
-#vectors_container {
+#stt_container {
     display: none !important;
 }
 

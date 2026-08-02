@@ -33,6 +33,11 @@ export function validateUiCapabilityContract({ uiContract, capabilities }) {
     'implementedActions',
     errors
   );
+  const configuredActions = requireArray(
+    uiContract?.configuredActions,
+    'configuredActions',
+    errors
+  );
   const hiddenSelectors = requireArray(
     uiContract?.hiddenSelectors,
     'hiddenSelectors',
@@ -83,6 +88,31 @@ export function validateUiCapabilityContract({ uiContract, capabilities }) {
     validateActionSource(action.source, label, action.selector, errors);
   }
 
+  for (const [index, action] of configuredActions.entries()) {
+    const label = `configuredActions[${index}]`;
+    if (!isObject(action)) {
+      errors.push(`${label} must be an object`);
+      continue;
+    }
+    requireStringFields(action, ['name', 'selector', 'capability', 'endpoint'], label, errors);
+    validateUnique(action.name, actionNames, `${label}.name`, errors);
+    validateUnique(action.selector, actionSelectors, `${label}.selector`, errors);
+    validateSelector(action.selector, `${label}.selector`, errors);
+
+    if (!parseEndpointKey(action.endpoint)) {
+      errors.push(`${label}.endpoint must use "METHOD /path" format`);
+    }
+
+    const capability = capabilityMap.get(action.capability);
+    if (!capability) {
+      errors.push(`${label} references unknown capability ${action.capability}`);
+    } else if (capability.kind !== 'external_optional' || capability.runtimeAvailable !== true) {
+      errors.push(`${label} must map to an external_optional capability with runtimeAvailable: true`);
+    }
+
+    validateActionSource(action.source, label, action.selector, errors);
+  }
+
   const hiddenSelectorNames = new Set();
   for (const [index, entry] of hiddenSelectors.entries()) {
     const label = `hiddenSelectors[${index}]`;
@@ -114,6 +144,12 @@ export function validateUiCapabilityContract({ uiContract, capabilities }) {
     }
   }
 
+  for (const action of configuredActions) {
+    if (hiddenSelectorNames.has(action.selector)) {
+      errors.push(`Configured action "${action.name}" must not also be a hidden selector: ${action.selector}`);
+    }
+  }
+
   return errors;
 }
 
@@ -137,7 +173,7 @@ export async function verifyUiCapabilityContract({
     ]);
   } catch (error) {
     errors.push(error instanceof Error ? error.message : String(error));
-    return buildResult({ errors, implementedActions: 0, hiddenSelectors: 0, localStylesheets: 0 });
+    return buildResult({ errors, implementedActions: 0, configuredActions: 0, hiddenSelectors: 0, localStylesheets: 0 });
   }
 
   errors.push(...validateUiCapabilityContract({ uiContract, capabilities }));
@@ -145,6 +181,7 @@ export async function verifyUiCapabilityContract({
     return buildResult({
       errors,
       implementedActions: uiContract.implementedActions?.length ?? 0,
+      configuredActions: uiContract.configuredActions?.length ?? 0,
       hiddenSelectors: uiContract.hiddenSelectors?.length ?? 0,
       localStylesheets: 0,
     });
@@ -160,6 +197,7 @@ export async function verifyUiCapabilityContract({
     return buildResult({
       errors,
       implementedActions: uiContract.implementedActions.length,
+      configuredActions: uiContract.configuredActions.length,
       hiddenSelectors: uiContract.hiddenSelectors.length,
       localStylesheets: 0,
     });
@@ -184,6 +222,7 @@ export async function verifyUiCapabilityContract({
   return buildResult({
     errors,
     implementedActions: uiContract.implementedActions.length,
+    configuredActions: uiContract.configuredActions.length,
     hiddenSelectors: uiContract.hiddenSelectors.length,
     localStylesheets: stylesheetRecords.stylesheets.length,
   });
@@ -385,19 +424,24 @@ function verifyImplementedEndpoints({ uiContract, apiContract, errors }) {
       : []
   );
 
-  for (const action of uiContract.implementedActions) {
-    const endpoint = endpoints.get(action.endpoint);
-    if (!endpoint) {
-      errors.push(`Implemented action "${action.name}" references missing endpoint ${action.endpoint}`);
-      continue;
-    }
-    if (endpoint.status !== 'implemented') {
-      errors.push(`Implemented action "${action.name}" endpoint is ${endpoint.status}`);
-    }
-    if (endpoint.capability !== action.capability) {
-      errors.push(
-        `Implemented action "${action.name}" capability drifted: ${endpoint.capability} != ${action.capability}`
-      );
+  for (const [kind, actions] of [
+    ['Implemented', uiContract.implementedActions],
+    ['Configured', uiContract.configuredActions],
+  ]) {
+    for (const action of actions) {
+      const endpoint = endpoints.get(action.endpoint);
+      if (!endpoint) {
+        errors.push(`${kind} action "${action.name}" references missing endpoint ${action.endpoint}`);
+        continue;
+      }
+      if (endpoint.status !== 'implemented') {
+        errors.push(`${kind} action "${action.name}" endpoint is ${endpoint.status}`);
+      }
+      if (endpoint.capability !== action.capability) {
+        errors.push(
+          `${kind} action "${action.name}" capability drifted: ${endpoint.capability} != ${action.capability}`
+        );
+      }
     }
   }
 }
@@ -416,16 +460,20 @@ function verifyHtmlActions({ uiContract, document, stylesheetRecords, errors }) 
     }
   }
 
-  for (const action of uiContract.implementedActions.filter(({ source }) => source.type === 'html')) {
+  const htmlActions = [
+    ...uiContract.implementedActions.map((action) => ({ kind: 'Implemented', action })),
+    ...uiContract.configuredActions.map((action) => ({ kind: 'Configured', action })),
+  ].filter(({ action }) => action.source.type === 'html');
+  for (const { kind, action } of htmlActions) {
     let elements;
     try {
       elements = [...document.querySelectorAll(action.selector)];
     } catch (error) {
-      errors.push(`Implemented action "${action.name}" has invalid selector: ${formatError(error)}`);
+      errors.push(`${kind} action "${action.name}" has invalid selector: ${formatError(error)}`);
       continue;
     }
     if (elements.length === 0) {
-      errors.push(`Implemented action "${action.name}" is missing from final HTML: ${action.selector}`);
+      errors.push(`${kind} action "${action.name}" is missing from final HTML: ${action.selector}`);
       continue;
     }
 
@@ -436,7 +484,7 @@ function verifyHtmlActions({ uiContract, document, stylesheetRecords, errors }) 
         )
       );
       if (hidesAction) {
-        errors.push(`Implemented action "${action.name}" is hidden by CSS selector: ${selector}`);
+        errors.push(`${kind} action "${action.name}" is hidden by CSS selector: ${selector}`);
       }
     }
   }
@@ -444,9 +492,10 @@ function verifyHtmlActions({ uiContract, document, stylesheetRecords, errors }) 
 
 async function verifyJavaScriptActions({ uiContract, webRoot, stylesheetRecords, errors }) {
   const actionsByPath = new Map();
-  for (const action of uiContract.implementedActions.filter(
-    ({ source }) => source.type === 'javascript'
-  )) {
+  for (const action of [
+    ...uiContract.implementedActions,
+    ...uiContract.configuredActions,
+  ].filter(({ source }) => source.type === 'javascript')) {
     const actions = actionsByPath.get(action.source.path) ?? [];
     actions.push(action);
     actionsByPath.set(action.source.path, actions);
@@ -1849,12 +1898,13 @@ function isNonEmptyString(value) {
   return typeof value === 'string' && value.trim().length > 0;
 }
 
-function buildResult({ errors, implementedActions, hiddenSelectors, localStylesheets }) {
+function buildResult({ errors, implementedActions, configuredActions = 0, hiddenSelectors, localStylesheets }) {
   return {
     ok: errors.length === 0,
     errors,
     summary: {
       implementedActions,
+      configuredActions,
       hiddenSelectors,
       localStylesheets,
     },

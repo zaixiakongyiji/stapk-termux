@@ -9,6 +9,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
 import org.junit.Assume.assumeTrue
+import java.io.File
 import java.io.IOException
 import java.nio.file.Files
 import java.util.concurrent.CountDownLatch
@@ -43,6 +44,15 @@ class AtomicFileStoreTest {
         }
 
         assertEquals("old-value", target.readText())
+    }
+
+    @Test
+    fun `production source does not rely on API 26 Files move`() {
+        val source = File("src/main/java/com/stapk/mobile/nativeadapter/AtomicFileStore.kt")
+            .readText()
+
+        assertFalse(source.contains("java.nio.file.Files"))
+        assertFalse(source.contains("StandardCopyOption"))
     }
 
     @Test

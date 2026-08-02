@@ -2,11 +2,11 @@
 
 > 将 SillyTavern 转换为无 Node.js 运行时的 Android 原生应用。
 
-[下载 v0.3.1](https://github.com/zaixiakongyiji/stapk-termux/releases/tag/v0.3.1) · [查看更新日志](CHANGELOG.md) · [查看设计文档](docs/superpowers/specs/2026-07-09-stapk-no-node-native-adapter-design.md)
+[下载 v0.3.2](https://github.com/zaixiakongyiji/stapk-termux/releases/tag/v0.3.2) · [查看更新日志](CHANGELOG.md) · [查看设计文档](docs/superpowers/specs/2026-07-09-stapk-no-node-native-adapter-design.md)
 
 stAPK Mobile 把 [SillyTavern](https://github.com/SillyTavern/SillyTavern) 官方 Web UI 转换成一个可直接安装的 Android APK。APK 运行时不内置 Node.js、npm、`node_modules` 或 `server.js`；Android 侧通过 WebView 加载转换后的静态资源，并由 Kotlin 原生 HTTP 兼容后端提供单用户核心接口。
 
-> `v0.3.1` 是当前 no-node 正式版，按全新安装交付。0.2.x 数据不会自动迁移，请在替换旧版本前先导出需要保留的数据。
+> `v0.3.2` 是当前 no-node 正式版，按全新安装交付。0.2.x 数据不会自动迁移，请在替换旧版本前先导出需要保留的数据。
 
 旧的 0.2.x Node runtime 方案仅保留在 Git 历史中。当前开发以 [no-node 原生适配设计](docs/superpowers/specs/2026-07-09-stapk-no-node-native-adapter-design.md) 和 [单用户功能完成计划](docs/plan/2026-07-12-stapk-single-user-feature-completion-plan.md) 为准。
 
@@ -45,6 +45,7 @@ stAPK Mobile 把 [SillyTavern](https://github.com/SillyTavern/SillyTavern) 官�
 | 单用户数据 | Persona、角色卡、聊天、群组、群聊、recent chats、settings、themes、presets 和 snapshots |
 | 角色与知识库 | PNG/JSON 角色卡导入导出、角色卡内嵌 World Info 自动导入、独立 World Info 的导入导出与增删改查 |
 | 对话工具 | OpenAI Tokenizer、Quick Reply、Regex，以及只调用 Main API 的 Summarize |
+| Vector Storage / RAG | OpenAI 或 Custom OpenAI-compatible 远程 Embedding、本地 SQLite 精确检索，以及 Data Bank、聊天记忆和 World Info 向量激活；默认关闭 |
 | 媒体 | 背景、头像、附件、图片与本地媒体管理 |
 | 第三方扩展 | client-only 扩展的 GitHub URL 安装、发现、启用、禁用、版本检查、更新、删除和重新安装 |
 | 文件与诊断 | 角色、聊天、World Info、预设和媒体等功能页面的 SAF 导入导出；诊断 ZIP 导出与敏感字段脱敏 |
@@ -54,8 +55,10 @@ stAPK Mobile 把 [SillyTavern](https://github.com/SillyTavern/SillyTavern) 官�
 | 能力 | 限制 |
 |------|------|
 | 第三方扩展 | 仅在扩展依赖的 SillyTavern API 已由 Native adapter 提供时可用；不承诺任意扩展兼容 |
-| 远程多媒体与模型服务 | 不内置 embedding、图片、TTS、STT、字幕或翻译模型；当前只保留外部服务能力边界 |
-| Android 版本 | Pixel 8 / Android 15（API 35）已完成设备验收；Android 7（API 24）和 Android 10（API 29）尚待真机验证 |
+| 远程多媒体与模型服务 | 不内置 embedding、图片、TTS、STT、字幕或翻译模型；Embedding 已支持 OpenAI 和 Custom OpenAI-compatible，其他远程能力仍只保留外部服务边界 |
+| Android 版本 | 正式维护、回归和问题修复范围为 Android 15（API 35）及以上；API 35 已完成设备验收，低于 API 35 的系统不纳入支持矩阵 |
+
+Vector Storage 各类 RAG 开关默认关闭。启用后，待向量化的聊天、Data Bank 或 World Info 文本片段会发送给用户配置的 Embedding Provider，可能产生 API 费用；向量保存在应用私有 SQLite 中，是可由原始数据重建的派生索引。
 
 ### 暂不支持
 
@@ -66,7 +69,7 @@ stAPK Mobile 把 [SillyTavern](https://github.com/SillyTavern/SillyTavern) 官�
 | 部署模式 | multiuser、远程访问和非 OpenAI-compatible provider |
 | 数据维护 | 0.2.x 自动数据迁移、完整应用备份恢复和 Data Maid；这些能力不等同于已支持的单项数据导入导出 |
 
-详细设备证据见 [单用户功能验证记录](docs/plan/2026-07-12-stapk-single-user-feature-validation-record.md) 和 [扩展与导入兼容设计](docs/superpowers/specs/2026-07-17-stapk-extension-and-import-compatibility-design.md)。
+详细设备证据见 [单用户功能验证记录](docs/plan/2026-07-12-stapk-single-user-feature-validation-record.md)、[Vector Storage 验证记录](docs/plan/2026-07-30-stapk-vector-storage-validation-record.md) 和 [扩展与导入兼容设计](docs/superpowers/specs/2026-07-17-stapk-extension-and-import-compatibility-design.md)。
 
 ## 目标工作原理
 
@@ -94,13 +97,13 @@ stAPK Mobile 把 [SillyTavern](https://github.com/SillyTavern/SillyTavern) 官�
 
 ## 下载
 
-前往 [Releases](https://github.com/zaixiakongyiji/stapk-termux/releases) 页面下载 APK。当前正式版为 [v0.3.1](https://github.com/zaixiakongyiji/stapk-termux/releases/tag/v0.3.1)。
+前往 [Releases](https://github.com/zaixiakongyiji/stapk-termux/releases) 页面下载 APK。当前正式版为 [v0.3.2](https://github.com/zaixiakongyiji/stapk-termux/releases/tag/v0.3.2)。
 
 | 要求 | 说明 |
 |------|------|
-| Android 版本 | 7.0+ (API 24+) |
+| Android 版本 | 技术安装下限仍为 Android 7.0（API 24+）；正式支持范围为 Android 15（API 35）及以上 |
 | APK 类型 | 通用 APK；不包含 native runtime，不按 CPU ABI 拆包 |
-| 安装方式 | 0.3.1 建议全新安装，暂不自动迁移 0.2.x 数据 |
+| 安装方式 | 0.3.2 建议全新安装，暂不自动迁移 0.2.x 数据 |
 | 存储空间 | APK 约 25 MB，另需保存角色、聊天、扩展和媒体数据的空间 |
 
 ## 构建
@@ -138,8 +141,8 @@ Release 可通过仓库变量 `SILLYTAVERN_REF` 固定上游 tag/commit；未设
 
 ```bash
 git push origin master
-git tag -a v0.3.1 -m "release: 发布 stAPK 0.3.1"
-git push origin v0.3.1
+git tag -a v0.3.2 -m "release: 发布 stAPK 0.3.2"
+git push origin v0.3.2
 ```
 
 详细说明见 [GitHub 自动构建与发版](docs/reference/github-release-automation.md)。

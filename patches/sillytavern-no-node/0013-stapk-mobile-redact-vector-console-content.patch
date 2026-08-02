@@ -1,0 +1,174 @@
+diff --git a/public/scripts/RossAscends-mods.js b/public/scripts/RossAscends-mods.js
+--- a/public/scripts/RossAscends-mods.js
++++ b/public/scripts/RossAscends-mods.js
+@@ -465,6 +465,5 @@ function saveUserInput() {
+     const userInput = String($('#send_textarea').val());
+     localStorage.setItem(getUserInputKey(), userInput);
+-    console.debug('User Input -- ', userInput);
+ }
+ const saveUserInputDebounced = debounce(saveUserInput);
+ 
+diff --git a/public/scripts/extensions/vectors/index.js b/public/scripts/extensions/vectors/index.js
+index 1ab9e59..e100014 100644
+--- a/public/scripts/extensions/vectors/index.js
++++ b/public/scripts/extensions/vectors/index.js
+@@ -658,7 +658,7 @@ async function ingestDataBankAttachments(source) {
+ 
+         // Download and process the file
+         const fileText = await getFileAttachment(file.url);
+-        console.log(`Vectors: Retrieved file ${file.name} from Data Bank`);
++        console.log('Vectors: Retrieved a file from Data Bank');
+         // Convert kilobytes to string length
+         const thresholdLength = settings.size_threshold_db * 1024;
+         // Use chunk size from settings if file is larger than threshold
+@@ -680,11 +680,11 @@ async function ingestDataBankAttachments(source) {
+ async function injectDataBankChunks(queryText, collectionIds) {
+     try {
+         const queryResults = await queryMultipleCollections(collectionIds, queryText, settings.chunk_count_db, settings.score_threshold);
+-        console.debug(`Vectors: Retrieved ${collectionIds.length} Data Bank collections`, queryResults);
++        console.debug(`Vectors: Retrieved ${collectionIds.length} Data Bank collections`);
+         let textResult = '';
+ 
+         for (const collectionId in queryResults) {
+-            console.debug(`Vectors: Processing Data Bank collection ${collectionId}`, queryResults[collectionId]);
++            console.debug(`Vectors: Processing Data Bank collection ${collectionId}`);
+             const metadata = queryResults[collectionId].metadata?.filter(x => x.text)?.sort((a, b) => a.index - b.index)?.map(x => x.text)?.filter(onlyUnique) || [];
+             textResult += metadata.join('\n') + '\n\n';
+         }
+@@ -708,9 +708,10 @@ async function injectDataBankChunks(queryText, collectionIds) {
+  * @returns {Promise<string>} Retrieved file text
+  */
+ async function retrieveFileChunks(queryText, collectionId) {
+-    console.debug(`Vectors: Retrieving file chunks for collection ${collectionId}`, queryText);
++    console.debug(`Vectors: Retrieving file chunks for collection ${collectionId}`);
+     const queryResults = await queryCollection(collectionId, queryText, settings.chunk_count);
+-    console.debug(`Vectors: Retrieved ${queryResults.hashes.length} file chunks for collection ${collectionId}`, queryResults);
++    const retrievedCount = queryResults.hashes.length;
++    console.debug(`Vectors: Retrieved ${retrievedCount} file chunks for collection ${collectionId}`);
+     const metadata = queryResults.metadata.filter(x => x.text).sort((a, b) => a.index - b.index).map(x => x.text).filter(onlyUnique);
+     const fileText = metadata.join('\n');
+ 
+@@ -729,7 +730,7 @@ async function vectorizeFile(fileText, fileName, collectionId, chunkSize, overla
+ 
+     try {
+         if (settings.translate_files && typeof globalThis.translate === 'function') {
+-            console.log(`Vectors: Translating file ${fileName} to English...`);
++            console.log('Vectors: Translating a file to English...');
+             const translatedText = await globalThis.translate(fileText, 'en');
+             fileText = translatedText;
+         }
+@@ -747,7 +748,7 @@ async function vectorizeFile(fileText, fileName, collectionId, chunkSize, overla
+         const chunks = settings.only_custom_boundary && settings.force_chunk_delimiter
+             ? fileText.split(settings.force_chunk_delimiter).map(applyOverlap)
+             : splitRecursive(fileText, chunkSize, delimiters).map(applyOverlap);
+-        console.debug(`Vectors: Split file ${fileName} into ${chunks.length} chunks with ${overlapPercent}% overlap`, chunks);
++        console.debug(`Vectors: Split file into ${chunks.length} chunks with ${overlapPercent}% overlap`);
+ 
+         const items = chunks.map((chunk, index) => ({ hash: getStringHash(chunk), text: chunk, index: index }));
+ 
+@@ -756,7 +757,7 @@ async function vectorizeFile(fileText, fileName, collectionId, chunkSize, overla
+         }
+ 
+         toastr.clear(toast);
+-        console.log(`Vectors: Inserted ${chunks.length} vector items for file ${fileName} into ${collectionId}`);
++        console.log(`Vectors: Inserted ${chunks.length} vector items`);
+         return true;
+     } catch (error) {
+         toastr.clear(toast);
+@@ -866,7 +867,7 @@ async function rearrangeChat(chat, _contextSize, _abort, type) {
+  */
+ function getPromptText(queriedMessages) {
+     const queriedText = queriedMessages.map(x => collapseNewlines(`${x.name}: ${x.mes}`).trim()).join('\n\n');
+-    console.log('Vectors: relevant past messages found.\n', queriedText);
++    console.log(`Vectors: Found ${queriedMessages.length} relevant past messages`);
+     return substituteParamsExtended(settings.template, { text: queriedText });
+ }
+ 
+@@ -1210,7 +1211,7 @@ async function purgeFileVectorIndex(fileUrl) {
+             return;
+         }
+ 
+-        console.log(`Vectors: Purging file vector index for ${fileUrl}`);
++        console.log('Vectors: Purging a file vector index');
+         const collectionId = getFileCollectionId(fileUrl);
+ 
+         const response = await fetch('/api/vector/purge', {
+@@ -1579,7 +1580,7 @@ async function onVectorizeAllFilesClick() {
+             const hashes = await getSavedHashes(collectionId);
+ 
+             if (hashes.length) {
+-                console.log(`Vectors: File ${file.name} is already vectorized`);
++                console.log('Vectors: File is already vectorized');
+                 continue;
+             }
+ 
+@@ -1646,27 +1647,28 @@ async function activateWorldInfo(chat) {
+     const groupedEntries = {};
+ 
+     for (const entry of entries) {
++        const entryId = entry.uid;
+         // Skip orphaned entries. Is it even possible?
+         if (!entry.world) {
+-            console.debug('Vectors: Skipped orphaned WI entry', entry);
++            console.debug(`Vectors: Skipped orphaned WI entry ${entryId}`);
+             continue;
+         }
+ 
+         // Skip disabled entries
+         if (entry.disable) {
+-            console.debug('Vectors: Skipped disabled WI entry', entry);
++            console.debug(`Vectors: Skipped disabled WI entry ${entryId}`);
+             continue;
+         }
+ 
+         // Skip entries without content
+         if (!entry.content) {
+-            console.debug('Vectors: Skipped WI entry without content', entry);
++            console.debug(`Vectors: Skipped WI entry ${entryId} without content`);
+             continue;
+         }
+ 
+         // Skip non-vectorized entries
+         if (!entry.vectorized && !settings.enabled_for_all) {
+-            console.debug('Vectors: Skipped non-vectorized WI entry', entry);
++            console.debug(`Vectors: Skipped non-vectorized WI entry ${entryId}`);
+             continue;
+         }
+ 
+@@ -1683,12 +1685,12 @@ async function activateWorldInfo(chat) {
+         const deletedHashes = hashesInCollection.filter(x => !groupedEntries[world].some(y => getStringHash(y.content) === x));
+ 
+         if (newEntries.length > 0) {
+-            console.log(`Vectors: Found ${newEntries.length} new WI entries for world ${world}`);
++            console.log(`Vectors: Found ${newEntries.length} new WI entries`);
+             await insertVectorItems(collectionId, newEntries.map(x => ({ hash: getStringHash(x.content), text: x.content, index: x.uid })));
+         }
+ 
+         if (deletedHashes.length > 0) {
+-            console.log(`Vectors: Deleted ${deletedHashes.length} old hashes for world ${world}`);
++            console.log(`Vectors: Deleted ${deletedHashes.length} old WI hashes`);
+             await deleteVectorItems(collectionId, deletedHashes);
+         }
+ 
+@@ -1730,7 +1732,7 @@ async function activateWorldInfo(chat) {
+         return;
+     }
+ 
+-    console.log(`Vectors: Activated ${activatedEntries.length} WI entries`, activatedEntries);
++    console.log(`Vectors: Activated ${activatedEntries.length} WI entries`);
+     await eventSource.emit(event_types.WORLDINFO_FORCE_ACTIVATE, activatedEntries);
+ }
+ 
+diff --git a/public/scripts/power-user.js b/public/scripts/power-user.js
+index 216d397..cf7fe42 100644
+--- a/public/scripts/power-user.js
++++ b/public/scripts/power-user.js
+@@ -2299,7 +2299,7 @@ function validateStoryString(storyString, params) {
+                 fieldsToWarn.push(field);
+                 currentCache.fieldsWarned[field] = true;
+             }
+-            console.warn(`The story string does not contain {{${field}}}, but it would contain content:\n`, params[field]);
++            console.warn(`The story string does not contain {{${field}}}, but content was available`);
+         }
+     }
+ 

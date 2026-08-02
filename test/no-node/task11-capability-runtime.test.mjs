@@ -5,8 +5,42 @@ import test from 'node:test';
 import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
 
+import { buildCapabilityRuntime } from '../../scripts/stapk-transform-no-node.mjs';
+
 const PROJECT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const HELPER_FILE = path.join(PROJECT_ROOT, 'transform', 'no-node', 'web', 'stapk-capabilities.js');
+
+test('runtime enables only core and explicit runtimeAvailable capabilities', () => {
+  const runtime = buildCapabilityRuntime({
+    capabilities: [
+      { id: 'core.settings', kind: 'core' },
+      { id: 'remote.embeddings', kind: 'external_optional', runtimeAvailable: true },
+      { id: 'remote.tts', kind: 'external_optional' },
+      { id: 'excluded.extensions', kind: 'excluded', runtimeAvailable: false },
+    ],
+  });
+
+  assert.deepEqual(runtime, {
+    'core.settings': true,
+    'remote.embeddings': true,
+    'remote.tts': false,
+    'excluded.extensions': false,
+  });
+});
+
+test('runtime fails closed for an unknown capability even when it claims to be core', () => {
+  const runtime = buildCapabilityRuntime({
+    capabilities: [
+      { id: 'core.settings', kind: 'core' },
+      { id: 'core.unreviewed', kind: 'core' },
+    ],
+  });
+
+  assert.deepEqual(runtime, {
+    'core.settings': true,
+    'core.unreviewed': false,
+  });
+});
 
 async function runHelper(fetch, document) {
   const source = await readFile(HELPER_FILE, 'utf8');

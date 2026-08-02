@@ -510,6 +510,56 @@
       "method": "POST",
       "path": "/api/extensions/delete",
       "reason": "扩展兼容阶段删除本地第三方扩展"
+    },
+    {
+      "method": "POST",
+      "path": "/api/vector/list",
+      "reason": "Task 13 本地 SQLite 向量 hash 列表"
+    },
+    {
+      "method": "POST",
+      "path": "/api/vector/insert",
+      "reason": "Task 13 本地 SQLite 写入向量"
+    },
+    {
+      "method": "POST",
+      "path": "/api/vector/delete",
+      "reason": "Task 13 本地 SQLite 删除向量"
+    },
+    {
+      "method": "POST",
+      "path": "/api/vector/query",
+      "reason": "Task 13 本地 SQLite 单集合检索"
+    },
+    {
+      "method": "POST",
+      "path": "/api/vector/query-multi",
+      "reason": "Task 13 本地 SQLite 多集合检索"
+    },
+    {
+      "method": "POST",
+      "path": "/api/vector/purge",
+      "reason": "Task 13 清理单个向量集合"
+    },
+    {
+      "method": "POST",
+      "path": "/api/vector/purge-all",
+      "reason": "Task 13 清理全部向量索引"
+    },
+    {
+      "method": "POST",
+      "path": "/api/stapk/embeddings/config/get",
+      "reason": "Task 13 读取受控 Embedding 配置"
+    },
+    {
+      "method": "POST",
+      "path": "/api/stapk/embeddings/config/save",
+      "reason": "Task 13 保存受控 Embedding 配置"
+    },
+    {
+      "method": "POST",
+      "path": "/api/stapk/embeddings/test",
+      "reason": "Task 13 测试远程 Embedding Provider"
     }
   ],
   "unsupportedHidden": [

@@ -19,11 +19,12 @@ const METADATA_ARTIFACTS = [
 export async function buildNoNodeApk({
   variant = 'debug',
   ref = 'release',
+  repo,
   projectRoot = PROJECT_ROOT,
   platform = process.platform,
   runCommand
 } = {}) {
-  validateOptions({ variant, ref });
+  validateOptions({ variant, ref, repo });
   const root = path.resolve(projectRoot);
   const transformOut = path.join(root, 'build', 'no-node-payload');
   const androidAssets = path.join(root, 'mobile', 'app', 'src', 'main', 'assets');
@@ -31,21 +32,23 @@ export async function buildNoNodeApk({
   const gradleCommand = path.join(mobileRoot, platform === 'win32' ? 'gradlew.bat' : 'gradlew');
   const commandRunner = runCommand ?? ((command) => runExternal({ ...command, platform }));
   const noNodeTestFiles = await listNoNodeTestFiles(root);
+  const transformArgs = ['scripts/stapk-transform-no-node.mjs'];
+  if (repo) transformArgs.push('--repo', repo);
+  transformArgs.push(
+    '--ref', ref,
+    '--out', transformOut,
+    '--android-assets', androidAssets,
+    '--clean'
+  );
 
   await commandRunner({
     command: process.execPath,
-    args: ['--test', '--test-concurrency=1', ...noNodeTestFiles],
+    args: transformArgs,
     cwd: root
   });
   await commandRunner({
     command: process.execPath,
-    args: [
-      'scripts/stapk-transform-no-node.mjs',
-      '--ref', ref,
-      '--out', transformOut,
-      '--android-assets', androidAssets,
-      '--clean'
-    ],
+    args: ['--test', '--test-concurrency=1', ...noNodeTestFiles],
     cwd: root
   });
   await commandRunner({
@@ -113,7 +116,7 @@ async function listNoNodeTestFiles(root) {
   return files;
 }
 
-function validateOptions({ variant, ref }) {
+function validateOptions({ variant, ref, repo }) {
   if (!['debug', 'release'].includes(variant)) {
     throw new Error('variant 只接受 debug 或 release');
   }
@@ -124,6 +127,12 @@ function validateOptions({ variant, ref }) {
     ref.includes('//')
   ) {
     throw new Error(`ref 非法：${ref}`);
+  }
+  if (
+    repo !== undefined &&
+    (typeof repo !== 'string' || !repo.trim() || /[\u0000-\u001f\u007f]/.test(repo))
+  ) {
+    throw new Error('repo 非法');
   }
 }
 
@@ -180,10 +189,11 @@ async function main() {
   const { values } = parseArgs({
     options: {
       variant: { type: 'string', default: 'debug' },
-      ref: { type: 'string', default: 'release' }
+      ref: { type: 'string', default: 'release' },
+      repo: { type: 'string' }
     }
   });
-  await buildNoNodeApk({ variant: values.variant, ref: values.ref });
+  await buildNoNodeApk({ variant: values.variant, ref: values.ref, repo: values.repo });
 }
 
 const isMain = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);

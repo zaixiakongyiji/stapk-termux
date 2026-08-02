@@ -8,6 +8,7 @@ enum class DiagnosticArea {
     HTTP,
     STORAGE,
     PROVIDER,
+    VECTOR,
     RESTORE
 }
 
@@ -72,6 +73,9 @@ class DiagnosticLogger(
         "result" -> value.takeIf { CODE.matches(it) }
         "recoveredCount", "quarantinedCount" ->
             value.toIntOrNull()?.takeIf { it >= 0 }?.toString()
+        "batchCount", "dimension", "itemCount", "databaseBytes" ->
+            value.toLongOrNull()?.takeIf { it >= 0L }?.toString()
+        "collectionSha256", "modelSha256" -> value.takeIf { SHA256.matches(it) }
         else -> null
     }
 

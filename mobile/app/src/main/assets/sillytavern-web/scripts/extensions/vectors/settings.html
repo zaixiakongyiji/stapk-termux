@@ -10,26 +10,8 @@
                     Vectorization Source
                 </label>
                 <select id="vectors_source" class="text_pole">
-                    <option value="chutes">Chutes</option>
-                    <option value="workers_ai">Cloudflare Workers AI</option>
-                    <option value="cohere">Cohere</option>
-                    <option value="electronhub">Electron Hub</option>
-                    <option value="extras">Extras (deprecated)</option>
-                    <option value="palm">Google AI Studio</option>
-                    <option value="vertexai">Google Vertex AI</option>
-                    <option value="koboldcpp">KoboldCpp</option>
-                    <option value="llamacpp">llama.cpp</option>
-                    <option value="transformers" data-i18n="Local (Transformers)">Local (Transformers)</option>
-                    <option value="mistral">MistralAI</option>
-                    <option value="nanogpt">NanoGPT</option>
-                    <option value="nomicai">NomicAI</option>
-                    <option value="ollama">Ollama</option>
                     <option value="openai">OpenAI</option>
-                    <option value="openrouter">OpenRouter</option>
-                    <option value="siliconflow">SiliconFlow</option>
-                    <option value="togetherai">TogetherAI</option>
-                    <option value="vllm">vLLM</option>
-                    <option value="webllm" data-i18n="WebLLM Extension">WebLLM Extension</option>
+                    <option value="stapk_openai_compatible">Custom OpenAI-compatible</option>
                 </select>
             </div>
             <div class="flex-container flexFlowColumn" id="chutes_vectorsModel">
@@ -126,6 +108,20 @@
                     <option value="text-embedding-3-large">text-embedding-3-large</option>
                 </select>
             </div>
+            <div class="flex-container flexFlowColumn" id="stapk_embedding_custom">
+                <label for="stapk_embedding_base_url">Custom Embedding Base URL</label>
+                <input id="stapk_embedding_base_url" class="text_pole" type="url" autocomplete="off" placeholder="https://example.com/v1" />
+                <label for="stapk_embedding_model">Custom Embedding Model</label>
+                <input id="stapk_embedding_model" class="text_pole" type="text" autocomplete="off" placeholder="embed-model" />
+                <label for="stapk_embedding_api_key">Custom Embedding API Key</label>
+                <input id="stapk_embedding_api_key" class="text_pole" type="password" autocomplete="new-password" placeholder="Leave blank to keep the existing key" />
+                <small>密钥不会回显或保存到酒馆设置；测试连接只发送固定文本，不会发送聊天内容。</small>
+            </div>
+            <div class="flex-container justifyCenter">
+                <div id="stapk_embedding_save" class="menu_button menu_button_icon">Save Embedding Provider</div>
+                <div id="stapk_embedding_test" class="menu_button menu_button_icon">Test Connection</div>
+            </div>
+            <small id="stapk_embedding_privacy_notice">启用聊天、文件或世界书向量化前，需要确认这些文本片段会发送到所选 embedding 服务。</small>
             <div class="flex-container flexFlowColumn" id="cohere_vectorsModel">
                 <label for="vectors_cohere_model" data-i18n="Vectorization Model">
                     Vectorization Model

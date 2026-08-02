@@ -4,6 +4,9 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import java.io.File
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 
 data class StoredSecret(
     val id: String,
@@ -12,29 +15,34 @@ data class StoredSecret(
     val active: Boolean
 )
 
-class SecretStore(private val paths: NativeAdapterPaths) {
+open class SecretStore(private val paths: NativeAdapterPaths) {
     private val file get() = File(paths.secretsDir, "openai-compatible.json")
 
-    fun write(key: String, value: String, label: String): String? {
-        if (key !in SUPPORTED_KEYS) return null
-        if (value.isBlank()) {
-            delete(key, null)
-            return null
+    open fun write(key: String, value: String, label: String): String? {
+        return withFileLock {
+            if (key !in SUPPORTED_KEYS) return@withFileLock null
+            if (value.isBlank()) {
+                deleteLocked(key, null)
+                return@withFileLock null
+            }
+            val secrets = readSecrets()
+            val records = recordsFor(secrets, key)
+            records.indices.forEach { index -> records[index] = records[index].copy(active = false) }
+            val id = UUID.randomUUID().toString()
+            records += StoredSecret(id, label.ifBlank { key }, value, active = true)
+            secrets.add(key, records.toJsonArray())
+            writeSecrets(secrets)
+            id
         }
-        val secrets = readSecrets()
-        val records = recordsFor(secrets, key)
-        records.indices.forEach { index -> records[index] = records[index].copy(active = false) }
-        val id = UUID.randomUUID().toString()
-        records += StoredSecret(id, label.ifBlank { key }, value, active = true)
-        secrets.add(key, records.toJsonArray())
-        writeSecrets(secrets)
-        return id
     }
 
-    fun load(key: String): StoredSecret? = recordsFor(readSecrets(), key)
-        .firstOrNull { it.active }
+    fun load(key: String): StoredSecret? = withFileLock {
+        recordsFor(readSecrets(), key).firstOrNull { it.active }
+    }
 
-    fun delete(key: String, id: String?): Boolean {
+    fun delete(key: String, id: String?): Boolean = withFileLock { deleteLocked(key, id) }
+
+    private fun deleteLocked(key: String, id: String?): Boolean {
         if (key !in SUPPORTED_KEYS) return false
         val secrets = readSecrets()
         val records = recordsFor(secrets, key)
@@ -56,7 +64,7 @@ class SecretStore(private val paths: NativeAdapterPaths) {
 
     fun isSupported(key: String): Boolean = key in SUPPORTED_KEYS
 
-    fun readStateJson(): String {
+    fun readStateJson(): String = withFileLock {
         val secrets = readSecrets()
         val state = JsonObject()
         SUPPORTED_KEYS.forEach { key ->
@@ -74,8 +82,11 @@ class SecretStore(private val paths: NativeAdapterPaths) {
                 })
             }
         }
-        return state.toString()
+        state.toString()
     }
+
+    private fun <T> withFileLock(action: () -> T): T =
+        locks.getOrPut(file.canonicalFile.path) { ReentrantLock() }.withLock(action)
 
     private fun recordsFor(secrets: JsonObject, key: String): MutableList<StoredSecret> {
         val raw = secrets.get(key) ?: return mutableListOf()
@@ -136,7 +147,9 @@ class SecretStore(private val paths: NativeAdapterPaths) {
 
     private companion object {
         const val OPENAI_KEY = "api_key_openai"
+        const val EMBEDDING_KEY = "api_key_embedding"
         const val REDACTED_VALUE = "********"
-        val SUPPORTED_KEYS = setOf(OPENAI_KEY, "api_key_custom")
+        val SUPPORTED_KEYS = setOf(OPENAI_KEY, "api_key_custom", EMBEDDING_KEY)
+        val locks = ConcurrentHashMap<String, ReentrantLock>()
     }
 }

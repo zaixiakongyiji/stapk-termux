@@ -83,7 +83,16 @@ test('final Android UI capability asset is generated from the formal source cont
     })),
     EXPECTED_IMPLEMENTED_ACTIONS,
   );
-  assert.equal(generated.hiddenSelectors.length, 33);
+  assert.equal(generated.hiddenSelectors.length, 32);
+  assert.deepEqual(generated.configuredActions, [
+    {
+      name: 'Vector Storage',
+      selector: '#vectors_container',
+      capability: 'remote.embeddings',
+      endpoint: 'POST /api/vector/query',
+      source: { type: 'html', path: 'index.html' },
+    },
+  ]);
 });
 
 test('production UI verifier accepts implemented actions and hidden selectors in final Android assets', async () => {
@@ -98,6 +107,7 @@ test('production UI verifier accepts implemented actions and hidden selectors in
   assert.deepEqual(result.errors, []);
   assert.equal(result.ok, true);
   assert.equal(result.summary.implementedActions, 7);
-  assert.equal(result.summary.hiddenSelectors, 33);
+  assert.equal(result.summary.configuredActions, 1);
+  assert.equal(result.summary.hiddenSelectors, 32);
   assert.ok(result.summary.localStylesheets >= 1);
 });

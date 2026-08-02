@@ -9,3 +9,5 @@
 0009-stapk-mobile-extension-and-import-compatibility.patch
 0010-stapk-mobile-unicode-and-embedded-lorebook.patch
 0011-stapk-mobile-world-info-global-selector.patch
+0012-stapk-mobile-remote-embedding-vector-storage.patch
+0013-stapk-mobile-redact-vector-console-content.patch

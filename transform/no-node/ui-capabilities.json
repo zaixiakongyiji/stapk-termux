@@ -201,6 +201,18 @@
       }
     }
   ],
+  "configuredActions": [
+    {
+      "name": "Vector Storage",
+      "selector": "#vectors_container",
+      "capability": "remote.embeddings",
+      "endpoint": "POST /api/vector/query",
+      "source": {
+        "type": "html",
+        "path": "index.html"
+      }
+    }
+  ],
   "hiddenSelectors": [
     {
       "selector": ".userBackupButton",
@@ -233,7 +245,7 @@
       "reason": "The native adapter does not implement these server-backed extension controls."
     },
     {
-      "selector": "#extensions_settings2 .extension_container:not(#qr_container):not(#regex_container):not(#summarize_container)",
+      "selector": "#extensions_settings2 .extension_container:not(#qr_container):not(#regex_container):not(#summarize_container):not(#vectors_container)",
       "capability": "excluded.extensions",
       "status": "unsupported_hidden",
       "reason": "The native adapter does not implement these server-backed extension controls."
@@ -378,12 +390,6 @@
     },
     {
       "selector": "#stt_container",
-      "capability": "excluded.extensions",
-      "status": "unsupported_hidden",
-      "reason": "The native adapter does not implement these server-backed extension controls."
-    },
-    {
-      "selector": "#vectors_container",
       "capability": "excluded.extensions",
       "status": "unsupported_hidden",
       "reason": "The native adapter does not implement these server-backed extension controls."

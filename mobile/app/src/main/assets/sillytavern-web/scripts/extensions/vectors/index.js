@@ -53,11 +53,11 @@ export const EXTENSION_PROMPT_TAG = '3_vectors';
 export const EXTENSION_PROMPT_TAG_DB = '4_vectors_data_bank';
 
 // Force solo chunks for sources that don't support batching.
-const getBatchSize = () => ['transformers', 'ollama'].includes(settings.source) ? 1 : 5;
+const getBatchSize = () => 5;
 
 const settings = {
     // For both
-    source: 'transformers',
+    source: 'openai',
     alt_endpoint_url: '',
     use_alt_endpoint: false,
     include_wi: false,
@@ -137,6 +137,8 @@ const skippedHashes = new Set();
  */
 const FATAL_CAUSES = new Set(['account_id_missing', 'api_key_missing', 'api_url_missing', 'api_model_missing', 'extras_module_missing', 'webllm_not_supported', 'summary_endpoint_invalid']);
 const vectorApiRequiresUrl = ['llamacpp', 'vllm', 'ollama', 'koboldcpp'];
+let stapkEmbeddingConfig = null;
+let stapkEmbeddingsReady = false;
 
 /**
  * @typedef {object} RemoteEmbeddingEndpointConfig
@@ -658,7 +660,7 @@ async function ingestDataBankAttachments(source) {
 
         // Download and process the file
         const fileText = await getFileAttachment(file.url);
-        console.log(`Vectors: Retrieved file ${file.name} from Data Bank`);
+        console.log('Vectors: Retrieved a file from Data Bank');
         // Convert kilobytes to string length
         const thresholdLength = settings.size_threshold_db * 1024;
         // Use chunk size from settings if file is larger than threshold
@@ -678,11 +680,11 @@ async function ingestDataBankAttachments(source) {
 async function injectDataBankChunks(queryText, collectionIds) {
     try {
         const queryResults = await queryMultipleCollections(collectionIds, queryText, settings.chunk_count_db, settings.score_threshold);
-        console.debug(`Vectors: Retrieved ${collectionIds.length} Data Bank collections`, queryResults);
+        console.debug(`Vectors: Retrieved ${collectionIds.length} Data Bank collections`);
         let textResult = '';
 
         for (const collectionId in queryResults) {
-            console.debug(`Vectors: Processing Data Bank collection ${collectionId}`, queryResults[collectionId]);
+            console.debug(`Vectors: Processing Data Bank collection ${collectionId}`);
             const metadata = queryResults[collectionId].metadata?.filter(x => x.text)?.sort((a, b) => a.index - b.index)?.map(x => x.text)?.filter(onlyUnique) || [];
             textResult += metadata.join('\n') + '\n\n';
         }
@@ -706,9 +708,10 @@ async function injectDataBankChunks(queryText, collectionIds) {
  * @returns {Promise<string>} Retrieved file text
  */
 async function retrieveFileChunks(queryText, collectionId) {
-    console.debug(`Vectors: Retrieving file chunks for collection ${collectionId}`, queryText);
+    console.debug(`Vectors: Retrieving file chunks for collection ${collectionId}`);
     const queryResults = await queryCollection(collectionId, queryText, settings.chunk_count);
-    console.debug(`Vectors: Retrieved ${queryResults.hashes.length} file chunks for collection ${collectionId}`, queryResults);
+    const retrievedCount = queryResults.hashes.length;
+    console.debug(`Vectors: Retrieved ${retrievedCount} file chunks for collection ${collectionId}`);
     const metadata = queryResults.metadata.filter(x => x.text).sort((a, b) => a.index - b.index).map(x => x.text).filter(onlyUnique);
     const fileText = metadata.join('\n');
 
@@ -729,7 +732,7 @@ async function vectorizeFile(fileText, fileName, collectionId, chunkSize, overla
 
     try {
         if (settings.translate_files && typeof globalThis.translate === 'function') {
-            console.log(`Vectors: Translating file ${fileName} to English...`);
+            console.log('Vectors: Translating a file to English...');
             const translatedText = await globalThis.translate(fileText, 'en');
             fileText = translatedText;
         }
@@ -745,7 +748,7 @@ async function vectorizeFile(fileText, fileName, collectionId, chunkSize, overla
         const chunks = settings.only_custom_boundary && settings.force_chunk_delimiter
             ? fileText.split(settings.force_chunk_delimiter).map(applyOverlap)
             : splitRecursive(fileText, chunkSize, delimiters).map(applyOverlap);
-        console.debug(`Vectors: Split file ${fileName} into ${chunks.length} chunks with ${overlapPercent}% overlap`, chunks);
+        console.debug(`Vectors: Split file into ${chunks.length} chunks with ${overlapPercent}% overlap`);
 
         const items = chunks.map((chunk, index) => ({ hash: getStringHash(chunk), text: chunk, index: index }));
 
@@ -756,7 +759,7 @@ async function vectorizeFile(fileText, fileName, collectionId, chunkSize, overla
         }
 
         toastr.clear(toast);
-        console.log(`Vectors: Inserted ${chunks.length} vector items for file ${fileName} into ${collectionId}`);
+        console.log(`Vectors: Inserted ${chunks.length} vector items`);
         return true;
     } catch (error) {
         toastr.clear(toast);
@@ -864,7 +867,7 @@ async function rearrangeChat(chat, _contextSize, _abort, type) {
  */
 function getPromptText(queriedMessages) {
     const queriedText = queriedMessages.map(x => collapseNewlines(`${x.name}: ${x.mes}`).trim()).join('\n\n');
-    console.log('Vectors: relevant past messages found.\n', queriedText);
+    console.log(`Vectors: Found ${queriedMessages.length} relevant past messages`);
     return substituteParamsExtended(settings.template, { text: queriedText });
 }
 
@@ -931,67 +934,12 @@ async function getQueryText(chat, initiator) {
 function getVectorsRequestBody(args = {}) {
     const body = Object.assign({}, args);
     switch (settings.source) {
-        case 'extras':
-            body.extrasUrl = extension_settings.apiUrl;
-            body.extrasKey = extension_settings.apiKey;
-            break;
-        case 'electronhub':
-            body.model = extension_settings.vectors.electronhub_model;
-            break;
-        case 'openrouter':
-            body.model = extension_settings.vectors.openrouter_model;
-            break;
-        case 'togetherai':
-            body.model = extension_settings.vectors.togetherai_model;
-            break;
         case 'openai':
-            body.model = extension_settings.vectors.openai_model;
-            break;
-        case 'cohere':
-            body.model = extension_settings.vectors.cohere_model;
-            break;
-        case 'ollama':
-            body.model = extension_settings.vectors.ollama_model;
-            body.apiUrl = settings.use_alt_endpoint ? settings.alt_endpoint_url : textgenerationwebui_settings.server_urls[textgen_types.OLLAMA];
-            body.keep = !!extension_settings.vectors.ollama_keep;
-            break;
-        case 'llamacpp':
-            body.apiUrl = settings.use_alt_endpoint ? settings.alt_endpoint_url : textgenerationwebui_settings.server_urls[textgen_types.LLAMACPP];
-            break;
-        case 'vllm':
-            body.apiUrl = settings.use_alt_endpoint ? settings.alt_endpoint_url : textgenerationwebui_settings.server_urls[textgen_types.VLLM];
-            body.model = extension_settings.vectors.vllm_model;
-            break;
-        case 'webllm':
-            body.model = extension_settings.vectors.webllm_model;
-            break;
-        case 'palm':
-            body.model = extension_settings.vectors.google_model;
-            body.api = 'makersuite';
-            break;
-        case 'vertexai':
-            body.model = extension_settings.vectors.google_model;
-            body.api = 'vertexai';
-            body.vertexai_auth_mode = oai_settings.vertexai_auth_mode;
-            body.vertexai_region = oai_settings.vertexai_region;
-            body.vertexai_express_project_id = oai_settings.vertexai_express_project_id;
-            break;
-        case 'chutes':
-            body.model = extension_settings.vectors.chutes_model;
-            break;
-        case 'nanogpt':
-            body.model = extension_settings.vectors.nanogpt_model;
-            break;
-        case 'siliconflow':
-            body.model = extension_settings.vectors.siliconflow_model;
-            body.siliconflow_endpoint = oai_settings.siliconflow_endpoint;
-            break;
-        case 'workers_ai':
-            body.model = extension_settings.vectors.workers_ai_model || '@cf/baai/bge-m3';
-            body.workers_ai_account_id = oai_settings.workers_ai_account_id;
+        case 'stapk_openai_compatible':
+            body.model = getStapkEmbeddingModel();
             break;
         default:
-            break;
+            throw new Error('Vectors: unsupported embedding provider', { cause: 'embedding_provider_unsupported' });
     }
     return body;
 }
@@ -1002,19 +950,8 @@ function getVectorsRequestBody(args = {}) {
  * @returns {Promise<object>} Additional arguments
  */
 async function getAdditionalArgs(items) {
-    const args = {};
-    switch (settings.source) {
-        case 'webllm':
-            args.embeddings = await createWebLlmEmbeddings(items);
-            break;
-        case 'koboldcpp': {
-            const { embeddings, model } = await createKoboldCppEmbeddings(items);
-            args.embeddings = embeddings;
-            args.model = model;
-            break;
-        }
-    }
-    return args;
+    void items;
+    return {};
 }
 
 /**
@@ -1023,6 +960,7 @@ async function getAdditionalArgs(items) {
 * @returns {Promise<number[]>} Saved hashes
 */
 async function getSavedHashes(collectionId) {
+    throwIfSourceInvalid();
     const args = await getAdditionalArgs([]);
     const response = await fetch('/api/vector/list', {
         method: 'POST',
@@ -1072,49 +1010,11 @@ async function insertVectorItems(collectionId, items) {
  * Throws an error if the source is invalid (missing API key or URL, or missing module)
  */
 function throwIfSourceInvalid() {
-    if (settings.source === 'openai' && !secret_state[SECRET_KEYS.OPENAI] ||
-        settings.source === 'electronhub' && !secret_state[SECRET_KEYS.ELECTRONHUB] ||
-        settings.source === 'chutes' && !secret_state[SECRET_KEYS.CHUTES] ||
-        settings.source === 'nanogpt' && !secret_state[SECRET_KEYS.NANOGPT] ||
-        settings.source === 'openrouter' && !secret_state[SECRET_KEYS.OPENROUTER] ||
-        settings.source === 'palm' && !secret_state[SECRET_KEYS.MAKERSUITE] ||
-        settings.source === 'vertexai' && !secret_state[SECRET_KEYS.VERTEXAI] && !secret_state[SECRET_KEYS.VERTEXAI_SERVICE_ACCOUNT] ||
-        settings.source === 'mistral' && !secret_state[SECRET_KEYS.MISTRALAI] ||
-        settings.source === 'togetherai' && !secret_state[SECRET_KEYS.TOGETHERAI] ||
-        settings.source === 'nomicai' && !secret_state[SECRET_KEYS.NOMICAI] ||
-        settings.source === 'cohere' && !secret_state[SECRET_KEYS.COHERE] ||
-        settings.source === 'workers_ai' && !secret_state[SECRET_KEYS.WORKERS_AI] ||
-        settings.source === 'siliconflow' && !secret_state[SECRET_KEYS.SILICONFLOW]) {
+    if (!stapkEmbeddingsReady || !stapkEmbeddingConfig || stapkEmbeddingConfig.type !== settings.source) {
+        throw new Error('Vectors: embedding provider is not configured', { cause: 'embedding_not_configured' });
+    }
+    if (stapkEmbeddingConfig.keyConfigured !== true) {
         throw new Error('Vectors: API key missing', { cause: 'api_key_missing' });
-    }
-
-    if (vectorApiRequiresUrl.includes(settings.source) && settings.use_alt_endpoint) {
-        if (!settings.alt_endpoint_url) {
-            throw new Error('Vectors: API URL missing', { cause: 'api_url_missing' });
-        }
-    } else {
-        if (settings.source === 'ollama' && !textgenerationwebui_settings.server_urls[textgen_types.OLLAMA] ||
-            settings.source === 'vllm' && !textgenerationwebui_settings.server_urls[textgen_types.VLLM] ||
-            settings.source === 'koboldcpp' && !textgenerationwebui_settings.server_urls[textgen_types.KOBOLDCPP] ||
-            settings.source === 'llamacpp' && !textgenerationwebui_settings.server_urls[textgen_types.LLAMACPP]) {
-            throw new Error('Vectors: API URL missing', { cause: 'api_url_missing' });
-        }
-    }
-
-    if (settings.source === 'ollama' && !settings.ollama_model || settings.source === 'vllm' && !settings.vllm_model) {
-        throw new Error('Vectors: API model missing', { cause: 'api_model_missing' });
-    }
-
-    if (settings.source === 'extras' && !modules.includes('embeddings')) {
-        throw new Error('Vectors: Embeddings module missing', { cause: 'extras_module_missing' });
-    }
-
-    if (settings.source === 'webllm' && (!isWebLlmSupported() || !settings.webllm_model)) {
-        throw new Error('Vectors: WebLLM is not supported', { cause: 'webllm_not_supported' });
-    }
-
-    if (settings.source === 'workers_ai' && !oai_settings.workers_ai_account_id) {
-        throw new Error('Vectors: Workers AI account ID missing', { cause: 'account_id_missing' });
     }
 }
 
@@ -1125,6 +1025,7 @@ function throwIfSourceInvalid() {
  * @returns {Promise<void>}
  */
 async function deleteVectorItems(collectionId, hashes) {
+    throwIfSourceInvalid();
     const args = await getAdditionalArgs([]);
     const response = await fetch('/api/vector/delete', {
         method: 'POST',
@@ -1149,6 +1050,7 @@ async function deleteVectorItems(collectionId, hashes) {
  * @returns {Promise<{ hashes: number[], metadata: object[]}>} - Hashes of the results
  */
 async function queryCollection(collectionId, searchText, topK) {
+    throwIfSourceInvalid();
     const args = await getAdditionalArgs([searchText]);
     const response = await fetch('/api/vector/query', {
         method: 'POST',
@@ -1179,6 +1081,7 @@ async function queryCollection(collectionId, searchText, topK) {
  * @returns {Promise<Record<string, { hashes: number[], metadata: object[] }>>} - Results mapped to collection IDs
  */
 async function queryMultipleCollections(collectionIds, searchText, topK, threshold) {
+    throwIfSourceInvalid();
     const args = await getAdditionalArgs([searchText]);
     const response = await fetch('/api/vector/query-multi', {
         method: 'POST',
@@ -1206,11 +1109,12 @@ async function queryMultipleCollections(collectionIds, searchText, topK, thresho
  */
 async function purgeFileVectorIndex(fileUrl) {
     try {
+        throwIfSourceInvalid();
         if (!settings.enabled_files) {
             return;
         }
 
-        console.log(`Vectors: Purging file vector index for ${fileUrl}`);
+        console.log('Vectors: Purging a file vector index');
         const collectionId = getFileCollectionId(fileUrl);
 
         const response = await fetch('/api/vector/purge', {
@@ -1239,6 +1143,7 @@ async function purgeFileVectorIndex(fileUrl) {
  */
 async function purgeVectorIndex(collectionId) {
     try {
+        throwIfSourceInvalid();
         if (!settings.enabled_chats) {
             return true;
         }
@@ -1269,6 +1174,7 @@ async function purgeVectorIndex(collectionId) {
  */
 async function purgeAllVectorIndexes() {
     try {
+        throwIfSourceInvalid();
         const response = await fetch('/api/vector/purge-all', {
             method: 'POST',
             headers: getRequestHeaders(),
@@ -1289,32 +1195,136 @@ async function purgeAllVectorIndexes() {
     }
 }
 
+function getStapkEmbeddingModel() {
+    return String(stapkEmbeddingConfig?.model || '').trim();
+}
+
+function selectedStapkEmbeddingSource() {
+    const source = String($('#vectors_source').val() || '');
+    return ['openai', 'stapk_openai_compatible'].includes(source) ? source : 'openai';
+}
+
+async function requestStapkEmbeddingConfig(path, body = {}) {
+    const response = await fetch(path, {
+        method: 'POST',
+        headers: getRequestHeaders(),
+        body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+        throw new Error(`Embedding configuration failed: ${response.status}`);
+    }
+    return await response.json();
+}
+
+function displayStapkEmbeddingConfig(config) {
+    stapkEmbeddingConfig = config;
+    const source = config?.type === 'stapk_openai_compatible' ? 'stapk_openai_compatible' : 'openai';
+    settings.source = source;
+    $('#vectors_source').val(source);
+    $('#vectors_openai_model').val(source === 'openai' ? config.model : settings.openai_model);
+    $('#stapk_embedding_base_url').val(source === 'stapk_openai_compatible' ? config.baseUrl || '' : '');
+    $('#stapk_embedding_model').val(source === 'stapk_openai_compatible' ? config.model || '' : '');
+    $('#stapk_embedding_api_key').val('');
+    toggleSettings();
+}
+
+async function ensureStapkEmbeddingCapability() {
+    if (!window.stapkCapabilitiesReady || typeof window.isStapkCapabilityAvailable !== 'function') {
+        stapkEmbeddingsReady = false;
+        return false;
+    }
+    try {
+        await window.stapkCapabilitiesReady;
+        if (!window.isStapkCapabilityAvailable('remote.embeddings')) {
+            stapkEmbeddingsReady = false;
+            return false;
+        }
+        return true;
+    } catch (error) {
+        console.warn('Vectors: embedding capability is unavailable', error);
+        stapkEmbeddingsReady = false;
+        return false;
+    }
+}
+
+async function loadStapkEmbeddingConfig() {
+    if (!await ensureStapkEmbeddingCapability()) return false;
+    try {
+        displayStapkEmbeddingConfig(await requestStapkEmbeddingConfig('/api/stapk/embeddings/config/get'));
+        stapkEmbeddingsReady = true;
+        return true;
+    } catch (error) {
+        console.warn('Vectors: embedding configuration is unavailable', error);
+        stapkEmbeddingsReady = false;
+        return false;
+    }
+}
+
+function currentStapkEmbeddingConfigPayload() {
+    const type = selectedStapkEmbeddingSource();
+    if (type === 'openai') {
+        return { type, model: String($('#vectors_openai_model').val() || '').trim() };
+    }
+    const apiKey = String($('#stapk_embedding_api_key').val() || '');
+    return {
+        type,
+        baseUrl: String($('#stapk_embedding_base_url').val() || '').trim(),
+        model: String($('#stapk_embedding_model').val() || '').trim(),
+        ...(apiKey ? { apiKey } : {}),
+    };
+}
+
+async function saveStapkEmbeddingConfig() {
+    if (!await ensureStapkEmbeddingCapability()) {
+        throw new Error('Embedding capability is unavailable');
+    }
+    const saved = await requestStapkEmbeddingConfig('/api/stapk/embeddings/config/save', currentStapkEmbeddingConfigPayload());
+    if (!await ensureStapkEmbeddingCapability()) {
+        throw new Error('Embedding capability is unavailable');
+    }
+    settings.source = saved.type;
+    settings.openai_model = saved.type === 'openai' ? saved.model : settings.openai_model;
+    Object.assign(extension_settings.vectors, settings);
+    saveSettingsDebounced();
+    displayStapkEmbeddingConfig(saved);
+    return saved;
+}
+
+async function confirmStapkEmbeddingPrivacy() {
+    if (extension_settings.vectors.stapk_embedding_privacy_acknowledged === true) return true;
+    const acknowledged = window.confirm('启用向量功能会将聊天、世界书或 Data Bank 文本片段发送给你配置的 embedding 服务，可能产生费用。是否继续？');
+    if (!acknowledged) return false;
+    extension_settings.vectors.stapk_embedding_privacy_acknowledged = true;
+    saveSettingsDebounced();
+    return true;
+}
+
+async function allowStapkEmbeddingToggle(selector) {
+    if (!await ensureStapkEmbeddingCapability()) {
+        $(selector).prop('checked', false);
+        toastr.error('Embedding capability 当前不可用');
+        return false;
+    }
+    if (!stapkEmbeddingsReady || !stapkEmbeddingConfig?.keyConfigured || stapkEmbeddingConfig.type !== settings.source || selectedStapkEmbeddingSource() !== settings.source) {
+        $(selector).prop('checked', false);
+        toastr.error('请先保存并测试 Embedding Provider 配置');
+        return false;
+    }
+    if (!await confirmStapkEmbeddingPrivacy()) {
+        $(selector).prop('checked', false);
+        return false;
+    }
+    return true;
+}
+
 function toggleSettings() {
     $('#vectors_files_settings').toggle(!!settings.enabled_files);
     $('#vectors_chats_settings').toggle(!!settings.enabled_chats);
     $('#vectors_world_info_settings').toggle(!!settings.enabled_world_info);
-    $('#together_vectorsModel').toggle(settings.source === 'togetherai');
-    $('#openai_vectorsModel').toggle(settings.source === 'openai');
-    $('#electronhub_vectorsModel').toggle(settings.source === 'electronhub');
-    $('#chutes_vectorsModel').toggle(settings.source === 'chutes');
-    $('#nanogpt_vectorsModel').toggle(settings.source === 'nanogpt');
-    $('#openrouter_vectorsModel').toggle(settings.source === 'openrouter');
-    $('#cohere_vectorsModel').toggle(settings.source === 'cohere');
-    $('#ollama_vectorsModel').toggle(settings.source === 'ollama');
-    $('#llamacpp_vectorsModel').toggle(settings.source === 'llamacpp');
-    $('#vllm_vectorsModel').toggle(settings.source === 'vllm');
-    $('#nomicai_apiKey').toggle(settings.source === 'nomicai');
-    $('#webllm_vectorsModel').toggle(settings.source === 'webllm');
-    $('#koboldcpp_vectorsModel').toggle(settings.source === 'koboldcpp');
-    $('#google_vectorsModel').toggle(settings.source === 'palm' || settings.source === 'vertexai');
-    $('#siliconflow_vectorsModel').toggle(settings.source === 'siliconflow');
-    $('#workers_ai_vectorsModel').toggle(settings.source === 'workers_ai');
-    $('#vector_altEndpointUrl').toggle(vectorApiRequiresUrl.includes(settings.source));
-    if (settings.source === 'webllm') {
-        loadWebLlmModels();
-    } else if (settings.source in remoteEmbeddingEndpoints) {
-        loadRemoteEmbeddingModels(settings.source);
-    }
+    $('#vectors_container [id$="vectorsModel"], #vector_altEndpointUrl, #nomicai_apiKey').hide();
+    const source = selectedStapkEmbeddingSource();
+    $('#openai_vectorsModel').toggle(source === 'openai');
+    $('#stapk_embedding_custom').toggle(source === 'stapk_openai_compatible');
 }
 
 /**
@@ -1579,7 +1589,7 @@ async function onVectorizeAllFilesClick() {
             const hashes = await getSavedHashes(collectionId);
 
             if (hashes.length) {
-                console.log(`Vectors: File ${file.name} is already vectorized`);
+                console.log('Vectors: File is already vectorized');
                 continue;
             }
 
@@ -1637,27 +1647,28 @@ async function activateWorldInfo(chat) {
     const groupedEntries = {};
 
     for (const entry of entries) {
+        const entryId = entry.uid;
         // Skip orphaned entries. Is it even possible?
         if (!entry.world) {
-            console.debug('Vectors: Skipped orphaned WI entry', entry);
+            console.debug(`Vectors: Skipped orphaned WI entry ${entryId}`);
             continue;
         }
 
         // Skip disabled entries
         if (entry.disable) {
-            console.debug('Vectors: Skipped disabled WI entry', entry);
+            console.debug(`Vectors: Skipped disabled WI entry ${entryId}`);
             continue;
         }
 
         // Skip entries without content
         if (!entry.content) {
-            console.debug('Vectors: Skipped WI entry without content', entry);
+            console.debug(`Vectors: Skipped WI entry ${entryId} without content`);
             continue;
         }
 
         // Skip non-vectorized entries
         if (!entry.vectorized && !settings.enabled_for_all) {
-            console.debug('Vectors: Skipped non-vectorized WI entry', entry);
+            console.debug(`Vectors: Skipped non-vectorized WI entry ${entryId}`);
             continue;
         }
 
@@ -1683,12 +1694,12 @@ async function activateWorldInfo(chat) {
         const deletedHashes = hashesInCollection.filter(x => !groupedEntries[world].some(y => getStringHash(y.content) === x));
 
         if (newEntries.length > 0) {
-            console.log(`Vectors: Found ${newEntries.length} new WI entries for world ${world}`);
+            console.log(`Vectors: Found ${newEntries.length} new WI entries`);
             await insertVectorItems(collectionId, newEntries.map(x => ({ hash: getStringHash(x.content), text: x.content, index: x.uid })));
         }
 
         if (deletedHashes.length > 0) {
-            console.log(`Vectors: Deleted ${deletedHashes.length} old hashes for world ${world}`);
+            console.log(`Vectors: Deleted ${deletedHashes.length} old WI hashes`);
             await deleteVectorItems(collectionId, deletedHashes);
         }
 
@@ -1721,7 +1732,7 @@ async function activateWorldInfo(chat) {
         return;
     }
 
-    console.log(`Vectors: Activated ${activatedEntries.length} WI entries`, activatedEntries);
+    console.log(`Vectors: Activated ${activatedEntries.length} WI entries`);
     await eventSource.emit(event_types.WORLDINFO_FORCE_ACTIVATE, activatedEntries);
 }
 
@@ -1737,11 +1748,19 @@ export async function init() {
 
     Object.assign(settings, extension_settings.vectors);
 
-    // Migrate from TensorFlow to Transformers
-    settings.source = settings.source !== 'local' ? settings.source : 'transformers';
+    settings.source = ['openai', 'stapk_openai_compatible'].includes(settings.source) ? settings.source : 'openai';
     const template = await renderExtensionTemplateAsync(MODULE_NAME, 'settings');
     $('#vectors_container').append(template);
-    $('#vectors_enabled_chats').prop('checked', settings.enabled_chats).on('input', () => {
+    await loadStapkEmbeddingConfig();
+    if (!stapkEmbeddingsReady || !stapkEmbeddingConfig?.keyConfigured || extension_settings.vectors.stapk_embedding_privacy_acknowledged !== true) {
+        settings.enabled_chats = false;
+        settings.enabled_files = false;
+        settings.enabled_world_info = false;
+        Object.assign(extension_settings.vectors, settings);
+        saveSettingsDebounced();
+    }
+    $('#vectors_enabled_chats').prop('checked', settings.enabled_chats).on('input', async () => {
+        if ($('#vectors_enabled_chats').prop('checked') && !await allowStapkEmbeddingToggle('#vectors_enabled_chats')) return;
         settings.enabled_chats = $('#vectors_enabled_chats').prop('checked');
         Object.assign(extension_settings.vectors, settings);
         saveSettingsDebounced();
@@ -1752,17 +1771,38 @@ export async function init() {
         Object.assign(extension_settings.vectors, settings);
         saveSettingsDebounced();
     });
-    $('#vectors_enabled_files').prop('checked', settings.enabled_files).on('input', () => {
+    $('#vectors_enabled_files').prop('checked', settings.enabled_files).on('input', async () => {
+        if ($('#vectors_enabled_files').prop('checked') && !await allowStapkEmbeddingToggle('#vectors_enabled_files')) return;
         settings.enabled_files = $('#vectors_enabled_files').prop('checked');
         Object.assign(extension_settings.vectors, settings);
         saveSettingsDebounced();
         toggleSettings();
     });
-    $('#vectors_source').val(settings.source).on('change', () => {
-        settings.source = String($('#vectors_source').val());
-        Object.assign(extension_settings.vectors, settings);
-        saveSettingsDebounced();
+    $('#vectors_source').val(stapkEmbeddingConfig?.type || settings.source).on('change', () => {
         toggleSettings();
+    });
+    $('#stapk_embedding_save').on('click', async () => {
+        try {
+            await saveStapkEmbeddingConfig();
+            toastr.success('Embedding Provider 已保存');
+        } catch (error) {
+            displayStapkEmbeddingConfig(stapkEmbeddingConfig || { type: settings.source, model: settings.openai_model, keyConfigured: false });
+            toastr.error('Embedding Provider 保存失败');
+            console.warn('Vectors: embedding configuration save failed', error);
+        }
+    });
+    $('#stapk_embedding_test').on('click', async () => {
+        try {
+            await saveStapkEmbeddingConfig();
+            if (!await ensureStapkEmbeddingCapability()) {
+                throw new Error('Embedding capability is unavailable');
+            }
+            const result = await requestStapkEmbeddingConfig('/api/stapk/embeddings/test');
+            toastr.success(`Embedding 连接成功（${result.dimension} 维）`);
+        } catch (error) {
+            toastr.error('Embedding 测试失败；请检查 Provider 设置后手动重试');
+            console.warn('Vectors: embedding connection test failed', error);
+        }
     });
     $('#vector_altEndpointUrl_enabled').prop('checked', settings.use_alt_endpoint).on('input', () => {
         settings.use_alt_endpoint = $('#vector_altEndpointUrl_enabled').prop('checked');
@@ -1779,11 +1819,7 @@ export async function init() {
         Object.assign(extension_settings.vectors, settings);
         saveSettingsDebounced();
     });
-    $('#vectors_openai_model').val(settings.openai_model).on('change', () => {
-        settings.openai_model = String($('#vectors_openai_model').val());
-        Object.assign(extension_settings.vectors, settings);
-        saveSettingsDebounced();
-    });
+    $('#vectors_openai_model').val(settings.openai_model).on('change', () => {});
     $('#vectors_electronhub_model').val(settings.electronhub_model).on('change', () => {
         settings.electronhub_model = String($('#vectors_electronhub_model').val());
         Object.assign(extension_settings.vectors, settings);
@@ -2000,7 +2036,8 @@ export async function init() {
         saveSettingsDebounced();
     });
 
-    $('#vectors_enabled_world_info').prop('checked', settings.enabled_world_info).on('input', () => {
+    $('#vectors_enabled_world_info').prop('checked', settings.enabled_world_info).on('input', async () => {
+        if ($('#vectors_enabled_world_info').prop('checked') && !await allowStapkEmbeddingToggle('#vectors_enabled_world_info')) return;
         settings.enabled_world_info = !!$('#vectors_enabled_world_info').prop('checked');
         Object.assign(extension_settings.vectors, settings);
         saveSettingsDebounced();

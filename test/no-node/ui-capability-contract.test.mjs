@@ -40,6 +40,7 @@ function htmlActionContract() {
         source: { type: 'html', path: 'index.html' },
       },
     ],
+    configuredActions: [],
     hiddenSelectors: [
       {
         selector: '.unsupported',

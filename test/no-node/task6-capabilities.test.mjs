@@ -35,7 +35,7 @@ test('Task 6 World Info endpoints are implemented by the native adapter', async 
   assert.match(series, /^0004-stapk-mobile-world-info\.patch$/m);
 });
 
-test('formal Android assets expose lorebook UI while keeping vector RAG hidden', async () => {
+test('formal Android assets expose lorebook UI and configured Vector Storage', async () => {
   const [contractText, html, mobileCss] = await Promise.all([
     readFile(new URL('./mobile/app/src/main/assets/api-contract.json', root), 'utf8'),
     readFile(new URL('./mobile/app/src/main/assets/sillytavern-web/index.html', root), 'utf8'),
@@ -54,7 +54,8 @@ test('formal Android assets expose lorebook UI while keeping vector RAG hidden',
     assert.ok(html.includes(htmlToken), `missing lorebook UI ${selector}`);
     assert.doesNotMatch(mobileCss, new RegExp(`^\\s*${escapeRegExp(selector)}\\s*,?\\s*$`, 'm'));
   });
-  assert.match(mobileCss, /^\s*#vectors_container\s*\{/m);
+  assert.doesNotMatch(mobileCss, /^\s*#vectors_container\s*[,{]/m);
+  assert.match(mobileCss, /extension_container:not\(#qr_container\):not\(#regex_container\):not\(#summarize_container\):not\(#vectors_container\)/);
 });
 
 function escapeRegExp(value) {

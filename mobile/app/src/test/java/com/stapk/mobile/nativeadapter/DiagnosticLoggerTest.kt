@@ -9,6 +9,48 @@ import org.junit.Test
 
 class DiagnosticLoggerTest {
     @Test
+    fun `vector diagnostics retain only allowlisted metadata`() {
+        val logsDir = Files.createTempDirectory("stapk-vector-diagnostics").toFile()
+        val logger = DiagnosticLogger(logsDir)
+
+        logger.event(
+            DiagnosticArea.VECTOR,
+            "vector_query_failed",
+            mapOf(
+                "host" to "example.com",
+                "batchCount" to "2",
+                "dimension" to "1536",
+                "itemCount" to "1",
+                "databaseBytes" to "0",
+                "collectionSha256" to "a".repeat(64),
+                "modelSha256" to "b".repeat(64),
+                "text" to "private chunk",
+                "prompt" to "private prompt",
+                "vector" to "[0.1,0.2]",
+                "apiKey" to "top-secret",
+                "authorization" to "Bearer top-secret",
+                "baseUrl" to "https://example.com/v1?token=secret"
+            )
+        )
+
+        val text = logsDir.resolve("diagnostics.jsonl").readText()
+        val event = JsonParser.parseString(text.trim()).asJsonObject
+        val fields = event.getAsJsonObject("fields")
+        assertEquals("VECTOR", event.get("area").asString)
+        assertEquals("2", fields.get("batchCount").asString)
+        assertEquals("1536", fields.get("dimension").asString)
+        assertEquals("1", fields.get("itemCount").asString)
+        assertEquals("0", fields.get("databaseBytes").asString)
+        assertEquals("a".repeat(64), fields.get("collectionSha256").asString)
+        assertEquals("b".repeat(64), fields.get("modelSha256").asString)
+        assertFalse(text.contains("private chunk"))
+        assertFalse(text.contains("private prompt"))
+        assertFalse(text.contains("[0.1,0.2]"))
+        assertFalse(text.contains("top-secret"))
+        assertFalse(text.contains("token=secret"))
+    }
+
+    @Test
     fun `logger keeps only strict provider terminal metadata`() {
         val logsDir = Files.createTempDirectory("stapk-diagnostics-terminal").toFile()
         val logger = DiagnosticLogger(logsDir)

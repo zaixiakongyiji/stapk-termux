@@ -29,6 +29,21 @@ import java.util.zip.ZipOutputStream
 
 class ExtensionControllerTest {
     @Test
+    fun `discovers vector storage system extension`() {
+        val paths = NativeAdapterPaths(Files.createTempDirectory("stapk-vector-extension").toFile())
+        val controller = ExtensionController(
+            paths,
+            ExtensionRegistry(paths),
+            ExtensionSource { _, _ -> error("remote source must not be called") },
+            ExtensionArchiveInstaller(paths)
+        )
+
+        val discovered = JsonParser.parseString(controller.discover().bodyText).asJsonArray
+
+        assertTrue(discovered.any { it.asJsonObject.get("name").asString == "vectors" })
+    }
+
+    @Test
     fun `discovers system extensions and completes local extension lifecycle`() {
         val paths = NativeAdapterPaths(Files.createTempDirectory("stapk-extension-controller").toFile())
         val registry = ExtensionRegistry(paths)

@@ -18,7 +18,7 @@ npm run build:no-node-apk -- --variant debug --ref release
 
 一键构建固定执行 no-node tests、transform、产物 verifier、严格 capability verifier、Android JVM tests 和 Gradle assemble，然后向 `output/` 发布 APK、checksum、API contract、capability runtime、Web manifest 和 transform report。Release 使用 `--variant release` 并需要下述签名环境变量。
 
-截至 2026-07-17，Debug 候选已通过上述单命令、Pixel 8 / Android 15（API 35）clean install、无 Node 进程、官方单用户 UI 能力矩阵和真实外部 OpenAI-compatible provider 验收；稳定冷启动基线第 3 秒显示原生启动页而非黑屏，第 13 秒官方 UI 可用，`app_ready` 约 12.1 秒。API 24/29 延期到后续真机验收。证据和待办以 `docs/plan/2026-07-12-stapk-single-user-feature-validation-record.md` 为准。0.3.0 按全新安装处理，旧数据迁移及完整应用备份恢复不阻断主体发布。
+截至 2026-07-31，Debug 候选已通过上述单命令、Pixel 8 / Android 15（API 35）clean install、无 Node 进程、官方单用户 UI 能力矩阵、真实外部 OpenAI-compatible chat provider，以及远程 Embedding + 本地 SQLite Vector Storage/RAG 验收；稳定冷启动基线第 3 秒显示原生启动页而非黑屏，第 13 秒官方 UI 可用，`app_ready` 约 12.1 秒。项目只维护、回归和承诺 API 35 及以上，API 24/29 不再纳入设备矩阵，也不阻断交付。证据分别见 `docs/plan/2026-07-12-stapk-single-user-feature-validation-record.md` 与 `docs/plan/2026-07-30-stapk-vector-storage-validation-record.md`。0.3.0 按全新安装处理，旧数据迁移及完整应用备份恢复不阻断主体发布。
 
 ## Android Emulator MCP
 
@@ -38,6 +38,7 @@ Build config: `compileSdk=34`, `minSdk=24`, current `targetSdk=28`. ABI is `arm6
 - **`MainActivity.kt`** — 绑定原生 foreground service，加载随机 loopback 端口的官方 Web UI，并协调 SAF 导入导出。
 - **`nativeadapter/NativeHttpService.kt`** — 拥有本地 HTTP server 生命周期，不启动任何 Node 进程。
 - **`nativeadapter/NativeHttpServer.kt`** — 提供静态 Web、单用户数据、OpenAI-compatible provider、诊断和导出兼容接口。
+- **`nativeadapter/vector/`** — 提供 OpenAI/Custom OpenAI-compatible 远程 Embedding、本地 SQLite 向量存储、精确 Top-K 检索和七个 `/api/vector/*` 兼容接口。
 - **`TavernWebViewClient.kt` / `StapkFileBridge.kt`** — 限定 loopback 主文档、外部 HTTPS 跳转和带 nonce 的 SAF bridge。
 - **`mobile/app/src/main/assets/`** — 只包含 no-node Web 资产、API contract、capability runtime、manifest 和 transform report，不得重新加入 runtime archive 或 payload tar。
 
@@ -49,7 +50,7 @@ Build config: `compileSdk=34`, `minSdk=24`, current `targetSdk=28`. ABI is `arm6
 
 - Do not introduce runtime Node.js, npm, `node_modules`, `server.js` process spawning, or runtime archive extraction for the 0.3.0 path.
 - The app may still run a loopback HTTP server inside Android, but it must be implemented by Kotlin/Java and serve static Web assets plus native API compatibility endpoints.
-- Provider scope is OpenAI-compatible chat completion。普通单用户本地功能按 capability contract 开放；远程模型能力显示外部服务要求，本地重型模型、任意 Node 扩展和 multiuser 保持排除。
+- Provider scope 包含 OpenAI-compatible chat completion，以及默认关闭的 OpenAI/Custom OpenAI-compatible 远程 Embedding。启用 RAG 后文本片段会发送给用户配置的 Provider 并可能计费；向量 SQLite 是可重建派生索引，不是 canonical data。其他远程模型能力显示外部服务要求，本地重型模型、任意 Node 扩展和 multiuser 保持排除。
 - `network_security_config.xml` permits cleartext only to `127.0.0.1`/`localhost`; global cleartext stays off. Don't open global cleartext to simplify WebView loading.
 - Shell scripts use `set -euo pipefail` and must be LF-only (`.gitattributes` enforces `eol=lf` on `stapk/*`). CRLF here previously broke startup.
 
@@ -58,6 +59,12 @@ Build config: `compileSdk=34`, `minSdk=24`, current `targetSdk=28`. ABI is `arm6
 `docs/superpowers/specs/2026-07-09-stapk-no-node-native-adapter-design.md` is the authoritative design for the next major version. It supersedes the Node runtime transformer route in `docs/superpowers/specs/2026-06-25-stapk-transformer-design.md`.
 
 The active implementation plan is `docs/plan/2026-07-12-stapk-single-user-feature-completion-plan.md`. Preserve these boundaries while executing it:
+
+远程 Embedding 与本地向量存储的设计、计划和设备证据分别位于：
+
+- `docs/superpowers/specs/2026-07-30-stapk-remote-embedding-local-vector-design.md`
+- `docs/plan/2026-07-30-stapk-remote-embedding-local-vector-implementation-plan.md`
+- `docs/plan/2026-07-30-stapk-vector-storage-validation-record.md`
 
 - Android APK runtime has no Node.js, npm, `node_modules`, `server.js`, runtime zip, or payload tar extraction.
 - Build-time tools may use Node.js to scan and transform upstream SillyTavern Web assets.

@@ -3,6 +3,7 @@ package com.stapk.mobile.nativeadapter
 import com.google.gson.JsonObject
 import com.google.gson.JsonArray
 import com.google.gson.JsonParser
+import com.stapk.mobile.nativeadapter.vector.VectorRoutes
 import fi.iki.elonen.NanoFileUpload
 import fi.iki.elonen.NanoHTTPD
 import fi.iki.elonen.NanoHTTPD.ResponseException
@@ -22,21 +23,37 @@ class NativeHttpServer private constructor(
     port: Int,
     private val exportStore: ExportStore,
     private val diagnosticLogger: DiagnosticLogger,
+    private val vectorRoutes: VectorRoutes?,
     private val extensionSubsystemFactory: (NativeAdapterPaths, AtomicFileStore, DiagnosticLogger) -> ExtensionSubsystem,
     @Suppress("UNUSED_PARAMETER") constructorMarker: ExtensionSubsystemFactoryConstructorMarker
-) : NanoHTTPD("127.0.0.1", port) {
+) : NanoHTTPD("127.0.0.1", port), NativeAdapterServer {
     constructor(
         paths: NativeAdapterPaths,
         port: Int = 0,
         exportStore: ExportStore = ExportStore(paths.exportsDir),
-        diagnosticLogger: DiagnosticLogger = DiagnosticLogger(paths.logsDir)
+        diagnosticLogger: DiagnosticLogger = DiagnosticLogger(paths.logsDir),
+        vectorRoutes: VectorRoutes? = null
     ) : this(
         paths,
         port,
         exportStore,
         diagnosticLogger,
+        vectorRoutes,
         ::createExtensionSubsystem,
         ExtensionSubsystemFactoryConstructorMarker
+    )
+
+    constructor(
+        paths: NativeAdapterPaths,
+        port: Int,
+        exportStore: ExportStore,
+        diagnosticLogger: DiagnosticLogger
+    ) : this(
+        paths = paths,
+        port = port,
+        exportStore = exportStore,
+        diagnosticLogger = diagnosticLogger,
+        vectorRoutes = null
     )
 
     internal constructor(
@@ -44,12 +61,14 @@ class NativeHttpServer private constructor(
         port: Int = 0,
         exportStore: ExportStore = ExportStore(paths.exportsDir),
         diagnosticLogger: DiagnosticLogger = DiagnosticLogger(paths.logsDir),
+        vectorRoutes: VectorRoutes? = null,
         extensionSubsystemFactory: (NativeAdapterPaths, AtomicFileStore, DiagnosticLogger) -> ExtensionSubsystem
     ) : this(
         paths,
         port,
         exportStore,
         diagnosticLogger,
+        vectorRoutes,
         extensionSubsystemFactory,
         ExtensionSubsystemFactoryConstructorMarker
     )
@@ -134,10 +153,12 @@ class NativeHttpServer private constructor(
         return toNanoResponse(response)
     }
 
-    fun setExportBridgeNonce(nonce: String) {
+    override fun setExportBridgeNonce(nonce: String) {
         require(ExportMetadata.isToken(nonce)) { "Invalid bridge nonce" }
         bridgeNonce = nonce
     }
+
+    override fun serverPort(): Int = listeningPort
 
     private fun registerRoutes(router: NativeRouter) {
         router.get("/version") { versionResponse() }
@@ -182,6 +203,18 @@ class NativeHttpServer private constructor(
         }
         router.post("/api/tokenizers/openai/count") {
             tokenizer.count(it.query["model"]?.firstOrNull().orEmpty(), it.controllerBody())
+        }
+        vectorRoutes?.let { vectors ->
+            router.post("/api/vector/list") { vectors.list(it.controllerBody()) }
+            router.post("/api/vector/insert") { vectors.insert(it.controllerBody()) }
+            router.post("/api/vector/delete") { vectors.delete(it.controllerBody()) }
+            router.post("/api/vector/query") { vectors.query(it.controllerBody()) }
+            router.post("/api/vector/query-multi") { vectors.queryMulti(it.controllerBody()) }
+            router.post("/api/vector/purge") { vectors.purge(it.controllerBody()) }
+            router.post("/api/vector/purge-all") { vectors.purgeAll() }
+            router.post("/api/stapk/embeddings/config/get") { vectors.getConfig() }
+            router.post("/api/stapk/embeddings/config/save") { vectors.saveConfig(it.controllerBody()) }
+            router.post("/api/stapk/embeddings/test") { vectors.testConfig() }
         }
         router.get("/api/extensions/discover") { extensionSubsystem.routes.discover() }
         router.post("/api/extensions/install") { extensionSubsystem.routes.install(it.controllerBody()) }
@@ -259,11 +292,11 @@ class NativeHttpServer private constructor(
         router.post("/api/chats/group/import") { groupChats.importChat(it) }
     }
 
-    fun findExport(token: String): ExportTicket? = exportStore.find(token)
+    override fun findExport(token: String): ExportTicket? = exportStore.find(token)
 
-    fun consumeExport(token: String): ExportTicket? = exportStore.consume(token)
+    override fun consumeExport(token: String): ExportTicket? = exportStore.consume(token)
 
-    fun releaseExport(token: String) = exportStore.release(token)
+    override fun releaseExport(token: String) = exportStore.release(token)
 
     private fun fallback(request: NativeRequest): HttpResponse = when {
         request.path.startsWith("/api/") -> HttpResponse.json(404, """{"error":"endpoint_not_found"}""")

@@ -209,7 +209,8 @@ class ExtensionController(
             "gallery",
             "expressions",
             "regex",
-            "memory"
+            "memory",
+            "vectors"
         )
     }
 
