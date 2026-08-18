@@ -31,7 +31,6 @@ desktop.ini
 # ===== 开发内部文档 =====
 OPERATION_LOG.md
 AGENTS.md
-docs/superpowers/specs/2026-05-27-stapk-termux-design.md
 
 # ===== Gradle（根目录）=====
 .gradle/

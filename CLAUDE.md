@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this project is
 
-stAPK Mobile 的当前 0.3.0 主线是把 [SillyTavern](https://github.com/SillyTavern/SillyTavern) 的官方 Web UI 转换成一个不包含 Node.js 运行时的 Android 原生应用。APK 运行时只包含 WebView、静态前端资源、Kotlin/Java 本地 HTTP 兼容后端、用户数据和模型设置；Node.js 只允许作为构建期工具存在。
+stAPK Mobile 的当前 0.3.x 主线是把 [SillyTavern](https://github.com/SillyTavern/SillyTavern) 的官方 Web UI 转换成一个不包含 Node.js 运行时的 Android 原生应用。APK 运行时只包含 WebView、静态前端资源、Kotlin/Java 本地 HTTP 兼容后端、用户数据和模型设置；Node.js 只允许作为构建期工具存在。
 
 所有当前运行时开发均在 `mobile/` 中进行；不要重新引入旧的 APK 内置 Node.js、payload archive 或 `node server.js` 路线。
 
@@ -18,7 +18,7 @@ npm run build:no-node-apk -- --variant debug --ref release
 
 一键构建固定执行 no-node tests、transform、产物 verifier、严格 capability verifier、Android JVM tests 和 Gradle assemble，然后向 `output/` 发布 APK、checksum、API contract、capability runtime、Web manifest 和 transform report。Release 使用 `--variant release` 并需要下述签名环境变量。
 
-截至 2026-07-31，Debug 候选已通过上述单命令、Pixel 8 / Android 15（API 35）clean install、无 Node 进程、官方单用户 UI 能力矩阵、真实外部 OpenAI-compatible chat provider，以及远程 Embedding + 本地 SQLite Vector Storage/RAG 验收；稳定冷启动基线第 3 秒显示原生启动页而非黑屏，第 13 秒官方 UI 可用，`app_ready` 约 12.1 秒。项目只维护、回归和承诺 API 35 及以上，API 24/29 不再纳入设备矩阵，也不阻断交付。证据分别见 `docs/plan/2026-07-12-stapk-single-user-feature-validation-record.md` 与 `docs/plan/2026-07-30-stapk-vector-storage-validation-record.md`。0.3.0 按全新安装处理，旧数据迁移及完整应用备份恢复不阻断主体发布。
+v0.3.2 已通过上述单命令、Pixel 8 / Android 15（API 35）设备验收、无 Node 进程、官方单用户 UI 能力矩阵、真实外部 OpenAI-compatible chat provider，以及远程 Embedding + 本地 SQLite Vector Storage/RAG 验收；稳定冷启动基线第 3 秒显示原生启动页而非黑屏，第 13 秒官方 UI 可用，`app_ready` 约 12.1 秒。项目只维护、回归和承诺 API 35 及以上，API 24/29 不再纳入设备矩阵，也不阻断交付。证据分别见 `docs/plan/2026-07-12-stapk-single-user-feature-validation-record.md` 与 `docs/plan/2026-07-30-stapk-vector-storage-validation-record.md`。官方 v0.3.1 可覆盖升级至 v0.3.2；0.2.x 旧数据迁移及完整应用备份恢复不属于当前正式版能力。
 
 ## Android Emulator MCP
 
@@ -31,7 +31,7 @@ npm run build:no-node-apk -- --variant debug --ref release
 
 `local.properties` (git-ignored) must contain `sdk.dir=<android-sdk-path>`. Release signing reads these env vars: `TERMUX_RELEASE_STORE_FILE`, `TERMUX_RELEASE_STORE_PASSWORD`, `TERMUX_RELEASE_KEY_ALIAS`, `TERMUX_RELEASE_KEY_PASSWORD`.
 
-Build config: `compileSdk=34`, `minSdk=24`, current `targetSdk=28`. ABI is `arm64-v8a` only. The no-node migration should remove dependence on process-spawning behavior instead of preserving it.
+Build config: `compileSdk=34`, `minSdk=24`, current `targetSdk=28`. APK 不包含 native runtime，不按 CPU ABI 拆包。只要当前工具链没有实际问题，不主动升级 AGP、Gradle 或 SDK 版本。
 
 ## Runtime architecture status (`mobile/app/src/main/java/com/stapk/mobile/`)
 
@@ -56,14 +56,13 @@ Build config: `compileSdk=34`, `minSdk=24`, current `targetSdk=28`. ABI is `arm6
 
 ## Direction: no-node native adapter
 
-`docs/superpowers/specs/2026-07-09-stapk-no-node-native-adapter-design.md` is the authoritative design for the next major version. It supersedes the Node runtime transformer route in `docs/superpowers/specs/2026-06-25-stapk-transformer-design.md`.
+`docs/superpowers/specs/2026-07-09-stapk-no-node-native-adapter-design.md` 是当前权威架构设计；旧 Node runtime transformer 路线只保留在 Git 历史中。
 
-The active implementation plan is `docs/plan/2026-07-12-stapk-single-user-feature-completion-plan.md`. Preserve these boundaries while executing it:
+`docs/plan/2026-07-12-stapk-single-user-feature-completion-plan.md` 是 0.3.x 主体完成记录，其中尚未实施的完整应用备份恢复必须另行设计和计划。当前没有跨功能的活动实施计划；开始新功能前先查看 `docs/README.md`。
 
-远程 Embedding 与本地向量存储的设计、计划和设备证据分别位于：
+远程 Embedding 与本地向量存储的当前设计和设备证据分别位于：
 
 - `docs/superpowers/specs/2026-07-30-stapk-remote-embedding-local-vector-design.md`
-- `docs/plan/2026-07-30-stapk-remote-embedding-local-vector-implementation-plan.md`
 - `docs/plan/2026-07-30-stapk-vector-storage-validation-record.md`
 
 - Android APK runtime has no Node.js, npm, `node_modules`, `server.js`, runtime zip, or payload tar extraction.

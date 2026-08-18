@@ -1,7 +1,7 @@
 # stAPK 无 Node 原生适配转换器设计
 
 日期：2026-07-09
-状态：实施中，官方单用户功能与 API 35 基础验收已完成；OpenAI-compatible 流式实现已通过构建验证及 2026-07-21 模拟器设备验收
+状态：0.3.x 主体已实施并完成 API 35 验收；v0.3.2 已加入远程 Embedding、本地 SQLite Vector Storage 与 RAG
 范围：保留 SillyTavern 官方 Web UI，APK 运行时不包含、不解压、不启动 Node.js，通过 Android 原生兼容层承接官方单用户核心能力；本地重型模型和任意 Node 扩展不属于主体完成范围
 
 ## 结论
@@ -59,14 +59,13 @@ APK 可以通过 Kotlin/Java/Android 库访问文件、网络、加密、图片�
 
 ## 当前事实
 
-当前仓库已切换到无 Node 原生适配主线，但业务 API 尚未全部落地，不能把阶段性启动兼容写成完整产品可用：
+当前仓库已经完成无 Node 原生适配主体，并按 capability contract 区分已实现、远程可选和明确隐藏的能力：
 
 - `mobile/` 是当前 Android 工程，包名 `com.stapk.mobile`。
 - `mobile/app/src/main/assets/` 已切换为 `sillytavern-web/`、API 契约、Web manifest 和 transform report，不再包含 `payload.tgz` 或 Node runtime ZIP。
 - 旧 `RuntimeManager.kt` 和 `KeepAliveService.kt` 已删除，manifest 只注册新的 `NativeHttpService`。
 - `MainActivity.kt` 已切换为 loading/WebView/error 三态壳，不再展示控制面板，也不再启动 Node。
-- `docs/superpowers/specs/2026-06-25-stapk-transformer-design.md` 当前描述的是 Node runtime + WebView 容器路线。
-- `docs/plan/2026-07-06-stapk-0.3-completion-plan.md` 是旧路线的收口计划，不能继续作为新路线执行依据。
+- 旧 Node runtime + WebView 容器路线及其收口计划只保留在 Git 历史中，不再作为当前开发依据。
 
 当前 payload 中核对到的 SillyTavern 结构：
 
@@ -77,9 +76,9 @@ APK 可以通过 Kotlin/Java/Android 库访问文件、网络、加密、图片�
 - `public/script.js` 和相关前端脚本通过 `fetch('/api/...')` 调用后端。
 - OpenAI-compatible 真实生成路径主要涉及 `/api/backends/chat-completions/generate`、`/api/backends/chat-completions/status`、settings、secrets 和模型配置。
 
-## 实施进度（更新至 2026-07-21）
+## 实施进度（更新至 2026-08-18）
 
-- 当前执行入口已切换到 `docs/plan/2026-07-12-stapk-single-user-feature-completion-plan.md`；2026-07-09 计划的 Task 0-9 仅保留为基础 MVP 历史记录，旧 `docs/plan/2026-07-06-stapk-0.3-completion-plan.md` 不再存在。
+- `docs/plan/2026-07-12-stapk-single-user-feature-completion-plan.md` 已完成主体任务并保留为历史实施记录；新功能必须单独设计和计划。
 - 已落地构建期 API 契约扫描器：`scripts/stapk-scan-web-contract.mjs`。
 - 已落地 no-node transform 和 verifier：`scripts/stapk-transform-no-node.mjs`、`scripts/stapk-verify-no-node-transform.mjs`。转换器会执行 upstream Webpack 构建并把 `public/lib.js` 替换为浏览器 bundle，verifier 会阻断裸模块 import。
 - 真实 transform 已从 SillyTavern `release` 生成 `build/no-node-payload/`，resolved commit 为 `8172dcd0ee672d3cd9a5e5f7af134f91a45cd2b8`。
@@ -97,6 +96,7 @@ APK 可以通过 Kotlin/Java/Android 库访问文件、网络、加密、图片�
 - 2026-07-16 已完成 SAF 数据导出桥及审查加固：只允许已知 `127.0.0.1:<port>` 主文档注入随机 nonce；browser-generated staging 必须携带同一 nonce header，并受单文件 32 MiB、活动 ticket 数和总暂存字节配额约束；文件名、MIME 与扩展名必须匹配业务白名单。角色/聊天等服务端导出复用单次 ticket，World Info、附件等浏览器生成内容通过 `/api/stapk/exports/create` 暂存后交给 `ACTION_CREATE_DOCUMENT`，异步失败会显示用户可见错误。Activity 配置变化期间的 SAF 结果会保留到服务重绑后再消费 ticket。
 - Pixel 8 / Android 15 模拟器先卸载旧 app 后干净安装，官方首页正常加载；World Info JSON 在普通保存和 SAF 页面旋转后的配置变化场景均生成 14 字节 `{"entries":{}}`，私有 exports 目录随后为空，无崩溃且只有 `com.stapk.mobile` 进程。经 `adb forward` 对 staging endpoint 发起不带 nonce 的直接 POST，返回 `403 export_forbidden`。角色 JSON 与 World Info JSON 重新导入、完整官方单用户 UI 矩阵、真实外部 provider 和黑色 WebView surface 计时均已完成 API 35 验收；最新 output APK 再次 clean install 后 `/version` 返回 `node_runtime=false`。项目正式维护范围为 API 35 及以上，Android 7–14 不再纳入支持矩阵，详见 `docs/plan/2026-07-12-stapk-single-user-feature-validation-record.md`。
 - 完整应用数据 ZIP 备份恢复、恢复回滚和 Data Maid 不属于主体完成门槛，推迟到主体功能与发布链路全部完成后的独立可选项目；聊天自身的历史快照/恢复与普通角色、聊天、World Info 导入导出不受此决策影响。
+- v0.3.2 已实现 OpenAI/Custom OpenAI-compatible 远程 Embedding、本地 SQLite Vector Storage、Data Bank、聊天记忆和 World Info RAG；各 RAG 开关默认关闭并受隐私确认保护。
 
 ## 目标
 
@@ -563,7 +563,7 @@ X-Title: stAPK Mobile
 | 聊天 | `POST /api/chats/save` | 保存聊天 |
 | 聊天 | `POST /api/chats/delete` | 删除聊天 |
 | 聊天 | `POST /api/chats/search` | 基础搜索 |
-| Secrets | 待盘点 | 保存/读取 OpenAI-compatible key 状态 |
+| Secrets | `POST /api/secrets/read`、`/write`、`/delete` | 保存、读取和删除 OpenAI-compatible key 状态 |
 | OpenAI | `POST /api/backends/chat-completions/status` | 验证模型/API 可用 |
 | OpenAI | `POST /api/backends/chat-completions/generate` | 真实生成回复 |
 
@@ -1014,39 +1014,17 @@ SillyTavern 的 vectors、图片、语音等能力可能依赖 Transformers、We
 | 2026-07-21 | OpenAI-compatible 支持 preset 可选 streaming/non-streaming | 消除前端 SSE 状态与原生 JSON 响应不一致导致的空消息，同时保留新安装默认关闭的保守行为 |
 | 2026-07-21 | 流式正常路径采用透明 SSE，明确 JSON 响应使用 framing fallback | 复用 SillyTavern 前端解析语义，兼容忽略 `stream=true` 的 custom provider，避免在 Kotlin 中重写厂商 payload |
 | 2026-07-21 | 断连取消上游请求，streaming diagnostics 只记录脱敏元数据 | 防止 foreground service 遗留请求，并确保 API key、prompt、SSE chunk 和生成正文不进入日志 |
+| 2026-07-30 | 远程 Embedding 与本地 SQLite Vector Storage/RAG 纳入 0.3.x | 不在 APK 中打包模型或重量级向量库；远程生成向量，本地保存可重建派生索引 |
 
 ## 已确认边界
 
 1. 基础对话正式支持 OpenAI-compatible preset 可选 streaming/non-streaming；正常 SSE 透明转发，明确 JSON 响应使用 framing fallback。
 2. 项目主体补齐官方单用户核心能力，不追求全部 Node 服务端 endpoint。
-3. 本地重型模型、第三方扩展、多用户和远程访问明确排除。
+3. 本地重型模型、依赖 Node 服务端的扩展、多用户和远程访问明确排除；client-only 扩展按 capability contract 有限支持。
 4. 远程 embedding、图片、TTS、STT 等使用 capability gate，可在主体功能稳定后增量接入。
 5. 旧数据迁移不阻断主体完成，若未来开发则单独设计。
 6. 完整应用数据备份恢复与 Data Maid 不阻断主体完成，若未来开发则与旧数据迁移分别立项。
 
-## 下一步
+## 后续开发
 
-现有实施计划已完成基础 MVP Task 0-9，但其剩余 Task 10-12 的优先级和完成定义已不再匹配 2026-07-12 的范围决策。新的后续实施计划已经生成，旧计划 Task 0-9 继续保留为历史证据，Task 10-12 不再执行。
-
-当前执行入口：
-
-```text
-docs/plan/2026-07-12-stapk-single-user-feature-completion-plan.md
-```
-
-计划文档统一放在：
-
-```text
-docs/plan/
-```
-
-当前计划从 UI-action/API contract 盘点开始，按能力域执行：
-
-```text
-Checkpoint A: capability contract 和安全基础设施
-Checkpoint B: Persona、settings 和角色卡
-Checkpoint C: 群组、聊天和 World Info
-Checkpoint D: 文件、背景、Tokenizer 和 SAF 数据导入导出
-Checkpoint E: 诊断、capability gate 和 UI/API 对齐
-Checkpoint F: 一键构建、CI/Release、设备矩阵和文档收口
-```
+0.3.x 主体、发布链路、扩展事务恢复和 Vector/RAG 已完成。当前没有跨功能的活动实施计划；完整应用备份恢复、远程 TTS/STT/Caption 或其他新增能力必须分别建立设计和实施计划。有效文档入口统一维护在 `docs/README.md`，已完成的过程文档由 Git 历史追溯。

@@ -1,5 +1,7 @@
 # stAPK 官方单用户功能补齐实施计划
 
+> **执行状态（2026-08-18）：** 0.3.x 主体功能、发布链路和 API 35 验收已经完成；本文保留为历史实施记录。完整应用备份恢复与 Data Maid 仍是独立可选项目，启动时必须重新编写设计和实施计划，不得直接继续执行本文旧步骤。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 在现有无 Node MVP 基础上，把 SillyTavern 官方单用户核心 UI 对应的 Persona、角色卡、群组、聊天、World Info、背景、附件、Tokenizer、诊断和普通业务数据导入导出能力补齐为可发布的原生 Android 应用，同时保持 APK 运行时没有 Node.js。

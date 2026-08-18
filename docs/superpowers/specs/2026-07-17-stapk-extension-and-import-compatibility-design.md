@@ -33,7 +33,7 @@ stAPK 仅支持第一类 client-only Web extension。APK 不加入 Node.js、Pyt
 
 ### 2.2 角色卡样本
 
-`test/测试文件/cc7481f898a8e631.png` 是有效的 Character Card V3 PNG：
+`mobile/app/src/test/resources/fixtures/cc7481f898a8e631.png` 是有效的 Character Card V3 PNG：
 
 - 包含有效的 `chara` 与 `ccv3` `tEXt` chunk。
 - CRC、Base64、UTF-8 JSON、`IEND` 和尾随数据均合法。
@@ -48,7 +48,7 @@ stAPK 仅支持第一类 client-only Web extension。APK 不加入 Node.js、Pyt
 
 ### 2.3 World Info 样本
 
-`test/测试文件/写实世界V7.82.json` 已经是 SillyTavern object-entry schema：
+`mobile/app/src/test/resources/fixtures/real-world-v7.82.json` 已经是 SillyTavern object-entry schema：
 
 - `entries` 是 object，共 25 条。
 - 条目包含 `uid`、`key`、`keysecondary`、`comment`、`content`、`order`、`position` 等完整字段。
@@ -58,7 +58,7 @@ stAPK 仅支持第一类 client-only Web extension。APK 不加入 Node.js、Pyt
 
 ### 2.4 预设样本
 
-`test/测试文件/Izumi 0707.json` 是 OpenAI Chat Completion preset，包含：
+早期人工验收使用的匿名化 OpenAI Chat Completion preset 包含：
 
 - 204 个 prompt。
 - 26 条 `extensions.regex_scripts`，其中 16 条启用。
@@ -217,7 +217,7 @@ System extension 从允许列表生成，不扫描并暴露当前 capability 禁
 - 放行 `#regex_container`。
 - 保留上游首次启用授权流程。
 - 使用现有 settings、preset 和 character merge API。
-- 使用 `Izumi 0707.json` 验证 26 条脚本原样保留并能被 Regex consumer 读取。
+- 使用包含 26 条规则的匿名化 preset 验证脚本原样保留并能被 Regex consumer 读取。
 
 ### 8.2 Summarize
 
@@ -314,8 +314,8 @@ Native server 不再强制 multipart 必须带 `Content-Length`：
 
 1. 删除旧 App 后安装新 debug APK。
 2. 导入 `cc7481f898a8e631.png`，确认出现“珞蒹葭”并可打开。
-3. 导入 `写实世界V7.82.json`，确认显示 25 条词条及正文。
-4. 导入 `Izumi 0707.json`，确认 Regex 能读取 26 条规则。
+3. 导入 `real-world-v7.82.json`，确认显示 25 条词条及正文。
+4. 导入包含 26 条规则的匿名化 preset，确认 Regex 能读取全部规则。
 5. 使用 URL 安装 `ST-Prompt-Template`，重载后确认设置 UI 和模板功能。
 6. 使用 URL 安装 `JS-Slash-Runner`，重载后确认酒馆助手入口和基本脚本功能。
 7. 检查更新、禁用、启用和删除。
@@ -347,8 +347,8 @@ Native server 不再强制 multipart 必须带 `Content-Length`：
 ### 14.2 导入与扩展验收
 
 - 干净安装后，角色卡 `cc7481f898a8e631.png` 可通过系统文件选择器导入并显示角色“珞蒹葭”。
-- `写实世界V7.82.json` 导入后显示 25 条 World Info，正文编辑字段可见。
-- `Izumi 0707.json` 导入时显示 Regex 授权弹窗；授权后 Regex 面板实际渲染 26 条 preset scripts。
+- `real-world-v7.82.json` 导入后显示 25 条 World Info，正文编辑字段可见。
+- 匿名化 preset 导入时显示 Regex 授权弹窗；授权后 Regex 面板实际渲染 26 条 preset scripts。
 - `ST-Prompt-Template` 从公开 GitHub URL 安装成功，验证 commit 为 `ada54bb22e3dab0a07e473d383b4c2fe40bc6573`。
 - `JS-Slash-Runner` 从公开 GitHub URL 安装成功，验证 commit 为 `f70f9c99ba6f553596ca4cc78d05c76559f15ead`。
 - 两个扩展均完成发现、重载、启用、禁用、版本检查、删除和重新安装验证；第三方代码风险提示保留。
@@ -372,10 +372,10 @@ Native server 不再强制 multipart 必须带 `Content-Length`：
 ### 14.5 Unicode 与内嵌世界书补充验收
 
 - 发现 NanoHTTPD 2.3.1 会把没有 charset 的 JSON body 按 `US-ASCII` 解码，中文在进入 controller 前已经变成 `U+FFFD`；Native HTTP 边界现统一为无 charset JSON 补 `UTF-8`。
-- 中文 World Info 的读取和删除已使用真实无 charset HTTP 请求覆盖；`写实世界V7.82.json` 显示 25 条及正文，删除后列表和私有文件均消失。
+- 中文 World Info 的读取和删除已使用真实无 charset HTTP 请求覆盖；`real-world-v7.82.json` 显示 25 条及正文，删除后列表和私有文件均消失。
 - `cc7481f898a8e631.png` 的内嵌世界书自动转换为 13 条并绑定角色；同名相同内容复用，同名不同内容使用唯一后缀，角色写入失败只回滚本次新建文件。
 - `0010-stapk-mobile-unicode-and-embedded-lorebook.patch` 消费 Native response 的 `embedded_world`，只刷新列表，不执行前端二次保存。
-- `Izumi 0707.json` 授权后 Regex 面板实际渲染 26 条中文规则。preset、聊天、角色和 World Info 落盘文件以及重启后的 WebView 均未发现 `U+FFFD`。
+- 匿名化 preset 授权后 Regex 面板实际渲染 26 条中文规则。preset、聊天、角色和 World Info 落盘文件以及重启后的 WebView 均未发现 `U+FFFD`。
 
 ### 14.6 延后项
 
